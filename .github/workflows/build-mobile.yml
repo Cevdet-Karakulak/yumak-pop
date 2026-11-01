@@ -1,0 +1,227 @@
+name: Build Mobile Apps (APK, AAB & iOS)
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Derleme Hedefi (Target)'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - 'all'
+          - 'android-apk-aab'
+          - 'android-apk-only'
+          - 'ios-only'
+      create_release:
+        description: 'GitHub Releases Sayfasına Doğrudan İndirme Linki Eklensin mi?'
+        required: true
+        default: true
+        type: boolean
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-android:
+    name: 🤖 Android Derleme (APK & AAB)
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == 'android-apk-aab' || inputs.target == 'android-apk-only' }}
+    steps:
+      - name: 📥 Depoyu Klonla (Checkout)
+        uses: actions/checkout@v4
+
+      - name: ☕ Java 17 Kurulumu
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 🟢 Node.js 20 Kurulumu
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 📦 Bağımlılıkları Yükle (npm ci)
+        run: npm ci
+
+      - name: 🔍 TypeScript Doğrulaması
+        run: npx tsc --noEmit
+
+      - name: 🧩 100 Bölüm Çözülebilirlik Testi
+        run: npx tsx scripts/check-levels.ts
+
+      - name: 🛠️ Expo Android Yerel Dosyalarını Oluştur (Prebuild)
+        run: npx expo prebuild --platform android --no-install --clean
+
+      - name: 🔑 Android İmzalama Anahtarı (Keystore) Oluştur
+        run: |
+          keytool -genkeypair -v \
+            -keystore android/app/release.keystore \
+            -alias yumakpop \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass yumakpop2026 \
+            -keypass yumakpop2026 \
+            -dname "CN=FloppaTech, OU=Mobile, O=FloppaTech Corp, L=Istanbul, ST=Istanbul, C=TR"
+
+      - name: 📱 Android Debug APK Derle (Hızlı Test İçin)
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+          cd ..
+          cp android/app/build/outputs/apk/debug/app-debug.apk YumakPop-v1.0.0-debug.apk
+
+      - name: 🚀 Android Release APK Derle ve İmzala
+        run: |
+          cd android
+          ./gradlew assembleRelease --no-daemon
+          cd ..
+          
+          BT_DIR=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -n 1)
+          echo "Kullanılan Android Build Tools: $BT_DIR"
+          
+          RAW_APK="android/app/build/outputs/apk/release/app-release-unsigned.apk"
+          if [ ! -f "$RAW_APK" ]; then
+            RAW_APK="android/app/build/outputs/apk/release/app-release.apk"
+          fi
+          
+          $BT_DIR/zipalign -v -p 4 "$RAW_APK" android/app/build/outputs/apk/release/app-aligned.apk || cp "$RAW_APK" android/app/build/outputs/apk/release/app-aligned.apk
+          $BT_DIR/apksigner sign --ks android/app/release.keystore --ks-pass pass:yumakpop2026 --ks-key-alias yumakpop --key-pass pass:yumakpop2026 --out YumakPop-v1.0.0-release.apk android/app/build/outputs/apk/release/app-aligned.apk
+          $BT_DIR/apksigner verify YumakPop-v1.0.0-release.apk
+
+      - name: 📦 Google Play AAB (Android App Bundle) Derle ve İmzala
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == 'android-apk-aab' }}
+        run: |
+          cd android
+          ./gradlew bundleRelease --no-daemon
+          cd ..
+          
+          AAB_FILE="android/app/build/outputs/bundle/release/app-release.aab"
+          jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+            -keystore android/app/release.keystore \
+            -storepass yumakpop2026 \
+            -keypass yumakpop2026 \
+            "$AAB_FILE" yumakpop
+          
+          cp "$AAB_FILE" YumakPop-v1.0.0-release.aab
+
+      - name: 📤 Android Çıktılarını Yükle (Artifacts)
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-builds
+          path: |
+            YumakPop-v1.0.0-release.apk
+            YumakPop-v1.0.0-debug.apk
+            YumakPop-v1.0.0-release.aab
+          if-no-files-found: warn
+
+  build-ios:
+    name: 🍏 iOS Derleme (IPA & Archive)
+    runs-on: macos-14
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == 'ios-only' }}
+    steps:
+      - name: 📥 Depoyu Klonla (Checkout)
+        uses: actions/checkout@v4
+
+      - name: 🟢 Node.js 20 Kurulumu
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 📦 Bağımlılıkları Yükle (npm ci)
+        run: npm ci
+
+      - name: 🛠️ Expo iOS Yerel Dosyalarını Oluştur (Prebuild)
+        run: npx expo prebuild --platform ios --no-install --clean
+
+      - name: 🥥 CocoaPods Bağımlılıklarını Kur
+        run: |
+          cd ios
+          pod install --repo-update
+
+      - name: 🏗️ iOS Projesini Derle (xcodebuild)
+        run: |
+          xcodebuild -workspace ios/YumakPop.xcworkspace \
+            -scheme YumakPop \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/YumakPop.xcarchive \
+            archive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+
+      - name: 📦 Test IPA & xcarchive Paketle
+        run: |
+          mkdir -p Payload
+          cp -r build/YumakPop.xcarchive/Products/Applications/YumakPop.app Payload/
+          zip -r YumakPop-v1.0.0-unsigned.ipa Payload/
+          zip -r YumakPop-v1.0.0-xcarchive.zip build/YumakPop.xcarchive/
+
+      - name: 📤 iOS Çıktılarını Yükle (Artifacts)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-builds
+          path: |
+            YumakPop-v1.0.0-unsigned.ipa
+            YumakPop-v1.0.0-xcarchive.zip
+          if-no-files-found: warn
+
+  create-release:
+    name: 🚀 GitHub Sürümü (Release) Oluştur
+    runs-on: ubuntu-latest
+    needs: [build-android, build-ios]
+    if: ${{ always() && (inputs.create_release == true || startsWith(github.ref, 'refs/tags/')) }}
+    steps:
+      - name: 📥 Depoyu Klonla
+        uses: actions/checkout@v4
+
+      - name: 📥 Android Çıktılarını İndir
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: android-builds
+          path: release-files/
+
+      - name: 📥 iOS Çıktılarını İndir
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: ios-builds
+          path: release-files/
+
+      - name: 📋 İndirme Dosyalarını Doğrula
+        run: |
+          ls -la release-files/ || true
+
+      - name: 🏷️ GitHub Release Yayınla
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v1.0.0-build.{0}', github.run_number) }}
+          name: ${{ format('Yumak Pop v1.0.0 (Build #{0})', github.run_number) }}
+          body: |
+            ## 🧶 Yumak Pop v1.0.0 Mobil Derleme Paketi
+
+            Bu sürüm GitHub Actions ile otomatik olarak derlenmiştir.
+
+            ### 📱 İndirme Dosyaları (Assets):
+            * **`YumakPop-v1.0.0-release.apk`**: Android cihazınıza doğrudan yükleyip oynamak için imzalanmış APK paketi.
+            * **`YumakPop-v1.0.0-debug.apk`**: Geliştirici ve test amaçlı debug APK.
+            * **`YumakPop-v1.0.0-release.aab`**: Google Play Console mağazasına yüklenmeye hazır Android App Bundle.
+            * **`YumakPop-v1.0.0-unsigned.ipa`**: iOS test ve imzalama için IPA paketi.
+            * **`YumakPop-v1.0.0-xcarchive.zip`**: Xcode ile App Store'a yüklemek için arşiv paketi.
+
+            ---
+            *FloppaTech Corp © 2026 - Tüm Hakları Saklıdır.*
+          files: |
+            release-files/*
+          draft: false
+          prerelease: false

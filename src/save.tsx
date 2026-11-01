@@ -19,6 +19,7 @@ export interface SaveData {
   tutorialDone: boolean;
   seenMechanics: Partial<Record<MechanicKind, boolean>>;
   deaths: number;
+  completedLevels: number;
 }
 
 const KEY = 'yumakpop:save:v1';
@@ -36,6 +37,7 @@ const DEFAULT: SaveData = {
   tutorialDone: false,
   seenMechanics: {},
   deaths: 0,
+  completedLevels: 0,
 };
 
 export const BOOSTER_PRICE: Record<BoosterKind, number> = { undo: 60, slot: 120, magnet: 150 };

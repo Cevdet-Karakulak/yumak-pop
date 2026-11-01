@@ -1,0 +1,48 @@
+name: EAS Cloud Build (Expo)
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'EAS Platform'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - 'all'
+          - 'android'
+          - 'ios'
+      profile:
+        description: 'EAS Profile'
+        required: true
+        default: 'preview'
+        type: choice
+        options:
+          - 'preview'
+          - 'production'
+
+jobs:
+  eas-build:
+    name: ☁️ EAS Cloud Build (${{ inputs.platform }})
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🚀 Setup EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: 🏗️ Run EAS Build
+        run: npx eas-cli build --platform ${{ inputs.platform }} --profile ${{ inputs.profile }} --non-interactive

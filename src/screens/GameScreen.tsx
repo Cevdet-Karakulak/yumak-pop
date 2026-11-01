@@ -87,7 +87,8 @@ export function GameScreen({
   const [unlockSlotIdx, setUnlockSlotIdx] = useState<number | null>(null);
   const [swapSlotIdx, setSwapSlotIdx] = useState<number | null>(null);
   const [isWatchingAd, setIsWatchingAd] = useState(false);
-  const [showDeathAd, setShowDeathAd] = useState(false);
+  const [showLevelAd, setShowLevelAd] = useState(false);
+  const [pendingNextLevel, setPendingNextLevel] = useState<number | null>(null);
   const [showRewardedReviveAd, setShowRewardedReviveAd] = useState(false);
   const [showRewardedSlotAd, setShowRewardedSlotAd] = useState(false);
   const [showRewardedSwapAd, setShowRewardedSwapAd] = useState(false);
@@ -149,7 +150,26 @@ export function GameScreen({
   useEffect(() => {
     if (!toastMsg) return;
     const id = setTimeout(() => setToastMsg(null), 2500);
-    return () => clearTimeout(id);
+    const handleNextLevel = () => {
+    const nextLvl = level + 1;
+    // Every 3 levels passed: show interstitial ad before advancing to the new level
+    const passed = data.completedLevels || 0;
+    if (passed > 0 && passed % 3 === 0) {
+      setPendingNextLevel(nextLvl);
+      setShowLevelAd(true);
+    } else {
+      onNext(nextLvl);
+    }
+  };
+
+  const onLevelAdDismiss = () => {
+    setShowLevelAd(false);
+    const targetLvl = pendingNextLevel ?? (level + 1);
+    setPendingNextLevel(null);
+    onNext(targetLvl);
+  };
+
+  return () => clearTimeout(id);
   }, [toastMsg]);
 
   // Sizing: Expands track to fill the craft table while keeping all bottom controls comfortably visible!
@@ -256,6 +276,7 @@ export function GameScreen({
           unlocked: Math.max(d.unlocked, Math.min(TOTAL_LEVELS, level + 1)),
           stars: { ...d.stars, [level]: Math.max(d.stars[level] ?? 0, stars) },
           tutorialDone: true,
+          completedLevels: (d.completedLevels || 0) + 1,
         }));
         setTimeout(() => {
           play('win');
@@ -263,22 +284,10 @@ export function GameScreen({
           setResult({ won: true, stars, coins });
         }, 500);
       } else {
-        let triggerDeathAd = false;
-        update((d) => {
-          const newDeaths = (d.deaths || 0) + 1;
-          if (newDeaths % 3 === 0) {
-            triggerDeathAd = true;
-          }
-          return { ...d, deaths: newDeaths };
-        });
-
         setTimeout(() => {
           play('lose');
           buzz('error');
           setResult({ won: false, stars: 0, coins: 0 });
-          if (triggerDeathAd) {
-            setShowDeathAd(true);
-          }
         }, 400);
       }
     },
@@ -542,6 +551,25 @@ export function GameScreen({
     setResult(null);
     setBoth(addSlot(gameRef.current));
     startUnravelLoop();
+  };
+
+  const handleNextLevel = () => {
+    const nextLvl = level + 1;
+    // Every 3 levels successfully passed: show interstitial ad before advancing to the new level
+    const passed = data.completedLevels || 0;
+    if (passed > 0 && passed % 3 === 0) {
+      setPendingNextLevel(nextLvl);
+      setShowLevelAd(true);
+    } else {
+      onNext(nextLvl);
+    }
+  };
+
+  const onLevelAdDismiss = () => {
+    setShowLevelAd(false);
+    const targetLvl = pendingNextLevel ?? (level + 1);
+    setPendingNextLevel(null);
+    onNext(targetLvl);
   };
 
   const restart = () => {
@@ -951,7 +979,7 @@ export function GameScreen({
             label={t.next}
             icon="play"
             color="mint"
-            onPress={() => onNext(level + 1)}
+            onPress={handleNextLevel}
             style={{ alignSelf: 'stretch' }}
           />
         ) : (
@@ -1148,11 +1176,11 @@ export function GameScreen({
         onReplayTutorial={() => setTutStep(0)}
       />
       <MechanicIntroSheet mechanic={introMech} onClose={dismissIntroMech} />
-      {/* 3 Deaths Interstitial Ad */}
+      {/* 3 Completed Levels Interstitial Ad (Plays before advancing to next level) */}
       <InterstitialAdModal
-        visible={showDeathAd}
-        onClose={() => setShowDeathAd(false)}
-        title="Sponsorlu Reklam"
+        visible={showLevelAd}
+        onClose={onLevelAdDismiss}
+        title="Sıradaki Bölüm Reklamı"
         isRewarded={false}
       />
 
