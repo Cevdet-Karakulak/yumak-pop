@@ -64,31 +64,10 @@ if (fs.existsSync(jsObjPath)) {
     fs.writeFileSync(jsObjPath, content, 'utf8');
     console.log('[patch-ios-swift] Successfully patched JavaScriptObject.swift for Swift 6 data-race immunity!');
   } else {
-    console.log('[patch-ios-swift] JavaScriptObject.swift already patched or target not matched.');
+    console.log('[patch-ios-swift] JavaScriptObject.swift already patched.');
   }
 } else {
   console.log('[patch-ios-swift] JavaScriptObject.swift not found at:', jsObjPath);
-}
-
-// 3. Patch build-xcframework.sh to inject SWIFT_STRICT_CONCURRENCY=minimal
-const buildXcframeworkPath = path.resolve(
-  nodeModulesDir,
-  'expo-modules-jsi',
-  'apple',
-  'scripts',
-  'build-xcframework.sh'
-);
-
-if (fs.existsSync(buildXcframeworkPath)) {
-  let content = fs.readFileSync(buildXcframeworkPath, 'utf8');
-  if (content.includes('SWIFT_ENABLE_EXPLICIT_MODULES=NO') && !content.includes('SWIFT_STRICT_CONCURRENCY=minimal')) {
-    content = content.replace(
-      'SWIFT_ENABLE_EXPLICIT_MODULES=NO',
-      'SWIFT_ENABLE_EXPLICIT_MODULES=NO \\\n    SWIFT_STRICT_CONCURRENCY=minimal'
-    );
-    fs.writeFileSync(buildXcframeworkPath, content, 'utf8');
-    console.log('[patch-ios-swift] Successfully injected SWIFT_STRICT_CONCURRENCY=minimal into build-xcframework.sh!');
-  }
 }
 
 console.log('[patch-ios-swift] All Swift compatibility patches applied successfully!');
