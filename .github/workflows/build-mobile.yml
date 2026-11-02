@@ -95,6 +95,7 @@ jobs:
       - name: "Sign Release AAB"
         run: |
           AAB_FILE="android/app/build/outputs/bundle/release/app-release.aab"
+          zip -d "$AAB_FILE" "META-INF/*" || true
           jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
             -keystore android/app/release.keystore \
             -storepass yumakpop2026 \
