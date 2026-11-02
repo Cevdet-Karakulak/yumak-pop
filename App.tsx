@@ -10,6 +10,7 @@ import React, { useEffect, useState } from 'react';
 import { AppState, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { initAudio, pauseMusic, syncMusic } from './src/audio';
+import { initAdMob } from './src/services/adService';
 import { TOTAL_LEVELS } from './src/game/levels';
 import { SaveProvider, useSave } from './src/save';
 import { GameScreen } from './src/screens/GameScreen';
@@ -32,6 +33,7 @@ function Root() {
 
   useEffect(() => {
     initAudio();
+    initAdMob();
     const sub = AppState.addEventListener('change', (s) =>
       s === 'active' ? syncMusic() : pauseMusic(),
     );

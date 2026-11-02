@@ -16,6 +16,7 @@ import { buzz, play } from '../audio';
 import { PopBurst, PopIn, useShake } from '../components/effects';
 import { HowToPlaySheet, MechanicIntroSheet } from '../components/HowToPlayModal';
 import { InterstitialAdModal } from '../components/InterstitialAdModal';
+import { showAdMobInterstitial } from '../services/adService';
 import { SnakeTrackView } from '../components/SnakeTrackView';
 import { BasketView, SpoolView } from '../components/SpoolView';
 import { Bouncy, CoinBadge, FONT, RoundIcon, Sheet, T, YarnButton } from '../components/ui';
@@ -150,26 +151,7 @@ export function GameScreen({
   useEffect(() => {
     if (!toastMsg) return;
     const id = setTimeout(() => setToastMsg(null), 2500);
-    const handleNextLevel = () => {
-    const nextLvl = level + 1;
-    // Every 3 levels passed: show interstitial ad before advancing to the new level
-    const passed = data.completedLevels || 0;
-    if (passed > 0 && passed % 3 === 0) {
-      setPendingNextLevel(nextLvl);
-      setShowLevelAd(true);
-    } else {
-      onNext(nextLvl);
-    }
-  };
-
-  const onLevelAdDismiss = () => {
-    setShowLevelAd(false);
-    const targetLvl = pendingNextLevel ?? (level + 1);
-    setPendingNextLevel(null);
-    onNext(targetLvl);
-  };
-
-  return () => clearTimeout(id);
+    return () => clearTimeout(id);
   }, [toastMsg]);
 
   // Sizing: Expands track to fill the craft table while keeping all bottom controls comfortably visible!
@@ -559,15 +541,20 @@ export function GameScreen({
     const passed = data.completedLevels || 0;
     if (passed > 0 && passed % 3 === 0) {
       setPendingNextLevel(nextLvl);
-      setShowLevelAd(true);
+      const shown = showAdMobInterstitial(() => {
+        onLevelAdDismiss(nextLvl);
+      });
+      if (!shown) {
+        setShowLevelAd(true);
+      }
     } else {
       onNext(nextLvl);
     }
   };
 
-  const onLevelAdDismiss = () => {
+  const onLevelAdDismiss = (customTarget?: number) => {
     setShowLevelAd(false);
-    const targetLvl = pendingNextLevel ?? (level + 1);
+    const targetLvl = typeof customTarget === 'number' ? customTarget : (pendingNextLevel ?? (level + 1));
     setPendingNextLevel(null);
     onNext(targetLvl);
   };
