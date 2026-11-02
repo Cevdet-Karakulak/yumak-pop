@@ -26,20 +26,20 @@ export function HowToPlaySheet({
   }[] = [
     {
       key: 'basic',
-      title: '🧶 Örgü Yılan & Kuyu',
-      desc: 'Ray boyunca ilerleyen örgü yılan kuyuya düşmeden önce doğru makaraları rafa yerleştirerek ipleri sök!',
+      title: t.mech_basic_title,
+      desc: t.mech_basic_desc,
       visual: <SpoolView color="R" cap={4} need={4} size={46} />,
     },
     {
       key: 'knots',
-      title: '🔒 Düğümlü Makara',
-      desc: 'Düğümlü makaralara doğrudan basılamaz. Yanındaki komşu sütundan makara çekerek düğümü çöz!',
+      title: t.mech_knots_title,
+      desc: t.mech_knots_desc,
       visual: <SpoolView color="B" cap={5} need={5} knots={2} size={46} />,
     },
     {
       key: 'twin',
-      title: '🔗 İkiz Bağlı Makaralar',
-      desc: 'İki makara birlikte rafa iner. Rafa yerleştirmek için en az 2 boş yuva gerekir!',
+      title: t.mech_twin_title,
+      desc: t.mech_twin_desc,
       visual: (
         <View style={{ alignItems: 'center' }}>
           <SpoolView color="G" cap={4} need={4} twinId={1} isTwinTop size={36} />
@@ -51,38 +51,38 @@ export function HowToPlaySheet({
     },
     {
       key: 'basket',
-      title: '🧺 Sürpriz Örgü Sepeti',
-      desc: 'Sütunun arkasındaki hasır sepetler önü açıldıkça yeni makaralar fırlatır!',
+      title: t.mech_basket_title,
+      desc: t.mech_basket_desc,
       visual: <BasketView count={4} size={52} />,
     },
     {
       key: 'mystery',
-      title: '❓ Gizemli Makara',
-      desc: 'Rengi gizlidir. Rafa aldığında asıl canlı rengi ve örgüsü ortaya çıkar!',
+      title: t.mech_mystery_title,
+      desc: t.mech_mystery_desc,
       visual: <SpoolView color="P" cap={4} need={4} isMystery size={46} />,
     },
     {
       key: 'rainbow',
-      title: '🌈 Gökkuşağı Joker Makara',
-      desc: 'Her renkle eşleşir! Yılanın başındaki her rengi çeker ve kriz anlarında hayat kurtarır.',
+      title: t.mech_rainbow_title,
+      desc: t.mech_rainbow_desc,
       visual: <SpoolView color="Y" cap={4} need={4} isWild size={46} />,
     },
     {
       key: 'frozen',
-      title: '❄️ Buzlu / Donmuş Makara',
-      desc: 'Buzla kilitlidir. Rafta makara patlattıkça buzları çatlar ve çözülür!',
+      title: t.mech_frozen_title,
+      desc: t.mech_frozen_desc,
       visual: <SpoolView color="T" cap={4} need={4} frozen={2} size={46} />,
     },
     {
       key: 'dual',
-      title: '🪢 Çift Katmanlı Makara',
-      desc: 'İki katmanlı bobin! İlk renk bitince içindeki ikinci renk açılır ve sarmaya devam eder.',
+      title: t.mech_dual_title,
+      desc: t.mech_dual_desc,
       visual: <SpoolView color="R" cap={3} need={3} secondColor="B" size={46} />,
     },
     {
       key: 'vortex',
-      title: '🌀 Tehlikeli Obur Kuyu',
-      desc: 'Her hamlende yılan kuyuya doğru yaklaşır. Kuyuya çekilmeden önce tüm yünleri topla!',
+      title: t.mech_vortex_title,
+      desc: t.mech_vortex_desc,
       visual: (
         <View style={styles.vortexIcon}>
           <Ionicons name="warning" size={28} color="#fff" />
@@ -114,7 +114,7 @@ export function HowToPlaySheet({
         {onReplayTutorial && (
           <YarnButton
             small
-            label="Rehberi Başlat"
+            label={t.replayGuide}
             icon="school"
             color="mint"
             onPress={() => {
@@ -148,26 +148,26 @@ export function MechanicIntroSheet({
   if (!mechanic) return null;
 
   const titleMap: Record<MechanicKind, string> = {
-    basic: '🧶 Örgü Yılan & Kuyu',
-    knots: '🔒 Düğümlü Makara!',
-    twin: '🔗 İkiz Bağlı Makaralar!',
-    basket: '🧺 Sürpriz Örgü Sepeti!',
-    mystery: '❓ Gizemli Makara!',
-    rainbow: '🌈 Gökkuşağı Joker!',
-    frozen: '❄️ Buzlu Makara!',
-    dual: '🪢 Çift Katmanlı Makara!',
-    vortex: '🌀 Tehlikeli Obur Kuyu!',
+    basic: t.mech_basic_title,
+    knots: t.mech_knots_title,
+    twin: t.mech_twin_title,
+    basket: t.mech_basket_title,
+    mystery: t.mech_mystery_title,
+    rainbow: t.mech_rainbow_title,
+    frozen: t.mech_frozen_title,
+    dual: t.mech_dual_title,
+    vortex: t.mech_vortex_title,
   };
   const descMap: Record<MechanicKind, string> = {
-    basic: 'Ray boyunca ilerleyen örgü yılan kuyuya düşmeden önce doğru makaraları seçerek ipleri sök!',
-    knots: 'Düğümlü makaralara doğrudan basılamaz. Hemen yanındaki komşu sütundan makara çekerek düğümü çöz!',
-    twin: 'Kordonla bağlı iki makara aynı anda rafa iner! Rafta en az 2 boş yer olmalı.',
-    basket: 'Sütunun arkasındaki sepetler önü açıldıkça yeni yedek makaralar çıkarır!',
-    mystery: 'Rengi işlemeli soru işaretiyle gizlenmiştir. Rafa aldığında asıl rengi ve örgüsü ortaya çıkar!',
-    rainbow: 'Gökkuşağı makara her renkle eşleşir! Yılanın başındaki herhangi bir ipi çeker.',
-    frozen: 'Buzla kilitlidir! Rafta makara patlattıkça buzu çatlar ve çözülür.',
-    dual: 'İki renkli bobin! İlk yün katmanı sarılınca altındaki ikinci gizli renk devreye girer.',
-    vortex: 'Yılan kuyuya doğru hızla yaklaşıyor! Hamlelerini iyi planla, kuyuya düşmeden tüm ipleri topla!',
+    basic: t.mech_basic_desc,
+    knots: t.mech_knots_desc,
+    twin: t.mech_twin_desc,
+    basket: t.mech_basket_desc,
+    mystery: t.mech_mystery_desc,
+    rainbow: t.mech_rainbow_desc,
+    frozen: t.mech_frozen_desc,
+    dual: t.mech_dual_desc,
+    vortex: t.mech_vortex_desc,
   };
 
   return (

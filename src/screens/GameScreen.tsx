@@ -63,7 +63,7 @@ export function GameScreen({
   onHome: () => void;
   onNext: (n: number) => void;
 }) {
-  const { data, update, t } = useSave();
+  const { data, update, t, lang } = useSave();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const info = useMemo(() => getLevelInfo(level), [level]);
@@ -93,6 +93,7 @@ export function GameScreen({
   const [showRewardedReviveAd, setShowRewardedReviveAd] = useState(false);
   const [showRewardedSlotAd, setShowRewardedSlotAd] = useState(false);
   const [showRewardedSwapAd, setShowRewardedSwapAd] = useState(false);
+  const [pendingSwapSlot, setPendingSwapSlot] = useState<number | null>(null);
   const [normalReviveUsed, setNormalReviveUsed] = useState(false);
   const [adReviveUsed, setAdReviveUsed] = useState(false);
   const rackShake = useShake();
@@ -157,8 +158,8 @@ export function GameScreen({
   // Sizing: Expands track to fill the craft table while keeping all bottom controls comfortably visible!
   const usableH = height - insets.top - insets.bottom;
   const viewTrackW = Math.min(width - 8, 480);
-  const bottomControlsBudget = 265;
-  const viewTrackH = Math.max(340, Math.min(620, usableH - bottomControlsBudget - 8));
+  const bottomControlsBudget = 265 + Math.max(insets.bottom, 12);
+  const viewTrackH = Math.max(260, Math.min(560, usableH - bottomControlsBudget));
   const totalSlots = 6;
   const slotGap = 4;
   const slotW = Math.min(46, Math.floor((width - 24) / totalSlots) - slotGap);
@@ -460,8 +461,18 @@ export function GameScreen({
 
   const handleRevive = (isAd: boolean) => {
     if (isAd) {
-      setShowRewardedReviveAd(true);
+      setResult(null);
+      setTimeout(() => {
+        const shown = showAdMobInterstitial(() => {
+          setAdReviveUsed(true);
+          executeRevive(true);
+        });
+        if (!shown) {
+          setShowRewardedReviveAd(true);
+        }
+      }, 100);
     } else {
+      setResult(null);
       setNormalReviveUsed(true);
       executeRevive(false);
     }
@@ -474,8 +485,44 @@ export function GameScreen({
     setBoth(revivedState);
     play('pull');
     buzz('success');
-    showToast(isAd ? '🎬 Reklam Ödülü: Yılan Geri İtildi!' : '🛡️ Yılan Geri İtildi!');
+    showToast(isAd ? (lang === 'tr' ? '🎬 Reklam Ödülü: Yılan Geri İtildi!' : '🎬 Ad Reward: Snake Pushed Back!') : (lang === 'tr' ? '🛡️ Yılan Geri İtildi!' : '🛡️ Snake Pushed Back!'));
     startUnravelLoop();
+  };
+
+  const grantSlotReward = () => {
+    const nextState = cloneState(gameRef.current);
+    nextState.rack.push(null);
+    setBoth(nextState);
+    play('win');
+    buzz('success');
+    showToast(t.slotUnlockedToast);
+  };
+
+  const handleWatchAdForSlot = () => {
+    setUnlockSlotIdx(null);
+    setTimeout(() => {
+      const shown = showAdMobInterstitial(() => {
+        grantSlotReward();
+      });
+      if (!shown) {
+        setShowRewardedSlotAd(true);
+      }
+    }, 100);
+  };
+
+  const handleWatchAdForSwap = () => {
+    if (swapSlotIdx === null || !game.rack[swapSlotIdx] || !game.segments[0]) return;
+    const targetSlot = swapSlotIdx;
+    setSwapSlotIdx(null);
+    setTimeout(() => {
+      const shown = showAdMobInterstitial(() => {
+        executeColorSwap(targetSlot);
+      });
+      if (!shown) {
+        setPendingSwapSlot(targetSlot);
+        setShowRewardedSwapAd(true);
+      }
+    }, 100);
   };
 
   const executeColorSwap = (slotIdx: number) => {
@@ -624,7 +671,7 @@ export function GameScreen({
                   fontFamily: FONT.bold,
                 }}
               >
-                {isDanger ? `🚨 KUYUYA: ${stepsToHole} ADIM!` : `Kuyuya: ${stepsToHole} Adım`}
+                {isDanger ? `${t.dangerStepsPrefix}${stepsToHole}${t.dangerStepsSuffix}` : `${t.normalStepsPrefix}${stepsToHole}${t.normalStepsSuffix}`}
               </T>
             </View>
           </View>
@@ -640,12 +687,12 @@ export function GameScreen({
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                 <T style={{ fontFamily: FONT.black, fontSize: 15, color: UI.coral }}>
                   {tutStep === 0
-                    ? '🎯 1. Adım: Makaraya Dokun!'
+                    ? t.tutStep1Title
                     : tutStep === 1
-                    ? '🧶 2. Adım: İp Sökülüyor!'
+                    ? t.tutStep2Title
                     : tutStep === 2
-                    ? '🚨 3. Adım: Kuyuya Dikkat!'
-                    : '🎉 Rehber Tamamlandı!'}
+                    ? t.tutStep3Title
+                    : t.tutStep4Title}
                 </T>
                 <Pressable
                   onPress={() => {
@@ -655,24 +702,24 @@ export function GameScreen({
                   style={{ padding: 4 }}
                 >
                   <T style={{ fontSize: 12, color: UI.plumLight, textDecorationLine: 'underline' }}>
-                    Rehberi Geç
+                    {t.skipTut}
                   </T>
                 </Pressable>
               </View>
               <T style={{ fontSize: 13, color: UI.plum, lineHeight: 18 }}>
                 {tutStep === 0
-                  ? 'Yılanın başındaki renkle eşleşen makaraya dokun. Makara rafa çıkıp ipi otomatik çekmeye başlar!'
+                  ? t.tutStep1
                   : tutStep === 1
-                  ? 'Makara rafa yerleşti ve ipleri sarıyor! İp söküldükçe yılan geriye çekilerek kuyu tehlikesinden uzaklaşır.'
+                  ? t.tutStep2
                   : tutStep === 2
-                  ? 'Adım sayacına dikkat et! Her hamlende yılan kuyuya bir adım yaklaşır. Kuyuya çekilmeden önce tüm ipleri bitir!'
-                  : 'Tüm kuralları öğrendin. Artık rahatça oynayabilirsin!'}
+                  ? t.tutStep3
+                  : t.tutStep4}
               </T>
               {tutStep >= 1 && (
                 <View style={{ marginTop: 8, alignItems: 'flex-end' }}>
                   <YarnButton
                     small
-                    label={tutStep === 3 ? 'Hemen Başla!' : 'Devam Et ➔'}
+                    label={tutStep === 3 ? t.tutStartNow : t.tutContinue}
                     color={tutStep === 3 ? 'mint' : 'sky'}
                     onPress={() => {
                       if (tutStep < 3) {
@@ -711,7 +758,7 @@ export function GameScreen({
         </View>
 
         {/* Stable Fixed Bottom Section */}
-        <View style={styles.bottomArea}>
+        <View style={[styles.bottomArea, { paddingBottom: Math.max(insets.bottom, 14) }]}>
           {/* Spool Rack (Holding Area) */}
           <Animated.View
             style={[styles.shelf, rackShake.style]}
@@ -889,7 +936,7 @@ export function GameScreen({
                     color={UI.plum}
                   />
                   <T style={{ fontSize: 10, marginTop: -2 }}>
-                    {k === 'undo' ? 'Geri İt' : t[k]}
+                    {t[k]}
                   </T>
                   <View
                     style={[
@@ -912,15 +959,15 @@ export function GameScreen({
                 if (stuckIdx >= 0) {
                   setSwapSlotIdx(stuckIdx);
                 } else if (game.rack.every((sp) => sp === null)) {
-                  showToast('Rafta henüz makara yok!');
+                  showToast(lang === 'tr' ? 'Rafta henüz makara yok!' : 'No spools on rack yet!');
                 } else {
-                  showToast('Raftaki makaralar zaten yılanla eşleşiyor!');
+                  showToast(lang === 'tr' ? 'Raftaki makaralar zaten yılanla eşleşiyor!' : 'Rack spools already match the snake!');
                 }
               }}
             >
               <View style={styles.booster}>
                 <Ionicons name="color-wand" size={21} color={UI.plum} />
-                <T style={{ fontSize: 10, marginTop: -2 }}>Renk Değiş</T>
+                <T style={{ fontSize: 10, marginTop: -2 }}>{t.colorSwapName ?? "Renk Değiş"}</T>
                 <View style={[styles.boosterCount, { backgroundColor: UI.gold }]}>
                   <T style={{ fontSize: 9, color: '#fff', fontFamily: FONT.black }}>
                     {COLOR_SWAP_PRICE}🟡
@@ -953,9 +1000,9 @@ export function GameScreen({
       )}
 
       {/* Result sheets */}
-      <Sheet visible={!!result?.won} title="ÖRGÜ KURTULDU!">
-        <T style={{ marginVertical: 6, color: UI.plumLight }}>
-          Yılan kuyuya düşmeden tüm ipleri çözdün!
+      <Sheet visible={!!result?.won} title={t.win}>
+        <T style={{ marginVertical: 6, color: UI.plumLight, textAlign: 'center' }}>
+          {t.winSub}
         </T>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
           <T style={{ marginRight: 8 }}>{t.coinsEarned}</T>
@@ -967,74 +1014,82 @@ export function GameScreen({
             icon="play"
             color="mint"
             onPress={handleNextLevel}
-            style={{ alignSelf: 'stretch' }}
+            style={{ alignSelf: 'stretch', width: '100%' }}
           />
         ) : (
           <T style={{ textAlign: 'center', marginBottom: 10 }}>{t.allDone}</T>
         )}
-        <View style={{ flexDirection: 'row', marginTop: 12, gap: 12 }}>
-          <YarnButton small label={t.retry} icon="refresh" color="sky" onPress={restart} />
-          <YarnButton small label={t.home} icon="home" color="plum" onPress={onHome} />
+        <View style={{ flexDirection: 'row', marginTop: 12, gap: 10, width: '100%', alignSelf: 'stretch' }}>
+          <YarnButton small label={t.retry} icon="refresh" color="sky" onPress={restart} style={{ flex: 1 }} />
+          <YarnButton small label={t.home} icon="home" color="plum" onPress={onHome} style={{ flex: 1 }} />
         </View>
       </Sheet>
 
       {/* Game Over / Revive Sheet with 1-chance & ad options */}
       <Sheet
         visible={!!result && !result.won}
-        title={!normalReviveUsed || !adReviveUsed ? 'KUYUYA DÜŞTÜ!' : 'OYUN BİTTİ!'}
+        title={!normalReviveUsed || !adReviveUsed ? t.lose : (lang === 'tr' ? 'OYUN BİTTİ!' : 'GAME OVER!')}
       >
         <T style={{ color: UI.plumLight, marginBottom: 14, textAlign: 'center' }}>
           {!normalReviveUsed
-            ? 'Yılan kuyuya çekildi! 1 canlanma hakkını kullanabilir veya reklam izleyerek devam edebilirsin.'
+            ? (lang === 'tr'
+                ? 'Yılan kuyuya çekildi! 1 canlanma hakkını kullanabilir veya reklam izleyerek devam edebilirsin.'
+                : 'The snake was pulled into the hole! Use your free revive or watch an ad to continue.')
             : !adReviveUsed
-            ? 'Normal canlanma hakkın bitti! Reklam izleyerek son bir şans kazanabilirsin.'
-            : 'Tüm canlanma hakların tükendi! Bu bölümü baştan dene.'}
+            ? (lang === 'tr'
+                ? 'Normal canlanma hakkın bitti! Reklam izleyerek son bir şans kazanabilirsin.'
+                : 'Free revive used! Watch a short ad for one final chance.')
+            : (lang === 'tr'
+                ? 'Tüm canlanma hakların tükendi! Bu bölümü baştan dene.'
+                : 'All revive chances used! Try this level from the beginning.')}
         </T>
 
         {!normalReviveUsed && (
           <YarnButton
-            label="Geri İt & Devam Et (1 Hak)"
+            label={lang === 'tr' ? 'Geri İt & Devam Et (1 Hak)' : 'Push Back & Continue (1 Chance)'}
             icon="refresh"
             color="mint"
             onPress={() => handleRevive(false)}
-            style={{ alignSelf: 'stretch', marginBottom: 10 }}
+            style={{ alignSelf: 'stretch', width: '100%', marginBottom: 10 }}
           />
         )}
 
         {!adReviveUsed && (
           <YarnButton
-            label={isWatchingAd ? '🎬 Reklam Yükleniyor...' : '🎬 Reklam İzle & Geri İt'}
+            label={isWatchingAd
+              ? (lang === 'tr' ? '🎬 Reklam Yükleniyor...' : '🎬 Loading Ad...')
+              : (lang === 'tr' ? '🎬 Reklam İzle & Geri İt' : '🎬 Watch Ad & Push Back')}
             icon="videocam"
             color="gold"
             disabled={isWatchingAd}
             onPress={() => handleRevive(true)}
-            style={{ alignSelf: 'stretch', marginBottom: 10 }}
+            style={{ alignSelf: 'stretch', width: '100%', marginBottom: 10 }}
           />
         )}
 
         {normalReviveUsed && adReviveUsed ? (
           <YarnButton
-            label="🔄 Bölümü Yeniden Dene"
+            label={lang === 'tr' ? '🔄 Bölümü Yeniden Dene' : '🔄 Try Level Again'}
             icon="refresh"
             color="coral"
             onPress={restart}
-            style={{ alignSelf: 'stretch', marginBottom: 10 }}
+            style={{ alignSelf: 'stretch', width: '100%', marginBottom: 10 }}
           />
         ) : (
-          <View style={{ flexDirection: 'row', marginTop: 4, gap: 12 }}>
-            <YarnButton small label={t.retry} icon="refresh" color="coral" onPress={restart} />
-            <YarnButton small label={t.home} icon="home" color="plum" onPress={onHome} />
+          <View style={{ flexDirection: 'row', marginTop: 6, gap: 10, width: '100%', alignSelf: 'stretch' }}>
+            <YarnButton small label={t.retry} icon="refresh" color="coral" onPress={restart} style={{ flex: 1 }} />
+            <YarnButton small label={t.home} icon="home" color="plum" onPress={onHome} style={{ flex: 1 }} />
           </View>
         )}
 
         {normalReviveUsed && adReviveUsed && (
-          <View style={{ marginTop: 10, alignSelf: 'stretch' }}>
+          <View style={{ marginTop: 8, width: '100%', alignSelf: 'stretch' }}>
             <YarnButton
-              label="🏠 Ana Menü"
+              label={lang === 'tr' ? '🏠 Ana Menü' : '🏠 Main Menu'}
               icon="home"
               color="plum"
               onPress={onHome}
-              style={{ alignSelf: 'stretch' }}
+              style={{ alignSelf: 'stretch', width: '100%' }}
             />
           </View>
         )}
@@ -1066,23 +1121,23 @@ export function GameScreen({
       <Sheet
         visible={unlockSlotIdx !== null}
         onClose={() => setUnlockSlotIdx(null)}
-        title="YENİ MAKARA YUVASI AÇ"
+        title={t.unlockSlotTitle}
       >
         <Ionicons name="lock-open" size={48} color={UI.gold} style={{ alignSelf: 'center', marginVertical: 6 }} />
         <T style={{ textAlign: 'center', color: UI.plumLight, marginVertical: 6 }}>
-          Rafına 1 yeni yuva ekleyerek daha fazla makara tutabilir ve tıkanmaları önleyebilirsin!
+          {t.unlockSlotDesc}
         </T>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginVertical: 10 }}>
-          <T style={{ marginRight: 8 }}>Mevcut Altın:</T>
+          <T style={{ marginRight: 8 }}>{t.coinsAvailable}</T>
           <CoinBadge coins={data.coins} />
         </View>
         <YarnButton
-          label={`🟡 ${unlockSlotIdx !== null ? (SLOT_UNLOCK_PRICES[unlockSlotIdx] ?? 40) : 40} Altın ile Aç (Bu Bölüm)`}
+          label={`🟡 ${unlockSlotIdx !== null ? (SLOT_UNLOCK_PRICES[unlockSlotIdx] ?? 40) : 40} ${t.unlockWithCoins}`}
           color="gold"
           onPress={() => {
             const price = unlockSlotIdx !== null ? (SLOT_UNLOCK_PRICES[unlockSlotIdx] ?? 40) : 40;
             if (data.coins < price) {
-              showToast('Yeterli altının yok!');
+              showToast(t.notEnough);
               return play('blocked');
             }
             update((d) => ({
@@ -1095,16 +1150,16 @@ export function GameScreen({
             setUnlockSlotIdx(null);
             play('win');
             buzz('success');
-            showToast('🎉 Bu Bölüm İçin Yeni Yuva Açıldı!');
+            showToast(t.slotUnlockedToast);
           }}
           disabled={data.coins < (unlockSlotIdx !== null ? (SLOT_UNLOCK_PRICES[unlockSlotIdx] ?? 40) : 40)}
-          style={{ alignSelf: 'stretch', marginBottom: 10 }}
+          style={{ alignSelf: 'stretch', width: '100%', marginBottom: 10 }}
         />
         <YarnButton
-          label="🎬 Reklam İzle (Ücretsiz Aç)"
+          label={t.watchAdFree}
           color="mint"
-          onPress={() => setShowRewardedSlotAd(true)}
-          style={{ alignSelf: 'stretch' }}
+          onPress={handleWatchAdForSlot}
+          style={{ alignSelf: 'stretch', width: '100%' }}
         />
       </Sheet>
 
@@ -1112,48 +1167,45 @@ export function GameScreen({
       <Sheet
         visible={swapSlotIdx !== null}
         onClose={() => setSwapSlotIdx(null)}
-        title="MAKARA RENGİNİ DÖNÜŞTÜR"
+        title={t.swapColorTitle}
       >
         <Ionicons name="color-palette" size={48} color={UI.coral} style={{ alignSelf: 'center', marginVertical: 6 }} />
         <T style={{ textAlign: 'center', color: UI.plumLight, marginVertical: 6 }}>
-          Bu makarayı yılanın kafasındaki renge dönüştür! Anında ipler çözülmeye başlayacak.
+          {t.swapColorDesc}
         </T>
         {swapSlotIdx !== null && game.rack[swapSlotIdx] && game.segments[0] && (
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginVertical: 12, gap: 14 }}>
             <View style={{ alignItems: 'center' }}>
-              <T style={{ fontSize: 11, color: UI.plumLight, marginBottom: 4 }}>Şu Anki</T>
+              <T style={{ fontSize: 11, color: UI.plumLight, marginBottom: 4 }}>{t.swapCurrent}</T>
               <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: YARN[game.rack[swapSlotIdx]!.color]?.base ?? '#CCC' }} />
             </View>
             <Ionicons name="arrow-forward" size={20} color={UI.plumLight} />
             <View style={{ alignItems: 'center' }}>
-              <T style={{ fontSize: 11, color: UI.plumLight, marginBottom: 4 }}>Dönüşecek</T>
+              <T style={{ fontSize: 11, color: UI.plumLight, marginBottom: 4 }}>{t.swapTarget}</T>
               <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: YARN[game.segments[0].color]?.base ?? '#CCC' }} />
             </View>
           </View>
         )}
         <YarnButton
-          label={`🟡 ${COLOR_SWAP_PRICE} Altın ile Dönüştür`}
+          label={`🟡 ${COLOR_SWAP_PRICE} ${t.swapWithCoins}`}
           color="gold"
           onPress={() => {
             if (swapSlotIdx === null || !game.rack[swapSlotIdx] || !game.segments[0]) return;
             if (data.coins < COLOR_SWAP_PRICE) {
-              showToast('Yeterli altının yok!');
+              showToast(t.notEnough);
               return play('blocked');
             }
             update((d) => ({ ...d, coins: d.coins - COLOR_SWAP_PRICE }));
             executeColorSwap(swapSlotIdx);
           }}
           disabled={data.coins < COLOR_SWAP_PRICE}
-          style={{ alignSelf: 'stretch', marginBottom: 10 }}
+          style={{ alignSelf: 'stretch', width: '100%', marginBottom: 10 }}
         />
         <YarnButton
-          label="🎬 Reklam İzle (Ücretsiz Dönüştür)"
+          label={t.swapWatchAd}
           color="mint"
-          onPress={() => {
-            if (swapSlotIdx === null || !game.rack[swapSlotIdx] || !game.segments[0]) return;
-            setShowRewardedSwapAd(true);
-          }}
-          style={{ alignSelf: 'stretch' }}
+          onPress={handleWatchAdForSwap}
+          style={{ alignSelf: 'stretch', width: '100%' }}
         />
       </Sheet>
 
@@ -1188,15 +1240,9 @@ export function GameScreen({
         visible={showRewardedSlotAd}
         onClose={() => {
           setShowRewardedSlotAd(false);
-          const nextState = cloneState(gameRef.current);
-          nextState.rack.push(null);
-          setBoth(nextState);
-          setUnlockSlotIdx(null);
-          play('win');
-          buzz('success');
-          showToast('🎉 Reklam Ödülü: Yeni Yuva Açıldı!');
+          grantSlotReward();
         }}
-        title="Yuva Açma Ödüllü Reklamı"
+        title={lang === 'tr' ? 'Yuva Açma Ödüllü Reklamı' : 'Unlock Slot Rewarded Ad'}
         isRewarded={true}
       />
 
@@ -1205,11 +1251,12 @@ export function GameScreen({
         visible={showRewardedSwapAd}
         onClose={() => {
           setShowRewardedSwapAd(false);
-          if (swapSlotIdx !== null) {
-            executeColorSwap(swapSlotIdx);
+          if (pendingSwapSlot !== null) {
+            executeColorSwap(pendingSwapSlot);
+            setPendingSwapSlot(null);
           }
         }}
-        title="Renk Dönüştürme Ödüllü Reklamı"
+        title={lang === 'tr' ? 'Renk Dönüştürme Ödüllü Reklamı' : 'Color Swap Rewarded Ad'}
         isRewarded={true}
       />
     </View>
@@ -1250,7 +1297,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-end',
     marginTop: 'auto',
-    paddingBottom: 2,
+    paddingBottom: 0,
   },
   tutorialOverlay: {
     position: 'absolute',
@@ -1330,15 +1377,15 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(235, 195, 150, 0.45)',
     borderBottomWidth: 3,
     borderBottomColor: 'rgba(25, 10, 4, 0.75)',
-    minHeight: 110,
-    height: 110,
+    minHeight: 104,
+    height: 104,
     justifyContent: 'center',
   },
   queues: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'flex-start',
-    height: 96,
+    height: 92,
   },
   moreBadge: {
     marginTop: 2,
