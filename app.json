@@ -58,6 +58,15 @@
           "androidAppId": "ca-app-pub-9426623468970945~7281224562",
           "iosAppId": "ca-app-pub-9426623468970945~7281224562"
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": false,
+            "extraProguardRules": "-keep class androidx.work.impl.WorkDatabase* { *; }\n-keep class * extends androidx.room.RoomDatabase { *; }\n-keep class androidx.work.** { *; }\n-keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod\n-dontwarn androidx.work.impl.**"
+          }
+        }
       ]
     ],
     "react-native-google-mobile-ads": {
