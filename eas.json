@@ -18,7 +18,8 @@
       "distribution": "store",
       "autoIncrement": true,
       "android": {
-        "buildType": "app-bundle"
+        "buildType": "app-bundle",
+        "credentialsSource": "local"
       },
       "ios": {
         "simulator": false

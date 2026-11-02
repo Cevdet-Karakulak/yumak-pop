@@ -4,6 +4,11 @@
 node_modules/
 
 # Expo
+# Credentials and keystores
+credentials.json
+*.keystore
+*.jks
+
 .expo/
 dist/
 web-build/
