@@ -18,6 +18,8 @@ on:
         default: true
         type: boolean
   push:
+    branches:
+      - main
     tags:
       - "v*"
 
