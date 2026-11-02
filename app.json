@@ -17,7 +17,7 @@
     },
     "android": {
       "package": "com.floppatech.yumakpop",
-      "versionCode": 5,
+      "versionCode": 6,
       "adaptiveIcon": {
         "backgroundColor": "#FCE3D3",
         "foregroundImage": "./assets/android-icon-foreground.png"
