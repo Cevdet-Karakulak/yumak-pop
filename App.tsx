@@ -32,17 +32,28 @@ function Root() {
   const [gameKey, setGameKey] = useState(0);
 
   useEffect(() => {
-    initAudio();
-    initAdMob();
-    const sub = AppState.addEventListener('change', (s) =>
-      s === 'active' ? syncMusic() : pauseMusic(),
-    );
+    initAudio().catch((err) => console.warn('initAudio error:', err));
+    initAdMob().catch((err) => console.warn('initAdMob error:', err));
+    const sub = AppState.addEventListener('change', (s) => {
+      try {
+        s === 'active' ? syncMusic() : pauseMusic();
+      } catch (e) {
+        console.warn('AppState audio error:', e);
+      }
+    });
     return () => sub.remove();
   }, []);
 
   useEffect(() => {
     if (loaded && fontsLoaded) SplashScreen.hideAsync().catch(() => {});
   }, [loaded, fontsLoaded]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      SplashScreen.hideAsync().catch(() => {});
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, []);
 
   if (!loaded || !fontsLoaded) return <View style={{ flex: 1, backgroundColor: UI.cream }} />;
 

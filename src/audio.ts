@@ -28,20 +28,28 @@ export async function initAudio() {
     await setAudioModeAsync({ playsInSilentMode: false, interruptionMode: 'mixWithOthers' } as any);
   } catch {}
   (Object.keys(SOURCES) as Sfx[]).forEach((k) => {
-    const n = POOL_SIZE[k] ?? 1;
-    pools[k] = {
-      players: Array.from({ length: n }, () => {
-        const p = createAudioPlayer(SOURCES[k]);
-        p.volume = k === 'pull' ? 0.5 : 0.8;
-        return p;
-      }),
-      next: 0,
-    };
+    try {
+      const n = POOL_SIZE[k] ?? 1;
+      pools[k] = {
+        players: Array.from({ length: n }, () => {
+          const p = createAudioPlayer(SOURCES[k]);
+          p.volume = k === 'pull' ? 0.5 : 0.8;
+          return p;
+        }),
+        next: 0,
+      };
+    } catch (err) {
+      console.warn('Audio pool init error for', k, err);
+    }
   });
-  music = createAudioPlayer(require('../assets/sounds/music.wav'));
-  music.loop = true;
-  music.volume = 0.35;
-  syncMusic();
+  try {
+    music = createAudioPlayer(require('../assets/sounds/music.wav'));
+    music.loop = true;
+    music.volume = 0.35;
+    syncMusic();
+  } catch (err) {
+    console.warn('Music init error:', err);
+  }
 }
 
 export function play(sfx: Sfx) {
