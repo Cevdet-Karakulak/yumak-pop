@@ -106,18 +106,34 @@ Result: 100/100 solvable (ALL SOLVABLE - ZERO DEADLOCK)
 ## 📱 Ekran Görüntüleri ve Görsel Vitrin
 
 <div align="center">
-  <img src="./assets/images/feature-graphic.png" alt="Yumak Pop Feature Graphic" width="100%" style="border-radius: 16px; margin-bottom: 16px;" />
+  <img src="./assets/images/feature-graphic.png" alt="Yumak Pop Feature Graphic" width="100%" style="border-radius: 16px; margin-bottom: 24px;" />
 </div>
 
-| **01. Oyun Alanı & Triko Yılanı** | **02. Düğümlü & İkiz Makaralar** | **03. ASMR İp Çözülme Efekti** |
+### 🍏 iOS Mağaza Vitrini (iPhone 18 Pro Titanyum Mockup)
+
+| **01. Yumakları Çöz!** | **02. Kuyuya Yetiş!** | **03. İpleri Geri Sar!** |
 | :---: | :---: | :---: |
-| <img src="./assets/images/ios-screenshots/ios-screenshot-1.png" width="280" /> | <img src="./assets/images/ios-screenshots/ios-screenshot-2.png" width="280" /> | <img src="./assets/images/ios-screenshots/ios-screenshot-3.png" width="280" /> |
+| <img src="./assets/images/store-mockups/ios/01-Ana-Menu.png" width="280" /> | <img src="./assets/images/store-mockups/ios/02-Oynanis-Kuyu.png" width="280" /> | <img src="./assets/images/store-mockups/ios/03-Makaralari-Doldur.png" width="280" /> |
 
 <br>
 
-| **04. Seviye Sonu Zafer Ekranı** | **05. Nasıl Oynanır Kılavuzu** | **06. Bölüm Seçim Haritası** |
+| **04. Düğümleri Çöz!** | **05. 100 Örgü Bölümü!** | **06. Ayarlar & Dil!** |
 | :---: | :---: | :---: |
-| <img src="./assets/images/ios-screenshots/ios-screenshot-4.png" width="280" /> | <img src="./assets/images/ios-screenshots/5.5-inch%20(1242x2208)/screenshot-3.png" width="280" /> | <img src="./assets/images/ios-screenshots/5.5-inch%20(1242x2208)/screenshot-1.png" width="280" /> |
+| <img src="./assets/images/store-mockups/ios/04-Ozel-Mekanikler.png" width="280" /> | <img src="./assets/images/store-mockups/ios/05-Bolumler-Haritasi.png" width="280" /> | <img src="./assets/images/store-mockups/ios/06-Ayarlar.png" width="280" /> |
+
+<br>
+
+### 🤖 Android Mağaza Vitrini (Son Model Amiral Gemisi Mockup)
+
+| **01. Ana Menü** | **02. Dinamik Kuyu** | **03. Makara Rafı** |
+| :---: | :---: | :---: |
+| <img src="./assets/images/store-mockups/android/01-Ana-Menu.png" width="280" /> | <img src="./assets/images/store-mockups/android/02-Oynanis-Kuyu.png" width="280" /> | <img src="./assets/images/store-mockups/android/03-Makaralari-Doldur.png" width="280" /> |
+
+<br>
+
+| **04. Kilitli Makaralar** | **05. Macera Haritası** | **06. Kişiselleştirme** |
+| :---: | :---: | :---: |
+| <img src="./assets/images/store-mockups/android/04-Ozel-Mekanikler.png" width="280" /> | <img src="./assets/images/store-mockups/android/05-Bolumler-Haritasi.png" width="280" /> | <img src="./assets/images/store-mockups/android/06-Ayarlar.png" width="280" /> |
 
 ---
 
