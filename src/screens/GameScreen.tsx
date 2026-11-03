@@ -485,7 +485,7 @@ export function GameScreen({
     setBoth(revivedState);
     play('pull');
     buzz('success');
-    showToast(isAd ? (lang === 'tr' ? '🎬 Reklam Ödülü: Yılan Geri İtildi!' : '🎬 Ad Reward: Snake Pushed Back!') : (lang === 'tr' ? '🛡️ Yılan Geri İtildi!' : '🛡️ Snake Pushed Back!'));
+    showToast(isAd ? t.adRewardPushBack : t.snakePushedBack);
     startUnravelLoop();
   };
 
@@ -959,9 +959,9 @@ export function GameScreen({
                 if (stuckIdx >= 0) {
                   setSwapSlotIdx(stuckIdx);
                 } else if (game.rack.every((sp) => sp === null)) {
-                  showToast(lang === 'tr' ? 'Rafta henüz makara yok!' : 'No spools on rack yet!');
+                  showToast(t.noSpoolsOnRack);
                 } else {
-                  showToast(lang === 'tr' ? 'Raftaki makaralar zaten yılanla eşleşiyor!' : 'Rack spools already match the snake!');
+                  showToast(t.rackSpoolsAlreadyMatch);
                 }
               }}
             >
@@ -1028,25 +1028,19 @@ export function GameScreen({
       {/* Game Over / Revive Sheet with 1-chance & ad options */}
       <Sheet
         visible={!!result && !result.won}
-        title={!normalReviveUsed || !adReviveUsed ? t.lose : (lang === 'tr' ? 'OYUN BİTTİ!' : 'GAME OVER!')}
+        title={!normalReviveUsed || !adReviveUsed ? t.lose : t.gameOver}
       >
         <T style={{ color: UI.plumLight, marginBottom: 14, textAlign: 'center' }}>
           {!normalReviveUsed
-            ? (lang === 'tr'
-                ? 'Yılan kuyuya çekildi! 1 canlanma hakkını kullanabilir veya reklam izleyerek devam edebilirsin.'
-                : 'The snake was pulled into the hole! Use your free revive or watch an ad to continue.')
+            ? t.revivePromptNormal
             : !adReviveUsed
-            ? (lang === 'tr'
-                ? 'Normal canlanma hakkın bitti! Reklam izleyerek son bir şans kazanabilirsin.'
-                : 'Free revive used! Watch a short ad for one final chance.')
-            : (lang === 'tr'
-                ? 'Tüm canlanma hakların tükendi! Bu bölümü baştan dene.'
-                : 'All revive chances used! Try this level from the beginning.')}
+            ? t.revivePromptAd
+            : t.revivePromptOut}
         </T>
 
         {!normalReviveUsed && (
           <YarnButton
-            label={lang === 'tr' ? 'Geri İt & Devam Et (1 Hak)' : 'Push Back & Continue (1 Chance)'}
+            label={t.pushBackAndContinue}
             icon="refresh"
             color="mint"
             onPress={() => handleRevive(false)}
@@ -1056,9 +1050,7 @@ export function GameScreen({
 
         {!adReviveUsed && (
           <YarnButton
-            label={isWatchingAd
-              ? (lang === 'tr' ? '🎬 Reklam Yükleniyor...' : '🎬 Loading Ad...')
-              : (lang === 'tr' ? '🎬 Reklam İzle & Geri İt' : '🎬 Watch Ad & Push Back')}
+            label={isWatchingAd ? t.loadingAd : t.watchAdAndPushBack}
             icon="videocam"
             color="gold"
             disabled={isWatchingAd}
@@ -1069,7 +1061,7 @@ export function GameScreen({
 
         {normalReviveUsed && adReviveUsed ? (
           <YarnButton
-            label={lang === 'tr' ? '🔄 Bölümü Yeniden Dene' : '🔄 Try Level Again'}
+            label={t.tryLevelAgain}
             icon="refresh"
             color="coral"
             onPress={restart}
@@ -1085,7 +1077,7 @@ export function GameScreen({
         {normalReviveUsed && adReviveUsed && (
           <View style={{ marginTop: 8, width: '100%', alignSelf: 'stretch' }}>
             <YarnButton
-              label={lang === 'tr' ? '🏠 Ana Menü' : '🏠 Main Menu'}
+              label={t.mainMenu}
               icon="home"
               color="plum"
               onPress={onHome}
@@ -1242,7 +1234,7 @@ export function GameScreen({
           setShowRewardedSlotAd(false);
           grantSlotReward();
         }}
-        title={lang === 'tr' ? 'Yuva Açma Ödüllü Reklamı' : 'Unlock Slot Rewarded Ad'}
+        title={t.rewardedSlotAd}
         isRewarded={true}
       />
 
@@ -1256,7 +1248,7 @@ export function GameScreen({
             setPendingSwapSlot(null);
           }
         }}
-        title={lang === 'tr' ? 'Renk Dönüştürme Ödüllü Reklamı' : 'Color Swap Rewarded Ad'}
+        title={t.rewardedSwapAd}
         isRewarded={true}
       />
     </View>

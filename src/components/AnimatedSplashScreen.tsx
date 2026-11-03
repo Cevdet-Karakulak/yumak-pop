@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { buzz, play } from '../audio';
+import { useSave } from '../save';
 import { UI, YARN } from '../theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -27,13 +28,107 @@ const TITLE_LETTERS = [
   { char: 'p', color: YARN.G.base },
 ];
 
-const STATUS_STAGES = [
-  { threshold: 0, text: 'Makaralar diziliyor...' },
-  { threshold: 25, text: 'Yumaklar sarılıyor...' },
-  { threshold: 55, text: 'İplikler hazırlanıyor...' },
-  { threshold: 80, text: 'Örgü masası kuruluyor...' },
-  { threshold: 99, text: 'Örgü dünyası hazır! 🎉' },
-];
+const STATUS_STAGES_BY_LANG: Record<string, { threshold: number; text: string }[]> = {
+  tr: [
+    { threshold: 0, text: 'Makaralar diziliyor...' },
+    { threshold: 25, text: 'Yumaklar sarılıyor...' },
+    { threshold: 55, text: 'İplikler hazırlanıyor...' },
+    { threshold: 80, text: 'Örgü masası kuruluyor...' },
+    { threshold: 99, text: 'Örgü dünyası hazır! 🎉' },
+  ],
+  en: [
+    { threshold: 0, text: 'Aligning spools...' },
+    { threshold: 25, text: 'Winding yarn balls...' },
+    { threshold: 55, text: 'Preparing colorful threads...' },
+    { threshold: 80, text: 'Setting up knitting table...' },
+    { threshold: 99, text: 'Knitting world ready! 🎉' },
+  ],
+  de: [
+    { threshold: 0, text: 'Spulen werden angeordnet...' },
+    { threshold: 25, text: 'Wollknäuel werden gewickelt...' },
+    { threshold: 55, text: 'Bunte Fäden werden vorbereitet...' },
+    { threshold: 80, text: 'Stricktisch wird vorbereitet...' },
+    { threshold: 99, text: 'Strickwelt bereit! 🎉' },
+  ],
+  es: [
+    { threshold: 0, text: 'Alineando carretes...' },
+    { threshold: 25, text: 'Enrollando ovillos de lana...' },
+    { threshold: 55, text: 'Preparando hilos de colores...' },
+    { threshold: 80, text: 'Preparando mesa de tejido...' },
+    { threshold: 99, text: '¡Mundo de tejido listo! 🎉' },
+  ],
+  fr: [
+    { threshold: 0, text: 'Alignement des bobines...' },
+    { threshold: 25, text: 'Enroulement des pelotes de laine...' },
+    { threshold: 55, text: 'Préparation des fils colorés...' },
+    { threshold: 80, text: 'Préparation de la table à tricoter...' },
+    { threshold: 99, text: 'Monde du tricot prêt ! 🎉' },
+  ],
+  it: [
+    { threshold: 0, text: 'Allineamento rocchetti...' },
+    { threshold: 25, text: 'Avvolgimento gomitoli di lana...' },
+    { threshold: 55, text: 'Preparazione fili colorati...' },
+    { threshold: 80, text: 'Allestimento tavolo da maglia...' },
+    { threshold: 99, text: 'Mondo della maglia pronto! 🎉' },
+  ],
+  pt: [
+    { threshold: 0, text: 'Alinhando carretéis...' },
+    { threshold: 25, text: 'Enrolando novelos de lã...' },
+    { threshold: 55, text: 'Preparando fios coloridos...' },
+    { threshold: 80, text: 'Montando mesa de tricô...' },
+    { threshold: 99, text: 'Mundo do tricô pronto! 🎉' },
+  ],
+  ru: [
+    { threshold: 0, text: 'Расстановка катушек...' },
+    { threshold: 25, text: 'Сматывание клубков пряжи...' },
+    { threshold: 55, text: 'Подготовка цветных нитей...' },
+    { threshold: 80, text: 'Обустройство стола для вязания...' },
+    { threshold: 99, text: 'Мир вязания готов! 🎉' },
+  ],
+  ja: [
+    { threshold: 0, text: '糸巻きを配置中...' },
+    { threshold: 25, text: '毛糸玉を巻き巻き中...' },
+    { threshold: 55, text: 'カラフルな糸を準備中...' },
+    { threshold: 80, text: '編み物テーブルをセッティング中...' },
+    { threshold: 99, text: '編み物の世界が準備完了！🎉' },
+  ],
+  ko: [
+    { threshold: 0, text: '실타래 정렬 중...' },
+    { threshold: 25, text: '실뭉치 감는 중...' },
+    { threshold: 55, text: '색색의 실 준비 중...' },
+    { threshold: 80, text: '뜨개질 테이블 세팅 중...' },
+    { threshold: 99, text: '뜨개질 세계 준비 완료! 🎉' },
+  ],
+  zh: [
+    { threshold: 0, text: '线轴排列中...' },
+    { threshold: 25, text: '毛线球缠绕中...' },
+    { threshold: 55, text: '准备彩色毛线...' },
+    { threshold: 80, text: '搭建编织桌...' },
+    { threshold: 99, text: '编织世界已就绪！🎉' },
+  ],
+  ar: [
+    { threshold: 0, text: 'ترتيب البكرات...' },
+    { threshold: 25, text: 'لف كرات الصوف...' },
+    { threshold: 55, text: 'تجهيز الخيوط الملونة...' },
+    { threshold: 80, text: 'إعداد طاولة الحياكة...' },
+    { threshold: 99, text: 'عالم الحياكة جاهز! 🎉' },
+  ],
+};
+
+const TAP_HINTS: Record<string, string> = {
+  tr: '✨ Yumağa Dokun!',
+  en: '✨ Tap Yarn!',
+  de: '✨ Wolle antippen!',
+  es: '✨ ¡Toca la lana!',
+  fr: '✨ Touchez la laine !',
+  it: '✨ Tocca la lana!',
+  pt: '✨ Toque no novelo!',
+  ru: '✨ Нажми на пряжу!',
+  ja: '✨ 毛糸をタップ！',
+  ko: '✨ 실뭉치 탭하기!',
+  zh: '✨ 点击毛线球！',
+  ar: '✨ انقر على الصوف!',
+};
 
 // Ambient drifting craft particles
 const AMBIENT_PARTICLES = [
@@ -60,6 +155,8 @@ interface AnimatedSplashScreenProps {
 
 export function AnimatedSplashScreen({ isReady, onFinish }: AnimatedSplashScreenProps) {
   const insets = useSafeAreaInsets();
+  const { t, lang } = useSave();
+  const stages = STATUS_STAGES_BY_LANG[lang] ?? STATUS_STAGES_BY_LANG.en;
 
   // Root container opacity for fade out
   const containerOpacity = useRef(new Animated.Value(1)).current;
@@ -85,7 +182,7 @@ export function AnimatedSplashScreen({ isReady, onFinish }: AnimatedSplashScreen
   // Progress animation (0 to 100)
   const progressAnim = useRef(new Animated.Value(0)).current;
   const [percentDisplay, setPercentDisplay] = useState(0);
-  const [statusText, setStatusText] = useState(STATUS_STAGES[0].text);
+  const [statusText, setStatusText] = useState(stages[0].text);
 
   // Shimmer streak across the loading bar
   const shimmerTranslate = useRef(new Animated.Value(-100)).current;
@@ -269,9 +366,9 @@ export function AnimatedSplashScreen({ isReady, onFinish }: AnimatedSplashScreen
     const listenerId = progressAnim.addListener(({ value }) => {
       const p = Math.floor(value);
       setPercentDisplay(p);
-      for (let i = STATUS_STAGES.length - 1; i >= 0; i--) {
-        if (p >= STATUS_STAGES[i].threshold) {
-          setStatusText(STATUS_STAGES[i].text);
+      for (let i = stages.length - 1; i >= 0; i--) {
+        if (p >= stages[i].threshold) {
+          setStatusText(stages[i].text);
           break;
         }
       }
@@ -513,7 +610,7 @@ export function AnimatedSplashScreen({ isReady, onFinish }: AnimatedSplashScreen
 
             {/* Tap Hint Pill with Pulsing Star */}
             <View style={styles.tapPill}>
-              <Text style={styles.tapPillText}>✨ Yumağa Dokun!</Text>
+              <Text style={styles.tapPillText}>{TAP_HINTS[lang] ?? TAP_HINTS.en}</Text>
             </View>
           </Animated.View>
         </Pressable>
@@ -582,7 +679,7 @@ export function AnimatedSplashScreen({ isReady, onFinish }: AnimatedSplashScreen
         </View>
 
         {/* Subtitle */}
-        <Text style={styles.subtitleText}>Örgü Yılanını Çöz, İpleri Sar!</Text>
+        <Text style={styles.subtitleText}>{t.tagline}</Text>
       </View>
 
       {/* Bottom Loading Progress Area */}
@@ -591,7 +688,7 @@ export function AnimatedSplashScreen({ isReady, onFinish }: AnimatedSplashScreen
         {/* Status Stage & Percentage */}
         <View style={styles.statusRow}>
           <Text style={styles.statusLabel}>{statusText}</Text>
-          <Text style={styles.percentText}>%{percentDisplay}</Text>
+          <Text style={styles.percentText}>{lang === 'tr' ? `%${percentDisplay}` : `${percentDisplay}%`}</Text>
         </View>
 
         {/* Knitted Bar Groove */}

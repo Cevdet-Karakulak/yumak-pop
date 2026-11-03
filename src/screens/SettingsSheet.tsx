@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import React, { useState } from 'react';
-import { Linking, Switch, View } from 'react-native';
+import { Linking, ScrollView, Switch, View } from 'react-native';
 import { Bouncy, FONT, Sheet, T, YarnButton } from '../components/ui';
+import { LANGUAGES } from '../i18n';
 import { useSave } from '../save';
 import { UI } from '../theme';
 
@@ -26,24 +27,60 @@ export function SettingsSheet({ visible, onClose }: { visible: boolean; onClose:
       <Row icon="musical-notes" label={t.music} value={data.music} onChange={(v) => update((d) => ({ ...d, music: v }))} />
       <Row icon="phone-portrait" label={t.haptics} value={data.haptics} onChange={(v) => update((d) => ({ ...d, haptics: v }))} />
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', alignSelf: 'stretch', paddingVertical: 8 }}>
-        <Ionicons name="language" size={24} color={UI.coral} />
-        <T style={{ flex: 1, marginLeft: 10, fontSize: 18 }}>{t.language}</T>
-        {(['tr', 'en'] as const).map((l) => (
-          <Bouncy key={l} onPress={() => update((d) => ({ ...d, lang: l }))}>
-            <View
-              style={{
-                marginLeft: 8,
-                paddingHorizontal: 14,
-                paddingVertical: 4,
-                borderRadius: 14,
-                backgroundColor: lang === l ? UI.coral : '#F1E1D6',
-              }}
-            >
-              <T style={{ color: lang === l ? '#fff' : UI.plum, fontFamily: FONT.black }}>{l.toUpperCase()}</T>
-            </View>
-          </Bouncy>
-        ))}
+      <View style={{ alignSelf: 'stretch', paddingVertical: 8 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+          <Ionicons name="language" size={24} color={UI.coral} />
+          <T style={{ flex: 1, marginLeft: 10, fontSize: 18 }}>{t.language}</T>
+          <View
+            style={{
+              paddingHorizontal: 10,
+              paddingVertical: 3,
+              borderRadius: 10,
+              backgroundColor: '#F1E1D6',
+            }}
+          >
+            <T style={{ fontSize: 13, color: UI.coralDark, fontFamily: FONT.black }}>
+              {LANGUAGES.find((l) => l.code === lang)?.name ?? lang.toUpperCase()}
+            </T>
+          </View>
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingVertical: 4, gap: 8 }}
+        >
+          {LANGUAGES.map((l) => {
+            const active = lang === l.code;
+            return (
+              <Bouncy key={l.code} onPress={() => update((d) => ({ ...d, lang: l.code }))}>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderRadius: 16,
+                    backgroundColor: active ? UI.coral : '#F1E1D6',
+                    borderWidth: 1.5,
+                    borderColor: active ? UI.coralDark : 'transparent',
+                  }}
+                >
+                  <T style={{ fontSize: 16, marginRight: 6 }}>{l.flag}</T>
+                  <T
+                    style={{
+                      color: active ? '#fff' : UI.plum,
+                      fontFamily: active ? FONT.black : FONT.bold,
+                      fontSize: 14,
+                    }}
+                  >
+                    {l.name}
+                  </T>
+                </View>
+              </Bouncy>
+            );
+          })}
+        </ScrollView>
       </View>
 
       {confirm ? (
