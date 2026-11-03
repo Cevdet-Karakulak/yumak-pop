@@ -10,12 +10,13 @@ import React, { useEffect, useState } from 'react';
 import { AppState, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { initAudio, pauseMusic, syncMusic } from './src/audio';
-import { initAdMob } from './src/services/adService';
+import { AnimatedSplashScreen } from './src/components/AnimatedSplashScreen';
 import { TOTAL_LEVELS } from './src/game/levels';
 import { SaveProvider, useSave } from './src/save';
 import { GameScreen } from './src/screens/GameScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { MapScreen } from './src/screens/MapScreen';
+import { initAdMob } from './src/services/adService';
 import { UI } from './src/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -30,6 +31,12 @@ function Root() {
   const [fontsLoaded] = useFonts({ Baloo2_500Medium, Baloo2_700Bold, Baloo2_800ExtraBold });
   const [route, setRoute] = useState<Route>({ name: 'home' });
   const [gameKey, setGameKey] = useState(0);
+  const [splashFinished, setSplashFinished] = useState(false);
+
+  useEffect(() => {
+    // Hide static native splash immediately so our interactive animated splash screen takes over
+    SplashScreen.hideAsync().catch(() => {});
+  }, []);
 
   useEffect(() => {
     initAudio().catch((err) => console.warn('initAudio error:', err));
@@ -44,18 +51,7 @@ function Root() {
     return () => sub.remove();
   }, []);
 
-  useEffect(() => {
-    if (loaded && fontsLoaded) SplashScreen.hideAsync().catch(() => {});
-  }, [loaded, fontsLoaded]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      SplashScreen.hideAsync().catch(() => {});
-    }, 2500);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (!loaded || !fontsLoaded) return <View style={{ flex: 1, backgroundColor: UI.cream }} />;
+  const isReady = loaded && Boolean(fontsLoaded);
 
   const openLevel = (level: number, forceTutorial = false) => {
     setGameKey((k) => k + 1);
@@ -82,6 +78,14 @@ function Root() {
           forceTutorial={route.forceTutorial}
           onHome={() => setRoute({ name: 'home' })}
           onNext={(n) => openLevel(n)}
+        />
+      )}
+
+      {/* Interactive Animated Splash Overlay */}
+      {!splashFinished && (
+        <AnimatedSplashScreen
+          isReady={isReady}
+          onFinish={() => setSplashFinished(true)}
         />
       )}
     </View>
