@@ -475,28 +475,6 @@ export function AnimatedSplashScreen({ isReady, onFinish }: AnimatedSplashScreen
           />
         </Animated.View>
 
-        {/* Pulsing Concentric Aura Ripples */}
-        <Animated.View
-          pointerEvents="none"
-          style={[
-            styles.auraCircle,
-            {
-              transform: [{ scale: auraScale1 }],
-              opacity: auraOpacity1,
-            },
-          ]}
-        />
-        <Animated.View
-          pointerEvents="none"
-          style={[
-            styles.auraCircle,
-            {
-              transform: [{ scale: auraScale2 }],
-              opacity: auraOpacity2,
-            },
-          ]}
-        />
-
         {/* Tap Shockwave Ripple */}
         <Animated.View
           pointerEvents="none"
@@ -509,7 +487,7 @@ export function AnimatedSplashScreen({ isReady, onFinish }: AnimatedSplashScreen
           ]}
         />
 
-        {/* Interactive 3D Mascot Spool */}
+        {/* Interactive 3D Mascot Spool (Completely transparent backdrop) */}
         <Pressable onPress={handleMascotTap} style={styles.mascotTouchArea}>
           <Animated.View
             style={[
@@ -524,8 +502,8 @@ export function AnimatedSplashScreen({ isReady, onFinish }: AnimatedSplashScreen
               },
             ]}
           >
-            {/* Halo Backdrop Circle */}
-            <View style={styles.haloCircle} />
+            {/* Subtle Natural Ground Shadow */}
+            <View style={styles.mascotGroundShadow} />
 
             <Image
               source={require('../../assets/images/mascot.png')}
@@ -696,18 +674,6 @@ const styles = StyleSheet.create({
     width: 66,
     height: 66,
   },
-  auraCircle: {
-    position: 'absolute',
-    top: '25%',
-    alignSelf: 'center',
-    width: 260,
-    height: 260,
-    borderRadius: 130,
-    borderWidth: 3,
-    borderColor: 'rgba(255, 122, 107, 0.45)',
-    backgroundColor: 'rgba(255, 217, 194, 0.22)',
-    zIndex: 6,
-  },
   shockwaveRing: {
     position: 'absolute',
     top: '30%',
@@ -730,23 +696,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     position: 'relative',
   },
-  haloCircle: {
+  mascotGroundShadow: {
     position: 'absolute',
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
-    borderWidth: 4,
-    borderColor: 'rgba(255, 217, 194, 0.95)',
-    shadowColor: UI.coral,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.28,
-    shadowRadius: 20,
-    elevation: 8,
+    bottom: 12,
+    width: 140,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(91, 58, 94, 0.16)',
+    transform: [{ scaleY: 0.6 }],
   },
   mascotImage: {
-    width: 195,
-    height: 195,
+    width: 215,
+    height: 215,
   },
   tapPill: {
     position: 'absolute',
