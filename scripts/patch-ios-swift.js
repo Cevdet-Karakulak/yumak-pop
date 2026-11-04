@@ -684,4 +684,99 @@ if (fs.existsSync(jsFuncPath)) {
   }
 }
 
+// 14. Patch precompiled .swiftinterface files in ios/Pods and prebuilt tarballs in node_modules
+// Prebuilt ExpoModulesCore.xcframework was compiled with Swift 6.3.1 (Xcode 26) which emits isolated conformance syntax
+// `extension UIKit.UIView : @_Concurrency.MainActor ExpoModulesCore.AnyArgument` in .swiftinterface files.
+// Swift 6.0 (Xcode 16) rejects `@_Concurrency.MainActor` in protocol conformance position with `unknown attribute '_Concurrency.MainActor'`.
+const { spawnSync } = require('child_process');
+const os = require('os');
+
+function patchSwiftInterfaceContent(content) {
+  let updated = content;
+  // Strip @_Concurrency.MainActor or @MainActor from protocol conformance clauses (after `:` before protocol name)
+  updated = updated.replace(/(:\s*)@(?:_Concurrency\.)?MainActor\s+/g, '$1');
+  return updated;
+}
+
+function patchSwiftInterfaceFilesInDir(dir) {
+  if (!fs.existsSync(dir)) return;
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      patchSwiftInterfaceFilesInDir(fullPath);
+    } else if (entry.name.endsWith('.swiftinterface')) {
+      try {
+        const content = fs.readFileSync(fullPath, 'utf8');
+        const updated = patchSwiftInterfaceContent(content);
+        if (updated !== content) {
+          fs.writeFileSync(fullPath, updated, 'utf8');
+          console.log(`[patch-ios-swift] Stripped isolated conformance attribute in: ${fullPath}`);
+        }
+      } catch (err) {
+        console.warn(`[patch-ios-swift] Failed to patch swiftinterface ${fullPath}:`, err.message);
+      }
+    }
+  }
+}
+
+function patchPrebuiltTarball(tarballPath) {
+  if (!fs.existsSync(tarballPath)) return;
+  const listRes = spawnSync('tar', ['-ztf', tarballPath]);
+  if (listRes.status !== 0) return;
+  const files = listRes.stdout.toString().split('\n').filter(f => f.trim().endsWith('.swiftinterface'));
+  if (files.length === 0) return;
+
+  // Check if any swiftinterface inside the tarball needs patching
+  let needsPatch = false;
+  for (const f of files) {
+    const checkRes = spawnSync('tar', ['-zxvf', tarballPath, '-O', f.trim()]);
+    if (checkRes.status === 0) {
+      const text = checkRes.stdout.toString();
+      if (patchSwiftInterfaceContent(text) !== text) {
+        needsPatch = true;
+        break;
+      }
+    }
+  }
+  if (!needsPatch) return;
+
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'expo-xcfw-patch-'));
+  try {
+    const extractRes = spawnSync('tar', ['-xzf', tarballPath, '-C', tmpDir]);
+    if (extractRes.status === 0) {
+      patchSwiftInterfaceFilesInDir(tmpDir);
+      const topEntries = fs.readdirSync(tmpDir);
+      const repackRes = spawnSync('tar', ['-czf', tarballPath, '-C', tmpDir, ...topEntries]);
+      if (repackRes.status === 0) {
+        console.log(`[patch-ios-swift] Repacked prebuilt tarball with Swift 6.0 compatible .swiftinterface: ${tarballPath}`);
+      }
+    }
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+}
+
+function findAndPatchTarballs(dir) {
+  if (!fs.existsSync(dir)) return;
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name !== '.git') {
+        findAndPatchTarballs(fullPath);
+      }
+    } else if (entry.name.endsWith('.tar.gz') && (fullPath.includes('prebuilds') || fullPath.includes('artifacts'))) {
+      patchPrebuiltTarball(fullPath);
+    }
+  }
+}
+
+findAndPatchTarballs(nodeModulesDir);
+const iosPodsDir = path.resolve(__dirname, '..', 'ios', 'Pods');
+if (fs.existsSync(iosPodsDir)) {
+  patchSwiftInterfaceFilesInDir(iosPodsDir);
+  findAndPatchTarballs(iosPodsDir);
+}
+
 console.log('[patch-ios-swift] All Swift compatibility patches applied successfully!');

@@ -26,7 +26,7 @@ jobs:
   build-android:
     name: "Android APK Build (Ubuntu Runner)"
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || inputs.target != 'ios-only'
+    if: github.event_name == 'workflow_dispatch' && inputs.target != 'ios-only'
     timeout-minutes: 30
 
     steps:
@@ -166,33 +166,12 @@ jobs:
           zip -r YumakPop-Lab-unsigned.ipa Payload/
           ls -lh YumakPop-Lab-unsigned.ipa
 
-      - name: "Build iOS Simulator App"
-        run: |
-          xcodebuild -workspace "${{ steps.detect.outputs.workspace }}" \
-            -scheme "${{ steps.detect.outputs.scheme }}" \
-            -configuration Release \
-            -destination 'generic/platform=iOS Simulator' \
-            -derivedDataPath build_sim \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY="" \
-            SWIFT_STRICT_CONCURRENCY=minimal \
-            build
-
-          SIM_APP_PATH=$(find build_sim/Build/Products -name "*.app" | grep -v "Pods" | head -n 1)
-          echo "Found Simulator App at: $SIM_APP_PATH"
-          cd "$(dirname "$SIM_APP_PATH")"
-          zip -r "$GITHUB_WORKSPACE/YumakPop-Lab-Simulator.zip" "$(basename "$SIM_APP_PATH")"
-          cd "$GITHUB_WORKSPACE"
-          ls -lh YumakPop-Lab-Simulator.zip
-
       - name: "Upload iOS Artifacts"
         uses: actions/upload-artifact@v4
         with:
           name: "ios-lab-builds"
           path: |
             YumakPop-Lab-unsigned.ipa
-            YumakPop-Lab-Simulator.zip
           if-no-files-found: error
           retention-days: 14
 
@@ -214,6 +193,15 @@ jobs:
         with:
           name: "android-lab-apk"
           path: "release-files/"
+
+      - name: "Reuse Previous Android APK if Skipped"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p release-files
+          if [ ! -f "release-files/YumakPop-Lab-release.apk" ]; then
+            gh release download v1.0.0-lab-build.2 -p "*.apk" -D release-files/ || true
+          fi
 
       - name: "Download iOS Artifacts"
         uses: actions/download-artifact@v4

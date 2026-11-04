@@ -17,6 +17,7 @@
    - `JavaScriptObject.swift`, `JavaScriptArray.swift` ve `JavaScriptPromise.swift` içindeki `~Copyable` delegating `self.init(...)` çağrıları Swift 6.0 derleyici hatasını (`copy of noncopyable typed value. This is a compiler bug`) tetikler; doğrudan stored property atamalarına (`self.runtimeHandle = ...; self.pointee = ...`) açılmalıdır.
    - `JavaScriptRuntime.swift` ve `JavaScriptFunction.swift` içindeki closure parametrelerinde `consuming` sahipliği açıkça yazılmalı (`(arguments: consuming JavaScriptValuesBuffer) in`), `JavaScriptFunction.swift` içindeki stack pointer'ları `UncheckedSendable` ile sarmalanmalıdır.
    - `JavaScriptObject.swift` içinde Swift 6 actor veri yarışı için pointer UInt üzerinden cast edilmelidir.
+   - `ExpoModulesCore` gibi önceden derlenmiş (`.tar.gz`) XCFramework'lerin `.swiftinterface` dosyalarındaki Swift 6.2/6.3 isolated conformance sözdizimi (`: @_Concurrency.MainActor `) Swift 6.0 derleyicisinde `unknown attribute '_Concurrency.MainActor'` hatası verir; `.tar.gz` arşivleri ve `Pods` içindeki `.swiftinterface` dosyalarından bu nitelik temizlenmelidir.
    - Bu adımlar `scripts/patch-ios-swift.js` içinde otomatik uygulanmalıdır.
 
 2. **GitHub Actions ile EAS Kotasız Derleme**:
