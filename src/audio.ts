@@ -21,6 +21,18 @@ let ready = false;
 
 export const audioSettings = { sound: true, music: true, haptics: true };
 
+const ASMR_SOURCES = [
+  require('../assets/sounds/asmr_c4.wav'),
+  require('../assets/sounds/asmr_e4.wav'),
+  require('../assets/sounds/asmr_g4.wav'),
+  require('../assets/sounds/asmr_b4.wav'),
+  require('../assets/sounds/asmr_c5.wav'),
+];
+const FEVER_CHORD_SOURCE = require('../assets/sounds/asmr_fever.wav');
+
+let asmrPlayers: AudioPlayer[] = [];
+let feverChordPlayer: AudioPlayer | null = null;
+
 export async function initAudio() {
   if (ready) return;
   ready = true;
@@ -42,6 +54,19 @@ export async function initAudio() {
       console.warn('Audio pool init error for', k, err);
     }
   });
+
+  try {
+    asmrPlayers = ASMR_SOURCES.map((src) => {
+      const p = createAudioPlayer(src);
+      p.volume = 0.85;
+      return p;
+    });
+    feverChordPlayer = createAudioPlayer(FEVER_CHORD_SOURCE);
+    feverChordPlayer.volume = 0.95;
+  } catch (err) {
+    console.warn('ASMR audio init error:', err);
+  }
+
   try {
     music = createAudioPlayer(require('../assets/sounds/music.wav'));
     music.loop = true;
@@ -50,6 +75,30 @@ export async function initAudio() {
   } catch (err) {
     console.warn('Music init error:', err);
   }
+}
+
+export function playAsmrComboTone(comboIndex: number) {
+  if (!audioSettings.sound) return;
+  try {
+    const idx = Math.max(0, Math.min(comboIndex, asmrPlayers.length - 1));
+    const p = asmrPlayers[idx];
+    if (p) {
+      p.seekTo(0);
+      p.play();
+    }
+    buzz('light');
+  } catch {}
+}
+
+export function playAsmrFeverChord() {
+  if (!audioSettings.sound) return;
+  try {
+    if (feverChordPlayer) {
+      feverChordPlayer.seekTo(0);
+      feverChordPlayer.play();
+    }
+    buzz('success');
+  } catch {}
 }
 
 export function play(sfx: Sfx) {

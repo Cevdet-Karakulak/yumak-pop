@@ -16,10 +16,20 @@ function patchPackageSwift(dir) {
     } else if (entry.name === 'Package.swift') {
       try {
         let content = fs.readFileSync(fullPath, 'utf8');
+        let changed = false;
         if (content.includes('swift-tools-version: 6.2')) {
           content = content.replace(/swift-tools-version:\s*6\.2/g, 'swift-tools-version: 6.0');
-          fs.writeFileSync(fullPath, content, 'utf8');
+          changed = true;
           console.log(`[patch-ios-swift] Downgraded swift-tools-version to 6.0 in: ${fullPath}`);
+        }
+        // Remove trailing commas before closing parentheses (invalid in Swift 6.0 Package.swift parser)
+        if (/,\s*\)/.test(content)) {
+          content = content.replace(/,\s*\)/g, ')');
+          changed = true;
+          console.log(`[patch-ios-swift] Stripped trailing commas before ')' in: ${fullPath}`);
+        }
+        if (changed) {
+          fs.writeFileSync(fullPath, content, 'utf8');
         }
       } catch (err) {
         console.warn(`[patch-ios-swift] Could not patch ${fullPath}:`, err.message);

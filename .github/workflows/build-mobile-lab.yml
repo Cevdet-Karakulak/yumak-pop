@@ -134,6 +134,7 @@ jobs:
           cd ios
           pod install
           cd ..
+          node scripts/patch-ios-swift.js
 
       - name: "Detect Workspace and Scheme"
         id: detect

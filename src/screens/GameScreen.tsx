@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { buzz, play } from '../audio';
+import { buzz, play, playAsmrComboTone, playAsmrFeverChord } from '../audio';
 import { PopBurst, PopIn, useShake } from '../components/effects';
 import { HowToPlaySheet, MechanicIntroSheet } from '../components/HowToPlayModal';
 import { InterstitialAdModal } from '../components/InterstitialAdModal';
@@ -98,6 +98,39 @@ export function GameScreen({
   const [adReviveUsed, setAdReviveUsed] = useState(false);
   const rackShake = useShake();
 
+  // ASMR Combo & Yarn Fever State
+  const [comboCount, setComboCount] = useState(0);
+  const [isFever, setIsFever] = useState(false);
+  const [feverSecondsLeft, setFeverSecondsLeft] = useState(0);
+  const feverTimer = useRef<NodeJS.Timeout | null>(null);
+  const feverActiveRef = useRef(false);
+  const feverTriggeredCount = useRef(0);
+  const comboStreak = useRef(0);
+  const lastPopTimestamp = useRef(0);
+
+  const activateFever = useCallback(() => {
+    feverActiveRef.current = true;
+    feverTriggeredCount.current += 1;
+    setIsFever(true);
+    setFeverSecondsLeft(8);
+
+    if (feverTimer.current) clearInterval(feverTimer.current);
+    const start = Date.now();
+    feverTimer.current = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - start) / 1000);
+      const remaining = Math.max(0, 8 - elapsed);
+      setFeverSecondsLeft(remaining);
+      if (remaining <= 0) {
+        if (feverTimer.current) clearInterval(feverTimer.current);
+        feverTimer.current = null;
+        feverActiveRef.current = false;
+        setIsFever(false);
+        comboStreak.current = 0;
+        setComboCount(0);
+      }
+    }, 500);
+  }, []);
+
   // Reset to 3 slots and refresh revive chances on level change or restart
   useEffect(() => {
     finished.current = false;
@@ -106,7 +139,19 @@ export function GameScreen({
     setAdReviveUsed(false);
     setPops([]);
     setResult(null);
+    if (feverTimer.current) clearInterval(feverTimer.current);
+    feverTimer.current = null;
+    feverActiveRef.current = false;
+    feverTriggeredCount.current = 0;
+    comboStreak.current = 0;
+    lastPopTimestamp.current = 0;
+    setIsFever(false);
+    setComboCount(0);
+    setFeverSecondsLeft(0);
     setBoth(createLevel(level, 3));
+    return () => {
+      if (feverTimer.current) clearInterval(feverTimer.current);
+    };
   }, [level]);
 
   // Active live unravel whip info
@@ -252,7 +297,9 @@ export function GameScreen({
 
       if (won) {
         const stars = Math.max(1, 3 - boostersUsed.current);
-        const coins = 15 + stars * 5 + (info.hard ? 20 : 0);
+        const feverMultiplier = feverTriggeredCount.current > 0 ? 1.5 : 1.0;
+        const baseCoins = 15 + stars * 5 + (info.hard ? 20 : 0);
+        const coins = Math.round(baseCoins * feverMultiplier);
         update((d) => ({
           ...d,
           coins: d.coins + coins,
@@ -316,7 +363,8 @@ export function GameScreen({
           }
           if (res.blockedReason === 'bridge' || res.blockedReason === 'ice') {
             setActiveUnravel(null);
-            const crawlSpeed = (info.hard ? 0.22 : 0.17) * 0.55;
+            const feverFactor = feverActiveRef.current ? 0.75 : 1.0;
+            const crawlSpeed = (info.hard ? 0.22 : 0.17) * 0.55 * feverFactor;
             const crawled = crawlTick(cur, crawlSpeed);
             setBoth(crawled);
             if (crawled.status === 'lost') {
@@ -336,6 +384,23 @@ export function GameScreen({
             if (res.tickInfo.popped) {
               play('pop');
               buzz('medium');
+
+              // ASMR Combo & Yarn Fever
+              const nowMs = Date.now();
+              const nextStreak = nowMs - lastPopTimestamp.current < 5000 ? comboStreak.current + 1 : 1;
+              lastPopTimestamp.current = nowMs;
+              comboStreak.current = nextStreak;
+              setComboCount(nextStreak);
+
+              // Play acoustic kalimba chord tone
+              playAsmrComboTone(nextStreak - 1);
+
+              // 5 combos triggers Yarn Fever!
+              if (nextStreak === 5) {
+                playAsmrFeverChord();
+                activateFever();
+              }
+
               // Add burst effect over slot
               const c = slotCoords[res.tickInfo.spoolSlot];
               if (c) {
@@ -354,8 +419,9 @@ export function GameScreen({
         }
       } else {
         setActiveUnravel(null);
-        // Snappy, continuous steady crawl forward when waiting for player move!
-        const crawlSpeed = (info.hard ? 0.22 : 0.17) * 0.55;
+        // Snappy, continuous steady crawl forward (slowed by 25% in Yarn Fever!)
+        const feverFactor = feverActiveRef.current ? 0.75 : 1.0;
+        const crawlSpeed = (info.hard ? 0.22 : 0.17) * 0.55 * feverFactor;
         const crawled = crawlTick(cur, crawlSpeed);
         setBoth(crawled);
         if (crawled.status === 'lost') {
@@ -386,6 +452,8 @@ export function GameScreen({
 
     const chk = checkTap(g, c);
     if (!chk.ok) {
+      comboStreak.current = 0;
+      setComboCount(0);
       play('blocked');
       buzz('error');
       rackShake.shake();
@@ -775,6 +843,43 @@ export function GameScreen({
 
         {/* Stable Fixed Bottom Section */}
         <View style={[styles.bottomArea, { paddingBottom: Math.max(insets.bottom, 14) }]}>
+          {/* ASMR Combo & Yarn Fever Floating Status Pill */}
+          {(comboCount >= 2 || isFever) && (
+            <Animated.View
+              style={{
+                alignSelf: 'center',
+                backgroundColor: isFever ? '#FEF3C7' : 'rgba(255, 255, 255, 0.94)',
+                paddingHorizontal: 14,
+                paddingVertical: 5,
+                borderRadius: 16,
+                borderWidth: 1.5,
+                borderColor: isFever ? '#F59E0B' : '#E0D4C3',
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 6,
+                marginBottom: 6,
+                shadowColor: isFever ? '#F59E0B' : '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: isFever ? 0.35 : 0.1,
+                shadowRadius: 4,
+                elevation: 4,
+              }}
+            >
+              <T style={{ fontSize: 14 }}>{isFever ? '✨' : '🎵'}</T>
+              <T
+                style={{
+                  fontFamily: FONT.bold,
+                  fontSize: 12.5,
+                  color: isFever ? '#92400E' : UI.plum,
+                }}
+              >
+                {isFever
+                  ? ('YARN FEVER! • 1.5x Puan & Slow-Mo (' + feverSecondsLeft + 's)')
+                  : (comboCount + 'x ASMR Akoru • Do-Mi-Sol-Si-Do')}
+              </T>
+            </Animated.View>
+          )}
+
           {/* Spool Rack (Holding Area) */}
           <Animated.View
             style={[styles.shelf, rackShake.style]}

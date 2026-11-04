@@ -31,11 +31,13 @@ export function HomeScreen({
   onLevels,
   onPlayTutorial,
   onOpenLab,
+  onWorkshop,
 }: {
   onPlay: () => void;
   onLevels: () => void;
   onPlayTutorial: () => void;
   onOpenLab?: () => void;
+  onWorkshop?: () => void;
 }) {
   const { data, t } = useSave();
   const insets = useSafeAreaInsets();
@@ -458,10 +460,10 @@ export function HomeScreen({
             </View>
           </View>
 
-          {/* Sandbox Lab Quick Access in Lab Branch */}
-          {Boolean(onOpenLab) && (
+          {/* Bobbin's Cozy Workshop Feature Button */}
+          {Boolean(onWorkshop) && (
             <Bouncy
-              onPress={onOpenLab}
+              onPress={onWorkshop}
               style={{
                 width: '100%',
                 backgroundColor: '#78350F',
@@ -477,10 +479,23 @@ export function HomeScreen({
                 elevation: 4,
               }}
             >
-              <Ionicons name="flask" size={18} color="#FDE68A" />
+              <Ionicons name="home" size={18} color="#FDE68A" />
               <T style={{ color: '#fff', fontWeight: 'bold', fontSize: 14 }}>
-                🧪 Yenilikler Laboratuvarı (Sandbox v2)
+                🪵 Bobbin'in Atölyesi
               </T>
+              <View
+                style={{
+                  backgroundColor: '#FEF3C7',
+                  paddingHorizontal: 8,
+                  paddingVertical: 2,
+                  borderRadius: 10,
+                  marginLeft: 4,
+                }}
+              >
+                <T style={{ color: '#92400E', fontSize: 11.5, fontWeight: 'bold' }}>
+                  ⭐ {totalStars} Yıldız
+                </T>
+              </View>
             </Bouncy>
           )}
         </View>

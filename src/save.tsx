@@ -20,6 +20,8 @@ export interface SaveData {
   seenMechanics: Partial<Record<MechanicKind, boolean>>;
   deaths: number;
   completedLevels: number;
+  workshopItems: string[];
+  bobbinOutfit: string;
 }
 
 const KEY = 'yumakpop:save:v1';
@@ -38,6 +40,8 @@ const DEFAULT: SaveData = {
   seenMechanics: {},
   deaths: 0,
   completedLevels: 0,
+  workshopItems: ['rocking_chair'],
+  bobbinOutfit: 'classic_honey',
 };
 
 export const BOOSTER_PRICE: Record<BoosterKind, number> = { undo: 60, slot: 120, magnet: 150 };
