@@ -407,10 +407,17 @@ if (fs.existsSync(buildXcfPath)) {
   if (!content.includes('SWIFT_STRICT_CONCURRENCY=minimal') && content.includes('SWIFT_COMPILATION_MODE=wholemodule')) {
     content = content.replace(
       'SWIFT_COMPILATION_MODE=wholemodule \\',
-      'SWIFT_COMPILATION_MODE=wholemodule \\\n    SWIFT_STRICT_CONCURRENCY=minimal \\'
+      'SWIFT_COMPILATION_MODE=wholemodule \\\n    SWIFT_STRICT_CONCURRENCY=minimal \\\n    CODE_SIGNING_ALLOWED=NO \\'
     );
     fs.writeFileSync(buildXcfPath, content, 'utf8');
-    console.log('[patch-ios-swift] Added SWIFT_STRICT_CONCURRENCY=minimal to build-xcframework.sh!');
+    console.log('[patch-ios-swift] Added SWIFT_STRICT_CONCURRENCY=minimal and CODE_SIGNING_ALLOWED=NO to build-xcframework.sh!');
+  } else if (!content.includes('CODE_SIGNING_ALLOWED=NO') && content.includes('SWIFT_STRICT_CONCURRENCY=minimal')) {
+    content = content.replace(
+      'SWIFT_STRICT_CONCURRENCY=minimal \\',
+      'SWIFT_STRICT_CONCURRENCY=minimal \\\n    CODE_SIGNING_ALLOWED=NO \\'
+    );
+    fs.writeFileSync(buildXcfPath, content, 'utf8');
+    console.log('[patch-ios-swift] Added CODE_SIGNING_ALLOWED=NO to build-xcframework.sh!');
   } else {
     console.log('[patch-ios-swift] build-xcframework.sh already patched.');
   }
@@ -777,6 +784,53 @@ const iosPodsDir = path.resolve(__dirname, '..', 'ios', 'Pods');
 if (fs.existsSync(iosPodsDir)) {
   patchSwiftInterfaceFilesInDir(iosPodsDir);
   findAndPatchTarballs(iosPodsDir);
+}
+
+// 15. Configure Xcode project pbxproj for Manual App Store Signing (when APPLE_TEAM_ID & PROVISIONING_PROFILE_UUID are set)
+const teamId = process.env.APPLE_TEAM_ID;
+const profileUuid = process.env.PROVISIONING_PROFILE_UUID;
+if (teamId && profileUuid) {
+  const podsPbxproj = path.resolve(__dirname, '..', 'ios', 'Pods', 'Pods.xcodeproj', 'project.pbxproj');
+  if (fs.existsSync(podsPbxproj)) {
+    let pbx = fs.readFileSync(podsPbxproj, 'utf8');
+    pbx = pbx.replace(/buildSettings = \{([\s\S]*?)\};/g, (match, inner) => {
+      let cleaned = inner
+        .replace(/^\s*CODE_SIGNING_ALLOWED\s*=.*;\r?\n?/gm, '')
+        .replace(/^\s*CODE_SIGNING_REQUIRED\s*=.*;\r?\n?/gm, '')
+        .replace(/^\s*"?CODE_SIGN_IDENTITY(?:\[sdk=iphoneos\*\])?"?\s*=.*;\r?\n?/gm, '')
+        .replace(/^\s*PROVISIONING_PROFILE_SPECIFIER\s*=.*;\r?\n?/gm, '');
+      return `buildSettings = {${cleaned}\t\t\t\tCODE_SIGNING_ALLOWED = NO;\n\t\t\t\tCODE_SIGNING_REQUIRED = NO;\n\t\t\t\tCODE_SIGN_IDENTITY = "";\n\t\t\t\t"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "";\n\t\t\t};`;
+    });
+    fs.writeFileSync(podsPbxproj, pbx, 'utf8');
+    console.log('[patch-ios-swift] Disabled code signing on all targets in Pods.xcodeproj!');
+  }
+
+  const iosDir = path.resolve(__dirname, '..', 'ios');
+  if (fs.existsSync(iosDir)) {
+    const entries = fs.readdirSync(iosDir);
+    for (const entry of entries) {
+      if (entry.endsWith('.xcodeproj')) {
+        const appPbxproj = path.join(iosDir, entry, 'project.pbxproj');
+        if (fs.existsSync(appPbxproj)) {
+          let pbx = fs.readFileSync(appPbxproj, 'utf8');
+          pbx = pbx.replace(/buildSettings = \{([\s\S]*?)\};/g, (match, inner) => {
+            if (!inner.includes('PRODUCT_BUNDLE_IDENTIFIER') && !inner.includes('INFOPLIST_FILE')) {
+              let projCleaned = inner.replace(/^\s*DEVELOPMENT_TEAM\s*=.*;\r?\n?/gm, '');
+              return `buildSettings = {${projCleaned}\t\t\t\tDEVELOPMENT_TEAM = ${teamId};\n\t\t\t};`;
+            }
+            let cleaned = inner
+              .replace(/^\s*CODE_SIGN_STYLE\s*=.*;\r?\n?/gm, '')
+              .replace(/^\s*"?CODE_SIGN_IDENTITY(?:\[sdk=iphoneos\*\])?"?\s*=.*;\r?\n?/gm, '')
+              .replace(/^\s*DEVELOPMENT_TEAM\s*=.*;\r?\n?/gm, '')
+              .replace(/^\s*"?PROVISIONING_PROFILE(?:_SPECIFIER)?"?\s*=.*;\r?\n?/gm, '');
+            return `buildSettings = {${cleaned}\t\t\t\tCODE_SIGN_STYLE = Manual;\n\t\t\t\tCODE_SIGN_IDENTITY = "Apple Distribution";\n\t\t\t\t"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Distribution";\n\t\t\t\tDEVELOPMENT_TEAM = ${teamId};\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "${profileUuid}";\n\t\t\t};`;
+          });
+          fs.writeFileSync(appPbxproj, pbx, 'utf8');
+          console.log(`[patch-ios-swift] Configured Manual Apple Distribution signing in ${entry}/project.pbxproj!`);
+        }
+      }
+    }
+  }
 }
 
 console.log('[patch-ios-swift] All Swift compatibility patches applied successfully!');

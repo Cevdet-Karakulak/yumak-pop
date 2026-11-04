@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Yumak Pop (Lab)",
+    "name": "Yumak Pop",
     "slug": "yumak-pop",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -10,7 +10,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.floppatech.yumakpop",
-      "buildNumber": "2",
+      "buildNumber": "3",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }

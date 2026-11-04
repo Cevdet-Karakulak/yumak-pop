@@ -126,6 +126,75 @@ jobs:
       - name: "Apply Swift Compatibility Patches"
         run: node scripts/patch-ios-swift.js
 
+      - name: "Set Unique iOS Build Number"
+        run: |
+          node -e "
+            const fs = require('fs');
+            const cfg = JSON.parse(fs.readFileSync('app.json', 'utf8'));
+            const buildNum = String(2 + parseInt(process.env.GITHUB_RUN_NUMBER || '1', 10));
+            cfg.expo.ios.buildNumber = buildNum;
+            fs.writeFileSync('app.json', JSON.stringify(cfg, null, 2));
+            console.log('Set iOS buildNumber to:', buildNum);
+          "
+
+      - name: "Setup Apple Distribution Certificate & Provisioning Profile"
+        id: signing
+        env:
+          IOS_DISTRIBUTION_P12_BASE64: ${{ secrets.IOS_DISTRIBUTION_P12_BASE64 }}
+          IOS_P12_PASSWORD: ${{ secrets.IOS_P12_PASSWORD }}
+          IOS_PROFILE_BASE64: ${{ secrets.IOS_PROFILE_BASE64 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          SIGN_DIR=$(mktemp -d "$RUNNER_TEMP/yumak-signing.XXXXXX")
+          KEYCHAIN="$SIGN_DIR/yumak.keychain-db"
+          KEYCHAIN_PASS=$(openssl rand -hex 24)
+          echo "SIGN_DIR=$SIGN_DIR" >> $GITHUB_ENV
+
+          python3 - <<'PY'
+          import base64, os, plistlib
+          from pathlib import Path
+          sign_dir = Path(os.environ['SIGN_DIR'])
+          (sign_dir / 'certificate.p12').write_bytes(base64.b64decode(os.environ['IOS_DISTRIBUTION_P12_BASE64']))
+          (sign_dir / 'profile.mobileprovision').write_bytes(base64.b64decode(os.environ['IOS_PROFILE_BASE64']))
+          PY
+
+          security create-keychain -p "$KEYCHAIN_PASS" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASS" "$KEYCHAIN"
+          security import "$SIGN_DIR/certificate.p12" -P "$IOS_P12_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN" >/dev/null
+          security list-keychains -d user -s "$KEYCHAIN" login.keychain-db
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASS" "$KEYCHAIN" >/dev/null
+          security cms -D -i "$SIGN_DIR/profile.mobileprovision" > "$SIGN_DIR/profile.plist"
+
+          PROFILE_UUID=$(python3 - <<'PY'
+          import os, plistlib
+          from pathlib import Path
+          sign_dir = Path(os.environ['SIGN_DIR'])
+          profile = plistlib.loads((sign_dir / 'profile.plist').read_bytes())
+          uuid = profile['UUID']
+          team = os.environ['APPLE_TEAM_ID']
+          bundle = 'com.floppatech.yumakpop'
+          options = {
+              'method': 'app-store-connect',
+              'teamID': team,
+              'signingStyle': 'manual',
+              'signingCertificate': 'Apple Distribution',
+              'provisioningProfiles': {bundle: uuid},
+              'manageAppVersionAndBuildNumber': False,
+              'uploadSymbols': True,
+          }
+          (sign_dir / 'exportOptions.plist').write_bytes(plistlib.dumps(options))
+          print(uuid)
+          PY
+          )
+
+          echo "PROVISIONING_PROFILE_UUID=$PROFILE_UUID" >> $GITHUB_ENV
+          echo "APPLE_TEAM_ID=$APPLE_TEAM_ID" >> $GITHUB_ENV
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles" "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"
+          cp "$SIGN_DIR/profile.mobileprovision" "$HOME/Library/MobileDevice/Provisioning Profiles/$PROFILE_UUID.mobileprovision"
+          cp "$SIGN_DIR/profile.mobileprovision" "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/$PROFILE_UUID.mobileprovision"
+          echo "Configured Apple Distribution Profile UUID: $PROFILE_UUID"
+
       - name: "Expo iOS Prebuild"
         run: npx expo prebuild --platform ios --clean --no-install
 
@@ -146,25 +215,44 @@ jobs:
           echo "workspace=$WS" >> $GITHUB_OUTPUT
           echo "scheme=$SCHEME" >> $GITHUB_OUTPUT
 
-      - name: "Build iOS Device App (Release ARM64)"
+      - name: "Archive & Export Signed iOS IPA (Release ARM64)"
         run: |
           xcodebuild -workspace "${{ steps.detect.outputs.workspace }}" \
             -scheme "${{ steps.detect.outputs.scheme }}" \
             -configuration Release \
             -destination 'generic/platform=iOS' \
-            -derivedDataPath build_device \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY="" \
+            -archivePath build_archive/YumakPop.xcarchive \
             SWIFT_STRICT_CONCURRENCY=minimal \
-            build
+            archive
 
-          APP_PATH=$(find build_device/Build/Products -name "*.app" | grep -v "Pods" | head -n 1)
-          echo "Found Device App at: $APP_PATH"
+          APP_PATH=$(find build_archive/YumakPop.xcarchive/Products/Applications -name "*.app" | head -n 1)
+          echo "Found Archived App at: $APP_PATH"
           mkdir -p Payload
           cp -r "$APP_PATH" Payload/
-          zip -r YumakPop-Lab-unsigned.ipa Payload/
+          zip -qr YumakPop-Lab-unsigned.ipa Payload/
           ls -lh YumakPop-Lab-unsigned.ipa
+
+          xcodebuild -exportArchive \
+            -archivePath build_archive/YumakPop.xcarchive \
+            -exportOptionsPlist "$SIGN_DIR/exportOptions.plist" \
+            -exportPath build_signed
+
+          SIGNED_IPA=$(find build_signed -name "*.ipa" | head -n 1)
+          cp "$SIGNED_IPA" YumakPop-AppStore-signed.ipa
+          ls -lh YumakPop-AppStore-signed.ipa
+
+      - name: "Upload to App Store Connect / TestFlight"
+        env:
+          APP_STORE_CONNECT_API_KEY_P8: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8 }}
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          printf '%s\n' "$APP_STORE_CONNECT_API_KEY_P8" > ~/.appstoreconnect/private_keys/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8
+          xcrun altool --upload-app --type ios -f YumakPop-AppStore-signed.ipa \
+            --apiKey "$APP_STORE_CONNECT_KEY_ID" \
+            --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID"
+          rm -f ~/.appstoreconnect/private_keys/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8
 
       - name: "Upload iOS Artifacts"
         uses: actions/upload-artifact@v4
@@ -172,6 +260,7 @@ jobs:
           name: "ios-lab-builds"
           path: |
             YumakPop-Lab-unsigned.ipa
+            YumakPop-AppStore-signed.ipa
           if-no-files-found: error
           retention-days: 14
 
