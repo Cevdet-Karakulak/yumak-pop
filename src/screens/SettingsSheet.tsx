@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
+import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
 import { Linking, ScrollView, Switch, View } from 'react-native';
 import { Bouncy, FONT, Sheet, T, YarnButton } from '../components/ui';
@@ -9,9 +10,19 @@ import { UI } from '../theme';
 
 export const PRIVACY_URL = 'https://floppatechcorp.vercel.app/privacy/yumak-pop/';
 
-export function SettingsSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+export function SettingsSheet({
+  visible,
+  onClose,
+  onOpenLab,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onOpenLab?: () => void;
+}) {
   const { data, update, t, lang, reset } = useSave();
   const [confirm, setConfirm] = useState(false);
+  const [labUnlocked, setLabUnlocked] = useState(false);
+  const [tapCount, setTapCount] = useState(0);
 
   const Row = ({ icon, label, value, onChange }: { icon: keyof typeof Ionicons.glyphMap; label: string; value: boolean; onChange: (v: boolean) => void }) => (
     <View style={{ flexDirection: 'row', alignItems: 'center', alignSelf: 'stretch', paddingVertical: 6 }}>
@@ -106,9 +117,46 @@ export function SettingsSheet({ visible, onClose }: { visible: boolean; onClose:
       <Bouncy onPress={() => Linking.openURL(PRIVACY_URL)} style={{ marginTop: 14 }}>
         <T style={{ color: UI.plumLight, textDecorationLine: 'underline' }}>{t.privacy}</T>
       </Bouncy>
-      <T style={{ color: UI.plumLight, fontSize: 13, marginTop: 4 }}>
-        FloppaTech Corp · {t.version} {Constants.expoConfig?.version ?? '1.0.0'}
-      </T>
+      <Bouncy
+        onPress={() => {
+          const next = tapCount + 1;
+          setTapCount(next);
+          if (next >= 3) {
+            setLabUnlocked(true);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+          } else {
+            Haptics.selectionAsync().catch(() => {});
+          }
+        }}
+        style={{ marginTop: 4, paddingVertical: 4 }}
+      >
+        <T style={{ color: UI.plumLight, fontSize: 13 }}>
+          FloppaTech Corp • {t.version} {Constants.expoConfig?.version ?? '1.0.0'}
+        </T>
+      </Bouncy>
+
+      {(labUnlocked || __DEV__) && Boolean(onOpenLab) && (
+        <Bouncy
+          onPress={() => {
+            onClose();
+            onOpenLab?.();
+          }}
+          style={{
+            marginTop: 10,
+            backgroundColor: '#78350F',
+            paddingVertical: 10,
+            paddingHorizontal: 16,
+            borderRadius: 14,
+            alignItems: 'center',
+            alignSelf: 'stretch',
+          }}
+        >
+          <T style={{ color: '#fff', fontWeight: 'bold', fontSize: 13 }}>
+            🧪 Yenilikler Laboratuvarı (Sandbox v2)
+          </T>
+        </Bouncy>
+      )}
+      
     </Sheet>
   );
 }

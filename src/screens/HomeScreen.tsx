@@ -11,7 +11,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { buzz, play } from '../audio';
 import { HowToPlaySheet } from '../components/HowToPlayModal';
-import { CoinBadge, FONT, RoundIcon, T, YarnButton } from '../components/ui';
+import { Bouncy, CoinBadge, FONT, RoundIcon, T, YarnButton } from '../components/ui';
 import { TOTAL_LEVELS } from '../game/levels';
 import { useSave } from '../save';
 import { UI, YARN } from '../theme';
@@ -30,10 +30,12 @@ export function HomeScreen({
   onPlay,
   onLevels,
   onPlayTutorial,
+  onOpenLab,
 }: {
   onPlay: () => void;
   onLevels: () => void;
   onPlayTutorial: () => void;
+  onOpenLab?: () => void;
 }) {
   const { data, t } = useSave();
   const insets = useSafeAreaInsets();
@@ -455,10 +457,36 @@ export function HomeScreen({
               />
             </View>
           </View>
+
+          {/* Sandbox Lab Quick Access in Lab Branch */}
+          {Boolean(onOpenLab) && (
+            <Bouncy
+              onPress={onOpenLab}
+              style={{
+                width: '100%',
+                backgroundColor: '#78350F',
+                paddingVertical: 12,
+                borderRadius: 20,
+                alignItems: 'center',
+                flexDirection: 'row',
+                justifyContent: 'center',
+                gap: 8,
+                marginTop: 8,
+                borderWidth: 2,
+                borderColor: '#FDE68A',
+                elevation: 4,
+              }}
+            >
+              <Ionicons name="flask" size={18} color="#FDE68A" />
+              <T style={{ color: '#fff', fontWeight: 'bold', fontSize: 14 }}>
+                🧪 Yenilikler Laboratuvarı (Sandbox v2)
+              </T>
+            </Bouncy>
+          )}
         </View>
       </View>
 
-      <SettingsSheet visible={settings} onClose={() => setSettings(false)} />
+      <SettingsSheet visible={settings} onClose={() => setSettings(false)} onOpenLab={onOpenLab} />
       <HowToPlaySheet
         visible={howTo}
         onClose={() => setHowTo(false)}

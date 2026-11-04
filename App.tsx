@@ -17,6 +17,7 @@ import { GameScreen } from './src/screens/GameScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { MapScreen } from './src/screens/MapScreen';
 import { initAdMob } from './src/services/adService';
+import { LabScreen } from './src/features_lab/LabScreen';
 import { UI } from './src/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -24,7 +25,8 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 type Route =
   | { name: 'home' }
   | { name: 'map' }
-  | { name: 'game'; level: number; forceTutorial?: boolean };
+  | { name: 'game'; level: number; forceTutorial?: boolean }
+  | { name: 'lab' };
 
 function Root() {
   const { loaded, data } = useSave();
@@ -66,7 +68,11 @@ function Root() {
           onPlay={() => openLevel(Math.min(data.unlocked, TOTAL_LEVELS))}
           onLevels={() => setRoute({ name: 'map' })}
           onPlayTutorial={() => openLevel(1, true)}
+          onOpenLab={() => setRoute({ name: 'lab' })}
         />
+      )}
+      {route.name === 'lab' && (
+        <LabScreen onBack={() => setRoute({ name: 'home' })} />
       )}
       {route.name === 'map' && (
         <MapScreen onBack={() => setRoute({ name: 'home' })} onPlay={(n) => openLevel(n)} />
