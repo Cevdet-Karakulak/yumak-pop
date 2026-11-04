@@ -227,10 +227,11 @@ if (fs.existsSync(jsActorPath)) {
     changed = true;
   }
 
-  if (content.includes('typealias IsolatedRunner = @JavaScriptActor (@JavaScriptActor () throws -> T) throws -> T')) {
+  if (content.includes('typealias IsolatedRunner = @JavaScriptActor (@JavaScriptActor () throws -> T) throws -> T') ||
+      content.includes('typealias IsolatedRunner = (() throws -> T) -> T')) {
     content = content.replace(
-      'typealias IsolatedRunner = @JavaScriptActor (@JavaScriptActor () throws -> T) throws -> T',
-      'typealias IsolatedRunner = (() throws -> T) -> T'
+      /typealias IsolatedRunner = (?:@JavaScriptActor \(@JavaScriptActor \(\) throws -> T\) throws -> T|\(\(\) throws -> T\) -> T)/g,
+      'typealias IsolatedRunner = (() throws -> T) throws -> T'
     );
     changed = true;
   }
@@ -351,14 +352,26 @@ if (fs.existsSync(jsCallbackPath)) {
     console.log('[patch-ios-swift] Successfully patched LongLivedState in JavaScriptCallback.swift!');
   }
 
-  // In Swift 6.0 (Xcode 16), local @JavaScriptActor functions are not inferred as @Sendable when passed as function values
-  if (content.includes('    @JavaScriptActor\n    func call(_ function: borrowing JavaScriptFunction, _ runtime: JavaScriptRuntime)')) {
+  // In Swift 6.0 (Xcode 16), local @JavaScriptActor func declarations cannot be marked @Sendable and are not inferred as @Sendable.
+  // Convert them to typed @JavaScriptActor @Sendable closure constants (let call: ... = { function, runtime in ... })
+  const voidCallRegex = /    @JavaScriptActor(?: @Sendable)?\n    func call\(_ function: borrowing JavaScriptFunction, _ runtime: JavaScriptRuntime\) throws \{/g;
+  if (voidCallRegex.test(content)) {
     content = content.replace(
-      /    @JavaScriptActor\n    func call\(_ function: borrowing JavaScriptFunction, _ runtime: JavaScriptRuntime\)/g,
-      '    @JavaScriptActor @Sendable\n    func call(_ function: borrowing JavaScriptFunction, _ runtime: JavaScriptRuntime)'
+      voidCallRegex,
+      '    let call: @JavaScriptActor @Sendable (borrowing JavaScriptFunction, JavaScriptRuntime) throws -> Void = { function, runtime in'
     );
     changed = true;
-    console.log('[patch-ios-swift] Added @Sendable to local func call in JavaScriptCallback.swift!');
+    console.log('[patch-ios-swift] Converted local Void func call to @JavaScriptActor @Sendable closure in JavaScriptCallback.swift!');
+  }
+
+  const boxCallRegex = /    @JavaScriptActor(?: @Sendable)?\n    func call\(_ function: borrowing JavaScriptFunction, _ runtime: JavaScriptRuntime\) throws -> UncheckedSendableBox<R>\n    \{/g;
+  if (boxCallRegex.test(content)) {
+    content = content.replace(
+      boxCallRegex,
+      '    let call: @JavaScriptActor @Sendable (borrowing JavaScriptFunction, JavaScriptRuntime) throws -> UncheckedSendableBox<R> = { function, runtime in'
+    );
+    changed = true;
+    console.log('[patch-ios-swift] Converted local UncheckedSendableBox func call to @JavaScriptActor @Sendable closure in JavaScriptCallback.swift!');
   }
 
   // Also ensure @escaping @JavaScriptActor closures captured by local func call are explicitly @Sendable
