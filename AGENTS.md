@@ -22,7 +22,7 @@
 
 2. **GitHub Actions ile EAS Kotasız Derleme**:
    - Android APK: `assembleRelease` + `apksigner` (Ubuntu runner).
-   - iOS IPA: `xcodebuild` Release ARM64, `CODE_SIGNING_ALLOWED=NO`, `Payload/` -> `.ipa` (macOS runner).
+   - iOS IPA: App Store Connect yüklemelerinde `ITMS-90725` (iOS 26 SDK zorunluluğu) nedeniyle daima `runs-on: macos-15` (Xcode 26 / iOS 26.2 SDK) kullanılmalıdır.
    - Scheme ve workspace adı dinamik aranmalıdır (`find ios -name "*.xcworkspace"`).
 
 ## 🎨 Tasarım ve Karakter Standartları

@@ -1,7 +1,25 @@
 const fs = require('fs');
 const path = require('path');
+const { spawnSync } = require('child_process');
+const os = require('os');
 
 console.log('[patch-ios-swift] Running Swift compatibility patches...');
+
+function isSwift60Or61() {
+  try {
+    const res = spawnSync('swift', ['--version']);
+    if (res.status === 0) {
+      const out = res.stdout.toString();
+      console.log(`[patch-ios-swift] Detected Swift toolchain: ${out.trim().split('\n')[0]}`);
+      if (out.includes('Swift version 6.2') || out.includes('Swift version 6.3') || out.includes('Swift version 6.4')) {
+        return false;
+      }
+    }
+  } catch (_) {}
+  return true;
+}
+
+const needSwift60Workarounds = isSwift60Or61();
 
 // 1. Patch Package.swift files to swift-tools-version: 6.0 and ensure swiftLanguageModes: [.v6] with minimal concurrency
 function patchPackageSwift(dir) {
@@ -22,32 +40,34 @@ function patchPackageSwift(dir) {
           changed = true;
           console.log(`[patch-ios-swift] Downgraded swift-tools-version to 6.0 in: ${fullPath}`);
         }
-        // Swift 6 mode is strictly required by ExpoModulesJSI for C++ interop, Task.immediate and consuming: labels
-        if (content.includes('swiftLanguageModes: [.v5]')) {
-          content = content.replace(/swiftLanguageModes:\s*\[\.v5\]/g, 'swiftLanguageModes: [.v6]');
-          changed = true;
-          console.log(`[patch-ios-swift] Set swiftLanguageModes to [.v6] in: ${fullPath}`);
-        }
-        // Add minimal strict concurrency flag to suppress fatal data-race errors in Swift 6 mode
-        if (!content.includes('"-strict-concurrency=minimal"') && content.includes('"-enable-library-evolution"')) {
-          content = content.replace(
-            /["']-enable-library-evolution["'],/g,
-            `"-enable-library-evolution",\n          "-Xfrontend",\n          "-strict-concurrency=minimal",`
-          );
-          changed = true;
-          console.log(`[patch-ios-swift] Added -strict-concurrency=minimal to: ${fullPath}`);
-        }
-        // Remove invalid -Werror warning group flags (e.g. "-Werror", "ImplicitStrongCapture") rejected by Swift 6.0 driver
-        if (content.includes('-Werror')) {
-          content = content.replace(/["']-Werror["'],\s*["'][A-Za-z0-9_-]+["'],?/g, '');
-          changed = true;
-          console.log(`[patch-ios-swift] Stripped invalid -Werror warning flags in: ${fullPath}`);
-        }
-        // Remove trailing commas before closing parentheses (invalid in Swift 6.0 Package.swift parser)
-        if (/,\s*\)/.test(content)) {
-          content = content.replace(/,\s*\)/g, ')');
-          changed = true;
-          console.log(`[patch-ios-swift] Stripped trailing commas before ')' in: ${fullPath}`);
+        if (needSwift60Workarounds) {
+          // Swift 6 mode is strictly required by ExpoModulesJSI for C++ interop, Task.immediate and consuming: labels
+          if (content.includes('swiftLanguageModes: [.v5]')) {
+            content = content.replace(/swiftLanguageModes:\s*\[\.v5\]/g, 'swiftLanguageModes: [.v6]');
+            changed = true;
+            console.log(`[patch-ios-swift] Set swiftLanguageModes to [.v6] in: ${fullPath}`);
+          }
+          // Add minimal strict concurrency flag to suppress fatal data-race errors in Swift 6 mode
+          if (!content.includes('"-strict-concurrency=minimal"') && content.includes('"-enable-library-evolution"')) {
+            content = content.replace(
+              /["']-enable-library-evolution["'],/g,
+              `"-enable-library-evolution",\n          "-Xfrontend",\n          "-strict-concurrency=minimal",`
+            );
+            changed = true;
+            console.log(`[patch-ios-swift] Added -strict-concurrency=minimal to: ${fullPath}`);
+          }
+          // Remove invalid -Werror warning group flags (e.g. "-Werror", "ImplicitStrongCapture") rejected by Swift 6.0 driver
+          if (content.includes('-Werror')) {
+            content = content.replace(/["']-Werror["'],\s*["'][A-Za-z0-9_-]+["'],?/g, '');
+            changed = true;
+            console.log(`[patch-ios-swift] Stripped invalid -Werror warning flags in: ${fullPath}`);
+          }
+          // Remove trailing commas before closing parentheses (invalid in Swift 6.0 Package.swift parser)
+          if (/,\s*\)/.test(content)) {
+            content = content.replace(/,\s*\)/g, ')');
+            changed = true;
+            console.log(`[patch-ios-swift] Stripped trailing commas before ')' in: ${fullPath}`);
+          }
         }
         if (changed) {
           fs.writeFileSync(fullPath, content, 'utf8');
@@ -101,6 +121,27 @@ if (fs.existsSync(jsObjPath)) {
   console.log('[patch-ios-swift] JavaScriptObject.swift not found at:', jsObjPath);
 }
 
+// Always ensure build-xcframework.sh has CODE_SIGNING_ALLOWED=NO so intermediate SPM builds do not attempt code signing
+const buildXcfPathAlways = path.resolve(
+  nodeModulesDir,
+  'expo-modules-jsi',
+  'apple',
+  'scripts',
+  'build-xcframework.sh'
+);
+if (fs.existsSync(buildXcfPathAlways)) {
+  let content = fs.readFileSync(buildXcfPathAlways, 'utf8');
+  if (!content.includes('CODE_SIGNING_ALLOWED=NO') && content.includes('SWIFT_COMPILATION_MODE=wholemodule')) {
+    content = content.replace(
+      'SWIFT_COMPILATION_MODE=wholemodule \\',
+      'SWIFT_COMPILATION_MODE=wholemodule \\\n    SWIFT_STRICT_CONCURRENCY=minimal \\\n    CODE_SIGNING_ALLOWED=NO \\'
+    );
+    fs.writeFileSync(buildXcfPathAlways, content, 'utf8');
+    console.log('[patch-ios-swift] Added CODE_SIGNING_ALLOWED=NO to build-xcframework.sh!');
+  }
+}
+
+if (needSwift60Workarounds) {
 // 3. Patch RuntimeScheduler.h in expo-modules-jsi (strip SWIFT_RETURNS_RETAINED which is unknown in Swift 6.0 / Clang)
 const runtimeSchedulerPath = path.resolve(
   nodeModulesDir,
@@ -695,8 +736,6 @@ if (fs.existsSync(jsFuncPath)) {
 // Prebuilt ExpoModulesCore.xcframework was compiled with Swift 6.3.1 (Xcode 26) which emits isolated conformance syntax
 // `extension UIKit.UIView : @_Concurrency.MainActor ExpoModulesCore.AnyArgument` in .swiftinterface files.
 // Swift 6.0 (Xcode 16) rejects `@_Concurrency.MainActor` in protocol conformance position with `unknown attribute '_Concurrency.MainActor'`.
-const { spawnSync } = require('child_process');
-const os = require('os');
 
 function patchSwiftInterfaceContent(content) {
   let updated = content;
@@ -779,11 +818,14 @@ function findAndPatchTarballs(dir) {
   }
 }
 
-findAndPatchTarballs(nodeModulesDir);
-const iosPodsDir = path.resolve(__dirname, '..', 'ios', 'Pods');
-if (fs.existsSync(iosPodsDir)) {
-  patchSwiftInterfaceFilesInDir(iosPodsDir);
-  findAndPatchTarballs(iosPodsDir);
+  findAndPatchTarballs(nodeModulesDir);
+  const iosPodsDir = path.resolve(__dirname, '..', 'ios', 'Pods');
+  if (fs.existsSync(iosPodsDir)) {
+    patchSwiftInterfaceFilesInDir(iosPodsDir);
+    findAndPatchTarballs(iosPodsDir);
+  }
+} else {
+  console.log('[patch-ios-swift] Swift 6.2+ (Xcode 26) detected — skipping Swift 6.0-only workarounds.');
 }
 
 // 15. Configure Xcode project pbxproj for Manual App Store Signing (when APPLE_TEAM_ID & PROVISIONING_PROFILE_UUID are set)

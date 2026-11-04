@@ -96,7 +96,7 @@ jobs:
   # ==========================================
   build-ios:
     name: "iOS IPA Build (macOS Runner)"
-    runs-on: macos-14
+    runs-on: macos-15
     if: github.event_name == 'push' || inputs.target != 'android-only'
     timeout-minutes: 45
 
