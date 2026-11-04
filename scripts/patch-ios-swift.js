@@ -22,6 +22,12 @@ function patchPackageSwift(dir) {
           changed = true;
           console.log(`[patch-ios-swift] Downgraded swift-tools-version to 6.0 in: ${fullPath}`);
         }
+        // Remove invalid -Werror warning group flags (e.g. "-Werror", "ImplicitStrongCapture") rejected by Swift 6.0 driver
+        if (content.includes('-Werror')) {
+          content = content.replace(/["']-Werror["'],\s*["'][A-Za-z0-9_-]+["'],?/g, '');
+          changed = true;
+          console.log(`[patch-ios-swift] Stripped invalid -Werror warning flags in: ${fullPath}`);
+        }
         // Remove trailing commas before closing parentheses (invalid in Swift 6.0 Package.swift parser)
         if (/,\s*\)/.test(content)) {
           content = content.replace(/,\s*\)/g, ')');
