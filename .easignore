@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+.expo/
+dist/
+dist-check/
+
+# Git
+.git/
+
+# Marketing & Store Screenshots (Not needed in app bundle)
+assets/images/store-mockups/
+assets/images/store-screenshots/
+assets/images/ios-screenshots/
+assets/images/features_lab/master_crafter*.jpg
+assets/images/features_lab/rocking_chair.jpg
+
+# Native folders (managed workflow)
+/ios
+/android
+
+# Temporary & Logs
+*.log
+npm-debug.*
+yarn-debug.*
