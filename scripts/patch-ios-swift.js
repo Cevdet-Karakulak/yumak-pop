@@ -199,4 +199,93 @@ if (fs.existsSync(jsActorPath)) {
   console.log('[patch-ios-swift] JavaScriptActor.swift not found at:', jsActorPath);
 }
 
+// 7. Patch JavaScriptRuntime.swift in expo-modules-jsi (replace bare-slash regex with NSRegularExpression / range)
+const jsRuntimePath = path.resolve(
+  nodeModulesDir,
+  'expo-modules-jsi',
+  'apple',
+  'Sources',
+  'ExpoModulesJSI',
+  'Runtime',
+  'JavaScriptRuntime.swift'
+);
+
+if (fs.existsSync(jsRuntimePath)) {
+  let content = fs.readFileSync(jsRuntimePath, 'utf8');
+  const target = 'if name.wholeMatch(of: /^[a-zA-Z_$][a-zA-Z0-9_$]*$/) == nil {';
+  const replacement = 'if name.range(of: "^[a-zA-Z_$][a-zA-Z0-9_$]*$", options: .regularExpression) == nil {';
+  if (content.includes(target)) {
+    content = content.replace(target, replacement);
+    fs.writeFileSync(jsRuntimePath, content, 'utf8');
+    console.log('[patch-ios-swift] Successfully replaced bare-slash regex in JavaScriptRuntime.swift!');
+  } else {
+    console.log('[patch-ios-swift] JavaScriptRuntime.swift regex already patched.');
+  }
+} else {
+  console.log('[patch-ios-swift] JavaScriptRuntime.swift not found at:', jsRuntimePath);
+}
+
+// 8. Patch JavaScriptPromise.swift in expo-modules-jsi (remove @JavaScriptActor from LongLivedState and add nonisolated init)
+const jsPromisePath = path.resolve(
+  nodeModulesDir,
+  'expo-modules-jsi',
+  'apple',
+  'Sources',
+  'ExpoModulesJSI',
+  'Runtime',
+  'Values',
+  'JavaScriptPromise.swift'
+);
+
+if (fs.existsSync(jsPromisePath)) {
+  let content = fs.readFileSync(jsPromisePath, 'utf8');
+  let changed = false;
+  if (content.includes('@JavaScriptActor\n  private final class LongLivedState: LongLivedObject {')) {
+    content = content.replace(
+      /@JavaScriptActor\s*\n\s*private final class LongLivedState: LongLivedObject {/g,
+      'private final class LongLivedState: LongLivedObject {\n    nonisolated init() {}'
+    );
+    changed = true;
+    console.log('[patch-ios-swift] Successfully patched LongLivedState in JavaScriptPromise.swift!');
+  }
+  if (changed) {
+    fs.writeFileSync(jsPromisePath, content, 'utf8');
+  } else {
+    console.log('[patch-ios-swift] JavaScriptPromise.swift already patched.');
+  }
+} else {
+  console.log('[patch-ios-swift] JavaScriptPromise.swift not found at:', jsPromisePath);
+}
+
+// 9. Patch JavaScriptCallback.swift in expo-modules-jsi (remove @JavaScriptActor from LongLivedState and add nonisolated init)
+const jsCallbackPath = path.resolve(
+  nodeModulesDir,
+  'expo-modules-jsi',
+  'apple',
+  'Sources',
+  'ExpoModulesJSI',
+  'Runtime',
+  'JavaScriptCallback.swift'
+);
+
+if (fs.existsSync(jsCallbackPath)) {
+  let content = fs.readFileSync(jsCallbackPath, 'utf8');
+  let changed = false;
+  if (content.includes('@JavaScriptActor\n  private final class LongLivedState: LongLivedObject {')) {
+    content = content.replace(
+      /@JavaScriptActor\s*\n\s*private final class LongLivedState: LongLivedObject {/g,
+      'private final class LongLivedState: LongLivedObject {\n    nonisolated init() {}'
+    );
+    changed = true;
+    console.log('[patch-ios-swift] Successfully patched LongLivedState in JavaScriptCallback.swift!');
+  }
+  if (changed) {
+    fs.writeFileSync(jsCallbackPath, content, 'utf8');
+  } else {
+    console.log('[patch-ios-swift] JavaScriptCallback.swift already patched.');
+  }
+} else {
+  console.log('[patch-ios-swift] JavaScriptCallback.swift not found at:', jsCallbackPath);
+}
+
 console.log('[patch-ios-swift] All Swift compatibility patches applied successfully!');

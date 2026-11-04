@@ -10,6 +10,8 @@
    - `JavaScriptRef.swift` içindeki `, Escapable` ibaresi kaldırılmalıdır (`type 'Escapable' requires -enable-experimental-feature NonescapableTypes`).
    - `JavaScriptError.swift` içindeki `CppError` uzantısında `public var message` -> `var message` yapılarak library evolution ABI hatası önlenmelidir.
    - `JavaScriptActor.swift` dosyasındaki `runIsolated` fonksiyonları `nonisolated` yapılmalıdır.
+   - `JavaScriptRuntime.swift` içindeki bare-slash regex (`/^[a-zA-Z_$][a-zA-Z0-9_$]*$/`) Swift 5 modunda integer literal olarak yorumlanıp patlar (`'$' is not a valid digit in integer literal`); `range(of: ..., options: .regularExpression)` ile değiştirilmelidir.
+   - `JavaScriptPromise.swift` ve `JavaScriptCallback.swift` içindeki `LongLivedState` sınıfından `@JavaScriptActor` kaldırılarak veya `nonisolated init()` eklenerek nonisolated bağlamdan çağrılabilmesi sağlanmalıdır.
    - `JavaScriptObject.swift` içinde Swift 6 actor veri yarışı için pointer UInt üzerinden cast edilmelidir.
    - Bu adımlar `scripts/patch-ios-swift.js` içinde otomatik uygulanmalıdır.
 
