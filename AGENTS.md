@@ -1,29 +1,29 @@
 # Workspace Rules – Yumak Pop (Mobile Game)
 
-## 🛠️ iOS & Android Derleme Hafızası (Sıfır EAS Kotası)
-1. **Xcode 16 (Apple Swift 6.0) Manifest & Compiler Düzeltmeleri**:
-   - `Package.swift` içinde `swift-tools-version: 6.2` görüldüğünde derhal `6.0` seviyesine çekilmelidir.
-   - `swiftLanguageModes: [.v6]` ExpoModulesJSI için zorunludur (C++ interop, Task.immediate ve consuming: etiketleri gerektirir). Asla [.v5]'e çekilmemeli; katı concurrency hatalarını önlemek için `unsafeFlags` içine `"-Xfrontend", "-strict-concurrency=minimal"` eklenmelidir.
-   - Swift 6.0 manifest sözdiziminde argüman listesi sonundaki virgüller (`,\s*\)`) yasaktır (`unexpected ',' separator`).
-   - `unsafeFlags` içindeki `"-Werror", "<WarningName>"` ikilileri (örn: `ImplicitStrongCapture`, `NoUsage`) Xcode 27 içindir; Swift 6.0 derleyici sürücüsü bunu `Driver threw unknown argument: '-Werror'` diyerek patlatır. Bunlar temizlenmelidir.
-   - `RuntimeScheduler.h` içindeki `SWIFT_RETURNS_RETAINED` makrosu Swift 6.0 / Clang C++ derleyicisinde tanınmaz ve `expected ';' at end of declaration list` hatası verir. Bu makro temizlenmelidir.
-   - `JavaScriptRef.swift` içindeki `, Escapable` ibaresi kaldırılmalıdır (`type 'Escapable' requires -enable-experimental-feature NonescapableTypes`).
-   - `JavaScriptError.swift` içindeki `CppError` uzantısında `public var message` -> `var message` yapılarak library evolution ABI hatası önlenmelidir.
-   - `JavaScriptActor.swift` dosyasındaki `runIsolated` ve `runIsolatedThrowing` fonksiyonları `nonisolated` yapılmalı ve parametreleri `() -> T` / `() throws -> T` olarak güncellenmelidir (`IsolatedRunner = (() -> T) -> T`); böylece `assumeIsolated` içinde ne actor izolasyon hatası ne de non-escaping generic dönüşüm hatası oluşur.
-   - `JavaScriptRuntime.swift` içindeki bare-slash regex (`/^[a-zA-Z_$][a-zA-Z0-9_$]*$/`) Swift 5 modunda integer literal olarak yorumlanıp patlar (`'$' is not a valid digit in integer literal`); `range(of: ..., options: .regularExpression)` ile değiştirilmelidir.
-   - `JavaScriptPromise.swift` ve `JavaScriptCallback.swift` içindeki `LongLivedState` sınıfından `@JavaScriptActor` kaldırılarak `nonisolated init()` eklenmeli; ayrıca `JavaScriptCallback.swift` içindeki yerel `@JavaScriptActor func call` fonksiyonları `@Sendable` yerel fonksiyon olamayacağı için `let call: @JavaScriptActor @Sendable (...) = { ... }` olarak yazılmalıdır.
-   - `Task+immediate.swift` içindeki `Task.immediate` ve `Task(name:)` çağrıları iOS 26 SDK gerektirdiğinden Xcode 16 için `Task(priority: priority ?? .high, operation: operation)` olarak sadeleştirilmelidir.
-   - `JavaScriptRuntime.swift` içindeki `vector.push_back(consuming: propNameId)` ve `expo.HostFunctionClosure(context, call, deallocate)` çağrıları Swift 6.0 C++ interop kısıtlamaları nedeniyle `HostObjectCallbacks::pushPropNameId` ve `HostFunctionClosure::make` C++ statik yardımcıları üzerinden çağrılmalıdır.
-   - `JavaScriptObject.swift`, `JavaScriptArray.swift` ve `JavaScriptPromise.swift` içindeki `~Copyable` delegating `self.init(...)` çağrıları Swift 6.0 derleyici hatasını (`copy of noncopyable typed value. This is a compiler bug`) tetikler; doğrudan stored property atamalarına (`self.runtimeHandle = ...; self.pointee = ...`) açılmalıdır.
-   - `JavaScriptRuntime.swift` ve `JavaScriptFunction.swift` içindeki closure parametrelerinde `consuming` sahipliği açıkça yazılmalı (`(arguments: consuming JavaScriptValuesBuffer) in`), `JavaScriptFunction.swift` içindeki stack pointer'ları `UncheckedSendable` ile sarmalanmalıdır.
-   - `JavaScriptObject.swift` içinde Swift 6 actor veri yarışı için pointer UInt üzerinden cast edilmelidir.
-   - `ExpoModulesCore` gibi önceden derlenmiş (`.tar.gz`) XCFramework'lerin `.swiftinterface` dosyalarındaki Swift 6.2/6.3 isolated conformance sözdizimi (`: @_Concurrency.MainActor `) Swift 6.0 derleyicisinde `unknown attribute '_Concurrency.MainActor'` hatası verir; `.tar.gz` arşivleri ve `Pods` içindeki `.swiftinterface` dosyalarından bu nitelik temizlenmelidir.
-   - Bu adımlar `scripts/patch-ios-swift.js` içinde otomatik uygulanmalıdır.
+## 🛠️ iOS & Android Derleme ve App Store Connect Hafızası (Sıfır EAS Kotası)
 
-2. **GitHub Actions ile EAS Kotasız Derleme**:
-   - Android APK: `assembleRelease` + `apksigner` (Ubuntu runner).
-   - iOS IPA: App Store Connect yüklemelerinde `ITMS-90725` (iOS 26 SDK zorunluluğu) nedeniyle daima `runs-on: macos-15` (Xcode 26 / iOS 26.2 SDK) kullanılmalıdır.
-   - Scheme ve workspace adı dinamik aranmalıdır (`find ios -name "*.xcworkspace"`).
+1. **Runner & SDK Seçimi (`ITMS-90725` Zorunluluğu)**:
+   - GitHub Actions iOS derlemelerinde **daima `runs-on: macos-15`** (Xcode 26.3 / `iphoneos26.2` SDK / Swift 6.3) kullanılmalıdır.
+   - `macos-14` (Xcode 16.2 / `iOS 18.2 SDK`) **ASLA kullanılmamalıdır**; Apple App Store Connect iOS 18.2 SDK ile üretilen paketleri `ITMS-90725` (*"All iOS and iPadOS apps must be built with the iOS 26 SDK or later"*) hatasıyla reddeder.
+
+2. **Tek Platform & Tek Archive Kuralı**:
+   - Her `push` işleminde `build-android` tekrar çalıştırılmaz (`if: github.event_name == 'workflow_dispatch' && inputs.target != 'ios-only'`).
+   - Gereksiz Simulator derlemesi yapılmaz; tek bir `xcodebuild archive` ile hem imzasız `.ipa` hem de `xcodebuild -exportArchive` üzerinden App Store imzalı `.ipa` üretilir.
+
+3. **CocoaPods & Xcode Manual App Store İmzalama (`pbxproj` Ayrımı)**:
+   - `xcodebuild archive` komutuna komut satırından `PROVISIONING_PROFILE_SPECIFIER` veya `CODE_SIGN_STYLE=Manual` verilmez (aksi halde Pod hedefleri `does not support provisioning profiles` hatasıyla patlar).
+   - `pod install` sonrasında `scripts/patch-ios-swift.js`:
+     - `ios/Pods/Pods.xcodeproj/project.pbxproj` içindeki tüm hedeflerde `CODE_SIGNING_ALLOWED = NO; CODE_SIGNING_REQUIRED = NO; CODE_SIGN_IDENTITY = ""; PROVISIONING_PROFILE_SPECIFIER = "";` ayarlar.
+     - `ios/YumakPop.xcodeproj/project.pbxproj` içindeki ana uygulama hedefinde `CODE_SIGN_STYLE = Manual; CODE_SIGN_IDENTITY = "Apple Distribution"; DEVELOPMENT_TEAM = B3XB34782X; PROVISIONING_PROFILE_SPECIFIER = "<UUID>";` ayarlar.
+     - `expo-modules-jsi/apple/scripts/build-xcframework.sh` içindeki `xcodebuild` çağrısına `CODE_SIGNING_ALLOWED=NO` ekler.
+
+4. **App Store Connect Otomatik Yükleme ve Doğrulama**:
+   - `app.json` içindeki `expo.ios.buildNumber`, her çalışmada `GITHUB_RUN_NUMBER` ile otomatik artırılır.
+   - GitHub Actions adımında alt Python sürecine aktarılan `SIGN_DIR` gibi değişkenler mutlaka `export SIGN_DIR=...` ile tanımlanır.
+   - `xcrun altool --upload-app` tamamlandıktan sonra App Store Connect API (`/v1/apps/6829707682/buildUploads`) üzerinden yüklemenin `ITMS-*` hatası almadan `COMPLETE` / `VALID` durumuna geçtiği doğrulanır.
+
+5. **Swift Toolchain Uyumluluğu (`scripts/patch-ios-swift.js`)**:
+   - `isSwift60Or61()` kontrolü ile Xcode 26 (`Swift 6.2+`) ortamında yalnızca `swift-tools-version: 6.0`, `JavaScriptObject.swift` pointer cast, `build-xcframework.sh` `CODE_SIGNING_ALLOWED=NO` ve `pbxproj` imzalama adımları çalıştırılır; Swift 6.0'a özgü diğer 12 yama yalnızca Xcode 16 (`Swift 6.0`) ortamında devreye girer.
 
 ## 🎨 Tasarım ve Karakter Standartları
 - Bobbin'in yüzü ve maskot kimliği (`assets/images/mascot.png`) sabittir. Kostüm veya eşya eklemelerinde karakterin yüzü asla değiştirilmez.

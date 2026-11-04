@@ -194,7 +194,7 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Unified 3D Stop-Motion Miniature Diorama Showcase */}
+        {/* Unified 3D Stop-Motion Miniature Diorama Showcase (100% Unobstructed) */}
         <View style={styles.dioramaCard}>
           <Image
             source={WORKSHOP_UNIFIED_IMAGE}
@@ -205,18 +205,50 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
           {/* Warm Vintage Vignette Gradient Border */}
           <View style={styles.dioramaBorderOverlay} pointerEvents="none" />
 
-          {/* Active Knitwear Accent Tag */}
-          <View style={styles.activeOutfitPill}>
-            <T style={{ fontSize: 13, color: '#FDE68A', fontWeight: 'bold' }}>
-              🧶 Aktif: {KNITWEAR_CATALOG.find((o) => o.id === currentOutfit)?.name || 'Klasik Atkı'}
-            </T>
+          {/* Visual Knitwear Scarf / Collar Overlay on Bobbin */}
+          <View
+            pointerEvents="none"
+            style={[
+              styles.bobbinScarfCollar,
+              {
+                borderColor: activeOutfit.color,
+                backgroundColor: `${activeOutfit.color}40`,
+                shadowColor: activeOutfit.color,
+              },
+            ]}
+          >
+            <View style={[styles.bobbinScarfKnot, { backgroundColor: activeOutfit.color }]}>
+              <T style={{ fontSize: 13 }}>{activeOutfit.accentEmoji}</T>
+            </View>
           </View>
 
-          {/* Bobbin Speech Bubble */}
-          <View style={styles.speechBubble}>
-            <T style={{ fontSize: 18, marginRight: 6 }}>🪵</T>
-            <T style={styles.speechText}>{speech}</T>
+          {/* Compact Pointer Tag at Bottom-Right Pointing to Bobbin's Equipped Knitwear */}
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => {
+              setActiveTab('knitwear');
+              buzz('light');
+            }}
+            style={[
+              styles.equippedPinBadge,
+              { borderColor: activeOutfit.color },
+            ]}
+          >
+            <View style={[styles.equippedColorDot, { backgroundColor: activeOutfit.color }]}>
+              <T style={{ fontSize: 11 }}>{activeOutfit.accentEmoji}</T>
+            </View>
+            <T style={styles.equippedPinText}>
+              ↑ Bobbin'de Takılı: {activeOutfit.name}
+            </T>
+          </TouchableOpacity>
+        </View>
+
+        {/* Bobbin Dialogue Card (Placed Outside Diorama So Room & Character Stay 100% Visible) */}
+        <View style={styles.speechCardOutside}>
+          <View style={styles.speechAvatarBadge}>
+            <T style={{ fontSize: 18 }}>🪵</T>
           </View>
+          <T style={styles.speechText}>{speech}</T>
         </View>
 
         {/* Room Restoration Progress Gauge */}
@@ -472,7 +504,7 @@ const styles = StyleSheet.create({
   },
   dioramaCard: {
     width: '100%',
-    height: 310,
+    height: 350,
     borderRadius: 24,
     overflow: 'hidden',
     backgroundColor: '#29180C',
@@ -495,34 +527,82 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.25)',
   },
-  activeOutfitPill: {
+  bobbinScarfCollar: {
     position: 'absolute',
-    top: 12,
-    left: 12,
-    backgroundColor: 'rgba(30, 20, 15, 0.78)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(253, 230, 138, 0.5)',
+    right: '14%',
+    bottom: '22%',
+    width: 108,
+    height: 34,
+    borderRadius: 18,
+    borderWidth: 3,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    paddingRight: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.6,
+    shadowRadius: 6,
+    elevation: 5,
   },
-  speechBubble: {
+  bobbinScarfKnot: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#FFFDF9',
+  },
+  equippedPinBadge: {
     position: 'absolute',
-    bottom: 12,
-    left: 12,
-    right: 12,
-    backgroundColor: 'rgba(255, 253, 248, 0.94)',
+    bottom: 10,
+    right: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(28, 17, 10, 0.86)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+    borderWidth: 1.5,
+  },
+  equippedColorDot: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  equippedPinText: {
+    fontSize: 11.5,
+    color: '#FEF3C7',
+    fontFamily: FONT.bold,
+  },
+  speechCardOutside: {
+    marginTop: 12,
+    backgroundColor: '#FFFBEB',
     borderRadius: 16,
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     paddingVertical: 10,
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 10,
     borderWidth: 1.5,
     borderColor: '#FDE68A',
-    shadowColor: '#000',
+    shadowColor: '#78350F',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.08,
     shadowRadius: 4,
+    elevation: 2,
+  },
+  speechAvatarBadge: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: '#F59E0B',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   speechText: {
     flex: 1,
