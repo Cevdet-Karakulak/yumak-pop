@@ -42,6 +42,24 @@ export type TapFailReason =
   | 'twin_partner_blocked'
   | 'rack_full';
 
+export interface BridgeZone {
+  start: number; // e.g. 42 (normalized 0..100)
+  end: number;   // e.g. 56
+}
+
+export interface IceZone {
+  start: number; // e.g. 64 (normalized 0..100)
+  end: number;   // e.g. 78
+  thawDuration?: number; // turns remaining thawed by a rack spool pop
+}
+
+export interface ConveyorConfig {
+  active: boolean;
+  interval: number; // shifts every X moves (e.g. 3)
+  movesUntilShift: number; // countdown
+  direction: 1 | -1;
+}
+
 export interface GameState {
   trackLength: number; // Normalized total length (e.g. 100)
   headPos: number; // 0..100 (100 = vortex hole)
@@ -55,6 +73,9 @@ export interface GameState {
   moves: number;
   stepPenalty: number; // how much the snake creeps forward on a move (e.g. 3.5)
   status: 'playing' | 'won' | 'lost';
+  bridge?: BridgeZone;
+  iceZone?: IceZone;
+  conveyor?: ConveyorConfig;
 }
 
 export interface UnravelTick {
@@ -72,6 +93,9 @@ export function cloneState(s: GameState): GameState {
     columns: s.columns.map((c) => c.map((sp) => ({ ...sp }))),
     baskets: s.baskets.map((b) => b.map((sp) => ({ ...sp }))),
     rack: s.rack.map((sp) => (sp ? { ...sp } : null)),
+    bridge: s.bridge ? { ...s.bridge } : undefined,
+    iceZone: s.iceZone ? { ...s.iceZone } : undefined,
+    conveyor: s.conveyor ? { ...s.conveyor } : undefined,
   };
 }
 
@@ -159,13 +183,33 @@ function thawFrozenSpools(next: GameState) {
   }
 }
 
+export function shiftConveyor(next: GameState) {
+  if (!next.columns || next.columns.length <= 1) return;
+  const dir = next.conveyor?.direction ?? 1;
+  if (dir > 0) {
+    const lastCol = next.columns.pop()!;
+    next.columns.unshift(lastCol);
+    if (next.baskets && next.baskets.length === next.columns.length) {
+      const lastB = next.baskets.pop()!;
+      next.baskets.unshift(lastB);
+    }
+  } else {
+    const firstCol = next.columns.shift()!;
+    next.columns.push(firstCol);
+    if (next.baskets && next.baskets.length === next.columns.length) {
+      const firstB = next.baskets.shift()!;
+      next.baskets.push(firstB);
+    }
+  }
+}
+
 /**
  * Move front spool into rack, advance snake step, and untie knots.
  */
 export function tapColumn(
   s: GameState,
   col: number,
-): { state: GameState; slots: number[] } | null {
+): { state: GameState; slots: number[]; conveyorShifted?: boolean } | null {
   const chk = checkTap(s, col);
   if (!chk.ok) return null;
 
@@ -207,12 +251,28 @@ export function tapColumn(
   // Step the snake forward closer to the vortex hole with every move!
   next.headPos = Math.min(next.dangerHolePos, next.headPos + next.stepPenalty);
 
+  // Conveyor / Escalator mechanics:
+  let conveyorShifted = false;
+  if (next.conveyor?.active) {
+    next.conveyor.movesUntilShift -= 1;
+    if (next.conveyor.movesUntilShift <= 0) {
+      next.conveyor.movesUntilShift = next.conveyor.interval;
+      shiftConveyor(next);
+      conveyorShifted = true;
+    }
+  }
+
+  // Thaw countdown for ice zone
+  if (next.iceZone && next.iceZone.thawDuration && next.iceZone.thawDuration > 0) {
+    next.iceZone.thawDuration -= 1;
+  }
+
   // Check loss condition: head reached the hole
   if (next.headPos >= next.dangerHolePos && next.remainingUnits > 0) {
     next.status = 'lost';
   }
 
-  return { state: next, slots };
+  return { state: next, slots, conveyorShifted };
 }
 
 /**
@@ -220,9 +280,28 @@ export function tapColumn(
  * When yarn is unraveled, the snake's head recedes backwards (relieving danger!),
  * and the spool winds up.
  */
-export function unravelTick(s: GameState): { state: GameState; tickInfo: UnravelTick | null } {
+export function unravelTick(s: GameState): {
+  state: GameState;
+  tickInfo: UnravelTick | null;
+  blockedReason?: 'bridge' | 'ice';
+} {
   if (s.status !== 'playing' || s.segments.length === 0) {
     return { state: s, tickInfo: null };
+  }
+
+  // 1. Bridge/Tunnel check: If snake head is under bridge, yarn cannot be unraveled!
+  if (s.bridge && s.headPos >= s.bridge.start && s.headPos <= s.bridge.end) {
+    return { state: s, tickInfo: null, blockedReason: 'bridge' };
+  }
+
+  // 2. Ice Zone check: If snake head is in frozen canal, yarn cannot be unraveled until thawed!
+  if (
+    s.iceZone &&
+    s.headPos >= s.iceZone.start &&
+    s.headPos <= s.iceZone.end &&
+    (!s.iceZone.thawDuration || s.iceZone.thawDuration <= 0)
+  ) {
+    return { state: s, tickInfo: null, blockedReason: 'ice' };
   }
 
   const headSeg = s.segments[0];
@@ -273,6 +352,9 @@ export function unravelTick(s: GameState): { state: GameState; tickInfo: Unravel
       next.rack[matchingSlot] = null; // Spool complete -> POP!
       popped = true;
       thawFrozenSpools(next); // Crack ice on frozen spools in columns!
+      if (next.iceZone) {
+        next.iceZone.thawDuration = 2; // Popping a spool generates warm craft heat that thaws the ice zone for 2 moves!
+      }
     }
   }
 

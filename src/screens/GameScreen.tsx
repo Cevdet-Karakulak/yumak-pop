@@ -314,7 +314,16 @@ export function GameScreen({
             finish(false);
             return;
           }
-          if (res.tickInfo) {
+          if (res.blockedReason === 'bridge' || res.blockedReason === 'ice') {
+            setActiveUnravel(null);
+            const crawlSpeed = (info.hard ? 0.22 : 0.17) * 0.55;
+            const crawled = crawlTick(cur, crawlSpeed);
+            setBoth(crawled);
+            if (crawled.status === 'lost') {
+              finish(false);
+              return;
+            }
+          } else if (res.tickInfo) {
             setBoth(res.state);
             setActiveUnravel({
               spoolSlot: res.tickInfo.spoolSlot,
@@ -399,6 +408,13 @@ export function GameScreen({
     setBoth(r.state);
     play('tap');
     buzz('light');
+    if (r.conveyorShifted) {
+      setTimeout(() => {
+        play('pop');
+        buzz('medium');
+        showToast(t.conveyorShift);
+      }, 100);
+    }
     if (hadBasket) {
       setTimeout(() => play('pull'), 150);
     }
@@ -860,7 +876,18 @@ export function GameScreen({
 
           {/* Spool queues + Baskets sitting in an Artisan Wooden Tray */}
           <View style={styles.spoolTrayWrapper}>
-            <View style={styles.spoolTray}>
+            {game.conveyor?.active && (
+              <View style={styles.conveyorHeader}>
+                <Ionicons name="cog" size={14} color={UI.gold} />
+                <T style={{ fontSize: 11, fontFamily: FONT.black, color: UI.plum, marginLeft: 4 }}>
+                  {t.conveyorBadge}: {game.conveyor.movesUntilShift}
+                </T>
+                <T style={{ fontSize: 11, color: UI.coralDark, marginLeft: 6 }}>
+                  {game.conveyor.direction > 0 ? '➔' : '⬅'}
+                </T>
+              </View>
+            )}
+            <View style={[styles.spoolTray, game.conveyor?.active && styles.conveyorTray]}>
               <View style={styles.queues}>
                 {game.columns.map((col, c) => {
                   const basketCount = game.baskets[c]?.length ?? 0;
@@ -1350,6 +1377,23 @@ const styles = StyleSheet.create({
     marginTop: 2,
     borderWidth: 1,
     borderColor: UI.gold,
+  },
+  conveyorHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    marginBottom: 4,
+    backgroundColor: '#FFFBEB',
+    paddingHorizontal: 10,
+    paddingVertical: 2,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: UI.gold,
+  },
+  conveyorTray: {
+    borderColor: UI.gold,
+    borderWidth: 1.5,
   },
   spoolTrayWrapper: {
     paddingHorizontal: 10,

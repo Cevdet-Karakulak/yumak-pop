@@ -9,7 +9,7 @@ import {
 } from './engine';
 import { createRng, Rng } from './rng';
 
-export const TOTAL_LEVELS = 100;
+export const TOTAL_LEVELS = 150;
 export const BASE_RACK = 3;
 export const LEVELS_PER_CHAPTER = 50;
 
@@ -25,7 +25,7 @@ export interface Chapter {
 export const CHAPTERS: Chapter[] = [
   { id: 1, title: 'Atölye Başlangıcı', subtitle: 'İlk İlmekler ve Temeller', startLevel: 1, endLevel: 50, icon: '🧶' },
   { id: 2, title: 'Renkli Yumaklar', subtitle: 'Kelt Labirenti & İkiz Makaralar', startLevel: 51, endLevel: 100, icon: '🌈' },
-  { id: 3, title: 'Sihirli İğneler', subtitle: 'Düğümler ve Obur Girdap', startLevel: 101, endLevel: 150, icon: '✨' },
+  { id: 3, title: 'Sihirli İğneler', subtitle: 'Köprüler, Buz Alanları & Yürüyen Bant', startLevel: 101, endLevel: 150, icon: '✨' },
   { id: 4, title: 'Büyük Örgü Ustası', subtitle: 'Usta İşi Akrobatik Parkurlar', startLevel: 151, endLevel: 200, icon: '👑' },
   { id: 5, title: 'Gökkuşağı Vadisi', subtitle: 'Buzlu Bobinler ve İki Renkli İpler', startLevel: 201, endLevel: 250, icon: '🌸' },
   { id: 6, title: 'Efsanevi Motifler', subtitle: 'Büyük Usta Mücadeleleri', startLevel: 251, endLevel: 300, icon: '🏆' },
@@ -58,7 +58,10 @@ export type MechanicKind =
   | 'mystery'
   | 'rainbow'
   | 'frozen'
-  | 'dual';
+  | 'dual'
+  | 'bridge'
+  | 'ice_zone'
+  | 'conveyor';
 
 export type TrackShape =
   | 'clover'
@@ -79,7 +82,13 @@ export type TrackShape =
   | 'star_spiral'
   | 'serpentine_waves'
   | 'hourglass'
-  | 's_curve';
+  | 's_curve'
+  | 'bridge_cross'
+  | 'frozen_fjord'
+  | 'carousel_circus'
+  | 'dragon_spiral'
+  | 'escalator_zigzag'
+  | 'celtic_nexus';
 
 export interface LevelInfo {
   number: number;
@@ -94,8 +103,8 @@ export interface LevelInfo {
 const COLOR_PALETTE = ['R', 'Y', 'T', 'B', 'O', 'P', 'G', 'K'];
 
 function levelParams(n: number) {
-  // From level 10 onwards, most levels are genuinely hard & tense!
-  const hard = n >= 10 ? n % 4 !== 1 : n >= 5 && (n % 5 === 0 || n % 7 === 0);
+  // Higher difficulty: from level 10 onwards, and especially Chapter 3 (101-150)!
+  const hard = n >= 10 ? (n > 100 ? n % 6 !== 1 : n % 4 !== 1) : n >= 5 && (n % 5 === 0 || n % 7 === 0);
   const mechanics: MechanicKind[] = ['basic'];
   if (n >= 3) mechanics.push('knots');
   if (n >= 5) mechanics.push('twin');
@@ -106,6 +115,19 @@ function levelParams(n: number) {
   if (n >= 36) mechanics.push('dual');
   if (hard) mechanics.push('vortex');
 
+  // Bridge / Tunnel obstacle:
+  if (n >= 55 && (n % 4 === 3 || n % 4 === 0 || (n >= 101 && (n % 3 === 0 || n % 5 === 0)))) {
+    mechanics.push('bridge');
+  }
+  // Ice Zone / Frozen Track:
+  if (n >= 75 && (n % 5 === 2 || n % 4 === 2 || (n >= 101 && (n % 3 === 1 || n % 4 === 0)))) {
+    mechanics.push('ice_zone');
+  }
+  // Conveyor / Moving Spool Belt:
+  if (n >= 95 && (n % 5 === 4 || (n >= 101 && (n % 3 === 2 || n % 2 === 0)))) {
+    mechanics.push('conveyor');
+  }
+
   let newMechanic: MechanicKind | undefined;
   if (n === 1) newMechanic = 'basic';
   else if (n === 3) newMechanic = 'knots';
@@ -115,11 +137,14 @@ function levelParams(n: number) {
   else if (n === 16) newMechanic = 'rainbow';
   else if (n === 24) newMechanic = 'frozen';
   else if (n === 36) newMechanic = 'dual';
+  else if (n === 55 || n === 101) newMechanic = 'bridge';
+  else if (n === 75 || n === 103) newMechanic = 'ice_zone';
+  else if (n === 95 || n === 105) newMechanic = 'conveyor';
 
-  // Rich progressive color palette expansion
+  // Progressive color palette expansion (up to 8 colors)
   const numColors = Math.min(
     COLOR_PALETTE.length,
-    n <= 2 ? 3 : n <= 5 ? 4 : n <= 9 ? 5 : n <= 18 ? 6 : n <= 35 ? 7 : 8,
+    n <= 2 ? 3 : n <= 5 ? 4 : n <= 9 ? 5 : n <= 18 ? 6 : n <= 35 ? 7 : (n > 100 ? (n > 125 ? 8 : (n % 2 === 0 ? 8 : 7)) : 8),
   );
   // Long, epic snake lengths across all levels (especially 10+)
   const totalSegments = Math.min(
@@ -134,7 +159,9 @@ function levelParams(n: number) {
       ? 34 + Math.floor(n * 0.45)
       : n <= 70
       ? 42 + Math.floor((n - 40) * 0.25)
-      : 50 + Math.floor((n - 70) * 0.15),
+      : n <= 100
+      ? 50 + Math.floor((n - 70) * 0.15)
+      : 48 + Math.floor((n - 100) * 0.12),
   );
   const segmentLength = n <= 3 ? 4 : n <= 8 ? 4 : 5;
 
@@ -157,17 +184,66 @@ function levelParams(n: number) {
     'star_spiral',
     'serpentine_waves',
     'hourglass',
+    'bridge_cross',
+    'frozen_fjord',
+    'carousel_circus',
+    'dragon_spiral',
+    'escalator_zigzag',
+    'celtic_nexus',
   ];
-  const trackShape: TrackShape = TRACK_ORDER[(n - 1) % TRACK_ORDER.length];
+
+  let trackShape: TrackShape;
+  if (n > 100) {
+    const ch3Tracks: TrackShape[] = [
+      'bridge_cross',
+      'frozen_fjord',
+      'carousel_circus',
+      'dragon_spiral',
+      'escalator_zigzag',
+      'celtic_nexus',
+      'labyrinth',
+      'rollercoaster',
+      'pretzel',
+      'star_spiral',
+    ];
+    trackShape = ch3Tracks[(n - 101) % ch3Tracks.length];
+  } else {
+    trackShape = TRACK_ORDER[(n - 1) % TRACK_ORDER.length];
+  }
 
   const basketRatio = n < 7 ? 0 : n <= 15 ? 0.20 : 0.26;
-  const stepPenalty = hard ? 2.0 : n <= 3 ? 1.2 : n <= 9 ? 1.4 : 1.7;
-  const startHeadPos = n <= 3 ? 20 : hard ? 30 : 24;
+  const stepPenalty = n > 100
+    ? Math.min(3.2, 2.3 + ((n - 100) / 50) * 0.9)
+    : (hard ? 2.0 : n <= 3 ? 1.2 : n <= 9 ? 1.4 : 1.7);
+  const startHeadPos = n > 100
+    ? Math.min(38, 30 + Math.floor(((n - 100) / 50) * 8))
+    : (n <= 3 ? 20 : hard ? 30 : 24);
 
-  const mysteryCount = n < 10 ? 0 : n <= 20 ? 1 : n <= 40 ? 2 : 3;
+  const mysteryCount = n < 10 ? 0 : n <= 20 ? 1 : n <= 40 ? 2 : (n > 100 ? (n > 125 ? 4 : 3) : 3);
   const wildCount = n < 16 ? 0 : (n % 3 === 0 || n % 5 === 0 ? 1 : 0);
-  const frozenCount = n < 24 ? 0 : n <= 45 ? 1 : 2;
-  const dualCount = n < 36 ? 0 : n <= 65 ? 1 : 2;
+  const frozenCount = n < 24 ? 0 : n <= 45 ? 1 : (n > 100 ? 3 : 2);
+  const dualCount = n < 36 ? 0 : n <= 65 ? 1 : (n > 100 ? 3 : 2);
+
+  const hasBridge = mechanics.includes('bridge') || trackShape === 'bridge_cross';
+  const hasIce = mechanics.includes('ice_zone') || trackShape === 'frozen_fjord';
+  const hasConveyor = mechanics.includes('conveyor') || trackShape === 'carousel_circus' || trackShape === 'escalator_zigzag';
+
+  const bridge = hasBridge
+    ? { start: 42 + (n % 8), end: 54 + (n % 8) }
+    : undefined;
+
+  const iceZone = hasIce
+    ? { start: 64 + (n % 6), end: 76 + (n % 6) }
+    : undefined;
+
+  const conveyor = hasConveyor
+    ? {
+        active: true,
+        interval: n > 130 ? 2 : 3,
+        movesUntilShift: n > 130 ? 2 : 3,
+        direction: (n % 2 === 0 ? 1 : -1) as (1 | -1),
+      }
+    : undefined;
 
   return {
     numColors,
@@ -187,6 +263,9 @@ function levelParams(n: number) {
     hard,
     mechanics,
     newMechanic,
+    bridge,
+    iceZone,
+    conveyor,
   };
 }
 
@@ -368,6 +447,9 @@ export function createLevel(n: number, rackSlots = BASE_RACK): GameState {
       moves: 0,
       stepPenalty: Math.max(1.5, p.stepPenalty - attempt * 0.1),
       status: 'playing',
+      bridge: p.bridge,
+      iceZone: p.iceZone,
+      conveyor: p.conveyor,
     };
 
     if (isLevelSolvable(candidate, 400)) {
@@ -411,6 +493,9 @@ export function createLevel(n: number, rackSlots = BASE_RACK): GameState {
     moves: 0,
     stepPenalty: 2.2,
     status: 'playing',
+    bridge: p.bridge,
+    iceZone: p.iceZone,
+    conveyor: p.conveyor,
   };
 }
 

@@ -137,7 +137,17 @@ const tr = {
   "tryLevelAgain": "🔄 Bölümü Yeniden Dene",
   "mainMenu": "🏠 Ana Menü",
   "rewardedSlotAd": "Yuva Açma Ödüllü Reklamı",
-  "rewardedSwapAd": "Renk Dönüştürme Ödüllü Reklamı"
+  "rewardedSwapAd": "Renk Dönüştürme Ödüllü Reklamı",
+  "mech_bridge_title": "Ahşap Köprü Engeli",
+  "mech_bridge_desc": "Yılan köprü altından geçerken ipler korunur ve makaralara sökülemez! Yılan köprüden çıkana kadar hamlelerini dikkatle planla.",
+  "mech_ice_zone_title": "Buzlu Parkur Alanı",
+  "mech_ice_zone_desc": "Yılan buzlu alandan geçerken dondurucu soğuktan kilitlenir! Rafta bir makara patlatarak sıcaklık dalgası yaratabilir ve buzu çözebilirsin.",
+  "mech_conveyor_title": "Yürüyen Makara Bandı",
+  "mech_conveyor_desc": "Alttaki makaralar yürüyen bir bant gibi döner! Belirli hamlelerde makaralar yer değiştirir, doğru renklere denk getirmek için sırayı iyi takip et.",
+  "bridgeUnder": "🌉 Köprü Altında! (Korumalı)",
+  "iceFrozenZone": "❄️ Buzlu Bölge! (İpler Dondu)",
+  "conveyorShift": "⚙️ Yürüyen Bant Döndü!",
+  "conveyorBadge": "⚙️ Yürüyen Bant"
 };
 
 export type Strings = typeof tr;
@@ -258,7 +268,17 @@ const en: Strings = {
   "tryLevelAgain": "🔄 Try Level Again",
   "mainMenu": "🏠 Main Menu",
   "rewardedSlotAd": "Unlock Slot Rewarded Ad",
-  "rewardedSwapAd": "Color Swap Rewarded Ad"
+  "rewardedSwapAd": "Color Swap Rewarded Ad",
+  "mech_bridge_title": "Wooden Bridge Obstacle",
+  "mech_bridge_desc": "When the snake passes under the bridge, yarn is covered and cannot be unraveled! Plan your moves carefully until it emerges.",
+  "mech_ice_zone_title": "Frozen Track Zone",
+  "mech_ice_zone_desc": "When passing through the icy zone, threads freeze solid! Pop a spool on your rack to trigger a burst of heat and thaw the ice.",
+  "mech_conveyor_title": "Moving Conveyor Belt",
+  "mech_conveyor_desc": "The bottom spools rotate like a conveyor belt! Spools shift across columns every few moves, so time your taps wisely.",
+  "bridgeUnder": "🌉 Under Bridge! (Protected)",
+  "iceFrozenZone": "❄️ Frost Zone! (Yarn Frozen)",
+  "conveyorShift": "⚙️ Conveyor Shifted!",
+  "conveyorBadge": "⚙️ Conveyor"
 };
 
 const de: Strings = {
@@ -377,7 +397,17 @@ const de: Strings = {
   "tryLevelAgain": "🔄 Level neu starten",
   "mainMenu": "🏠 Hauptmenü",
   "rewardedSlotAd": "Slot-Freischaltung Belohnungs-Werbung",
-  "rewardedSwapAd": "Farbtausch Belohnungs-Werbung"
+  "rewardedSwapAd": "Farbtausch Belohnungs-Werbung",
+  "mech_bridge_title": "Holzbrücken-Hindernis",
+  "mech_bridge_desc": "Unter der Brücke ist die Wolle geschützt und kann nicht aufgewickelt werden! Plane deine Züge, bis die Schlange hervorkommt.",
+  "mech_ice_zone_title": "Vereiste Bahnzone",
+  "mech_ice_zone_desc": "In der Eiszone frieren Fäden ein! Lass eine Spule im Regal platzen, um Hitze freizusetzen und das Eis aufzutauen.",
+  "mech_conveyor_title": "Laufendes Spulen-Förderband",
+  "mech_conveyor_desc": "Die Spulen unten bewegen sich wie ein Förderband! Alle paar Züge wechseln sie die Spalten, also plane im Voraus.",
+  "bridgeUnder": "🌉 Unter der Brücke! (Geschützt)",
+  "iceFrozenZone": "❄️ Eiszone! (Wolle gefroren)",
+  "conveyorShift": "⚙️ Förderband weitergerückt!",
+  "conveyorBadge": "⚙️ Förderband"
 };
 
 const es: Strings = {
@@ -496,7 +526,17 @@ const es: Strings = {
   "tryLevelAgain": "🔄 Reiniciar nivel",
   "mainMenu": "🏠 Menú principal",
   "rewardedSlotAd": "Anuncio de recompensa para desbloquear espacio",
-  "rewardedSwapAd": "Anuncio de recompensa para cambiar color"
+  "rewardedSwapAd": "Anuncio de recompensa para cambiar color",
+  "mech_bridge_title": "Obstáculo del Puente de Madera",
+  "mech_bridge_desc": "¡Bajo el puente, la lana está protegida y no se puede enrollar! Planifica tus movimientos hasta que la serpiente salga.",
+  "mech_ice_zone_title": "Zona Helada de la Pista",
+  "mech_ice_zone_desc": "¡Al pasar por la zona helada, los hilos se congelan! Haz estallar un carrete en el estante para generar calor y descongelar.",
+  "mech_conveyor_title": "Cinta Transportadora de Carretes",
+  "mech_conveyor_desc": "¡Los carretes inferiores giran como una cinta transportadora! Se desplazan de columna cada pocos turnos, calcula bien tu jugada.",
+  "bridgeUnder": "🌉 ¡Bajo el puente! (Protegido)",
+  "iceFrozenZone": "❄️ ¡Zona Helada! (Lana congelada)",
+  "conveyorShift": "⚙️ ¡Cinta transportadora movida!",
+  "conveyorBadge": "⚙️ Transportador"
 };
 
 const fr: Strings = {
@@ -615,7 +655,17 @@ const fr: Strings = {
   "tryLevelAgain": "🔄 Recommencer le niveau",
   "mainMenu": "🏠 Menu principal",
   "rewardedSlotAd": "Publicité avec récompense pour débloquer un emplacement",
-  "rewardedSwapAd": "Publicité avec récompense pour changer de couleur"
+  "rewardedSwapAd": "Publicité avec récompense pour changer de couleur",
+  "mech_bridge_title": "Obstacle du Pont en Bois",
+  "mech_bridge_desc": "Sous le pont, la laine est protégée et ne peut pas être dévidée ! Anticipez vos mouvements jusqu’à ce que le serpent émerge.",
+  "mech_ice_zone_title": "Zone de Glace",
+  "mech_ice_zone_desc": "Dans la zone glacée, les fils gèlent ! Faites éclater une bobine sur le rack pour libérer de la chaleur et faire fondre la glace.",
+  "mech_conveyor_title": "Tapis Roulant de Bobines",
+  "mech_conveyor_desc": "Les bobines du bas se déplacent comme un tapis roulant ! Elles changent de colonne à intervalles réguliers, anticipez la rotation.",
+  "bridgeUnder": "🌉 Sous le pont ! (Protégé)",
+  "iceFrozenZone": "❄️ Zone de glace ! (Laine gelée)",
+  "conveyorShift": "⚙️ Tapis roulant déplacé !",
+  "conveyorBadge": "⚙️ Tapis roulant"
 };
 
 const it: Strings = {
@@ -734,7 +784,17 @@ const it: Strings = {
   "tryLevelAgain": "🔄 Ricomincia livello",
   "mainMenu": "🏠 Menu principale",
   "rewardedSlotAd": "Annuncio con ricompensa per sbloccare slot",
-  "rewardedSwapAd": "Annuncio con ricompensa per cambio colore"
+  "rewardedSwapAd": "Annuncio con ricompensa per cambio colore",
+  "mech_bridge_title": "Ostacolo Ponte di Legno",
+  "mech_bridge_desc": "Sotto il ponte, la lana è protetta e non può essere srotolata! Pianifica le mosse finché il serpente non riappare.",
+  "mech_ice_zone_title": "Zona di Ghiaccio",
+  "mech_ice_zone_desc": "Nella zona ghiacciata, i fili si congelano! Fai scoppiare un rocchetto sul rack per generare calore e sciogliere il ghiaccio.",
+  "mech_conveyor_title": "Nastro Trasportatore di Rocchetti",
+  "mech_conveyor_desc": "I rocchetti in basso scorrono come su una scala mobile! Cambiano colonna ogni poche mosse, calcola il momento giusto.",
+  "bridgeUnder": "🌉 Sotto il ponte! (Protetto)",
+  "iceFrozenZone": "❄️ Zona ghiacciata! (Lana gelata)",
+  "conveyorShift": "⚙️ Nastro trasportatore avanzato!",
+  "conveyorBadge": "⚙️ Trasportatore"
 };
 
 const pt: Strings = {
@@ -853,7 +913,17 @@ const pt: Strings = {
   "tryLevelAgain": "🔄 Tentar novamente",
   "mainMenu": "🏠 Menu Principal",
   "rewardedSlotAd": "Anúncio premiado para desbloquear espaço",
-  "rewardedSwapAd": "Anúncio premiado para trocar cor"
+  "rewardedSwapAd": "Anúncio premiado para trocar cor",
+  "mech_bridge_title": "Obstáculo da Ponte de Madeira",
+  "mech_bridge_desc": "Sob a ponte, a lã fica protegida e não pode ser desfeita! Planeje seus movimentos até que a cobra saia do túnel.",
+  "mech_ice_zone_title": "Zona Congelada da Trilha",
+  "mech_ice_zone_desc": "Na área congelada, os fios viram gelo! Complete um carretel no suporte para emitir calor e descongelar a lã.",
+  "mech_conveyor_title": "Esteira Rolante de Carretéis",
+  "mech_conveyor_desc": "Os carretéis inferiores se movem como uma esteira rolante! Eles giram entre as colunas a cada poucos turnos, preste atenção.",
+  "bridgeUnder": "🌉 Sob a ponte! (Protegido)",
+  "iceFrozenZone": "❄️ Zona Congelada! (Lã congelada)",
+  "conveyorShift": "⚙️ Esteira rolante avançou!",
+  "conveyorBadge": "⚙️ Esteira"
 };
 
 const ru: Strings = {
@@ -972,7 +1042,17 @@ const ru: Strings = {
   "tryLevelAgain": "🔄 Начать сначала",
   "mainMenu": "🏠 Главное меню",
   "rewardedSlotAd": "Реклама с наградой: Разблокировать слот",
-  "rewardedSwapAd": "Реклама с наградой: Сменить цвет"
+  "rewardedSwapAd": "Реклама с наградой: Сменить цвет",
+  "mech_bridge_title": "Препятствие: Деревянный мост",
+  "mech_bridge_desc": "Под мостом пряжа защищена и не может быть смотана! Планируйте ходы, пока змейка не выйдет из-под моста.",
+  "mech_ice_zone_title": "Ледяная зона дорожки",
+  "mech_ice_zone_desc": "В ледяной зоне нити замерзают! Заполните катушку на полке, чтобы создать волну тепла и растопить лёд.",
+  "mech_conveyor_title": "Движущийся конвейер катушек",
+  "mech_conveyor_desc": "Нижние катушки двигаются, как на конвейере! Каждые несколько ходов они смещаются между колонками, ловите нужный цвет.",
+  "bridgeUnder": "🌉 Под мостом! (Защищено)",
+  "iceFrozenZone": "❄️ Ледяная зона! (Пряжа замёрзла)",
+  "conveyorShift": "⚙️ Конвейер сместился!",
+  "conveyorBadge": "⚙️ Конвейер"
 };
 
 const ja: Strings = {
@@ -1091,7 +1171,17 @@ const ja: Strings = {
   "tryLevelAgain": "🔄 レベルを再挑戦",
   "mainMenu": "🏠 メインメニュー",
   "rewardedSlotAd": "スロット解放リワード広告",
-  "rewardedSwapAd": "色変換リワード広告"
+  "rewardedSwapAd": "色変換リワード広告",
+  "mech_bridge_title": "木の橋ギミック",
+  "mech_bridge_desc": "橋の下を通過中、毛糸は覆われて巻き取れません！ヘビが橋を抜けるまで慎重に手を打ちましょう。",
+  "mech_ice_zone_title": "氷結コースゾーン",
+  "mech_ice_zone_desc": "凍ったエリアでは糸がカチコチに！ラックで糸巻きを完成させて熱波を起こし、氷を溶かしましょう。",
+  "mech_conveyor_title": "回転コンベアベルト",
+  "mech_conveyor_desc": "下の糸巻きはコンベアのように移動します！数手ごとに列をスライドするので、タイミングを見計らってタップしましょう。",
+  "bridgeUnder": "🌉 橋の下！（保護中）",
+  "iceFrozenZone": "❄️ 凍結エリア！（毛糸凍結中）",
+  "conveyorShift": "⚙️ コンベアが動きました！",
+  "conveyorBadge": "⚙️ コンベア"
 };
 
 const ko: Strings = {
@@ -1210,7 +1300,17 @@ const ko: Strings = {
   "tryLevelAgain": "🔄 다시 시도",
   "mainMenu": "🏠 메인 메뉴",
   "rewardedSlotAd": "슬롯 잠금 해제 보상형 광고",
-  "rewardedSwapAd": "색상 변경 보상형 광고"
+  "rewardedSwapAd": "색상 변경 보상형 광고",
+  "mech_bridge_title": "나무 다리 장애물",
+  "mech_bridge_desc": "뱀이 다리 밑을 지날 때는 실이 보호되어 감을 수 없습니다! 다리를 빠져나올 때까지 수를 계산하세요.",
+  "mech_ice_zone_title": "얼어붙은 빙판 구역",
+  "mech_ice_zone_desc": "빙판 구역에서는 실이 꽁꽁 얼어붙습니다! 거치대에서 실타래를 완성해 열기를 일으켜 얼음을 녹이세요.",
+  "mech_conveyor_title": "무빙 컨베이어 벨트",
+  "mech_conveyor_desc": "아래의 실타래들이 컨베이어 벨트처럼 회전합니다! 몇 수마다 줄이 이동하므로 적절한 타이밍에 탭하세요.",
+  "bridgeUnder": "🌉 다리 밑! (보호됨)",
+  "iceFrozenZone": "❄️ 빙판 구역! (실 얼어붙음)",
+  "conveyorShift": "⚙️ 컨베이어 이동 완료!",
+  "conveyorBadge": "⚙️ 컨베이어"
 };
 
 const zh: Strings = {
@@ -1329,7 +1429,17 @@ const zh: Strings = {
   "tryLevelAgain": "🔄 重新挑战关卡",
   "mainMenu": "🏠 主菜单",
   "rewardedSlotAd": "解锁卡槽激励广告",
-  "rewardedSwapAd": "颜色转换激励广告"
+  "rewardedSwapAd": "颜色转换激励广告",
+  "mech_bridge_title": "木桥障碍",
+  "mech_bridge_desc": "当毛线蛇穿过木桥时，毛线受到保护无法被缠绕！请仔细规划，直到它离开桥下。",
+  "mech_ice_zone_title": "冰冻轨道区域",
+  "mech_ice_zone_desc": "穿过冰封区域时，毛线会被彻底冻结！在卡槽完成线轴以释放热浪融化冰霜。",
+  "mech_conveyor_title": "旋转传送带",
+  "mech_conveyor_desc": "下方的线轴会像传送带一样旋转！每隔几步线轴就会移动位置，请把握时机点击。",
+  "bridgeUnder": "🌉 桥底穿行！（受保护）",
+  "iceFrozenZone": "❄️ 冰冻区域！（毛线冻结）",
+  "conveyorShift": "⚙️ 传送带已旋转！",
+  "conveyorBadge": "⚙️ 传送带"
 };
 
 const ar: Strings = {
@@ -1448,7 +1558,17 @@ const ar: Strings = {
   "tryLevelAgain": "🔄 إعادة تجربة المستوى",
   "mainMenu": "🏠 القائمة الرئيسية",
   "rewardedSlotAd": "إعلان بمكافأة: فتح فتحة إضافية",
-  "rewardedSwapAd": "إعلان بمكافأة: تبديل اللون"
+  "rewardedSwapAd": "إعلان بمكافأة: تبديل اللون",
+  "mech_bridge_title": "عائق الجسر الخشبي",
+  "mech_bridge_desc": "أثناء مرور الأفعى تحت الجسر، يكون الصوف محمياً ولا يمكن لفه! خطط لنقلاتك بحذر حتى تخرج من تحته.",
+  "mech_ice_zone_title": "منطقة المسار المتجمدة",
+  "mech_ice_zone_desc": "عند المرور في المنطقة الجليدية، تتجمد الخيوط! املأ بكرة على الرف لتوليد موجة حرارية وإذابة الجليد.",
+  "mech_conveyor_title": "حزام النقل المتحرك",
+  "mech_conveyor_desc": "تتحرك البكرات بالأسفل مثل حزام النقل! تتنقل بين الأعمدة كل بضع نقلات، فترقب التوقيت المناسب.",
+  "bridgeUnder": "🌉 تحت الجسر! (محمي)",
+  "iceFrozenZone": "❄️ منطقة جليدية! (الصوف متجمد)",
+  "conveyorShift": "⚙️ تحرك حزام النقل!",
+  "conveyorBadge": "⚙️ حزام النقل"
 };
 
 export type Lang = 'tr' | 'en' | 'de' | 'es' | 'fr' | 'it' | 'pt' | 'ru' | 'ja' | 'ko' | 'zh' | 'ar';

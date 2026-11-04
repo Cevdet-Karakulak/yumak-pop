@@ -157,6 +157,9 @@ export function MechanicIntroSheet({
     frozen: t.mech_frozen_title,
     dual: t.mech_dual_title,
     vortex: t.mech_vortex_title,
+    bridge: t.mech_bridge_title,
+    ice_zone: t.mech_ice_zone_title,
+    conveyor: t.mech_conveyor_title,
   };
   const descMap: Record<MechanicKind, string> = {
     basic: t.mech_basic_desc,
@@ -168,6 +171,9 @@ export function MechanicIntroSheet({
     frozen: t.mech_frozen_desc,
     dual: t.mech_dual_desc,
     vortex: t.mech_vortex_desc,
+    bridge: t.mech_bridge_desc,
+    ice_zone: t.mech_ice_zone_desc,
+    conveyor: t.mech_conveyor_desc,
   };
 
   return (
@@ -191,6 +197,30 @@ export function MechanicIntroSheet({
         {mechanic === 'vortex' && (
           <View style={styles.vortexIcon}>
             <Ionicons name="warning" size={44} color="#fff" />
+          </View>
+        )}
+        {mechanic === 'bridge' && (
+          <View style={{ alignItems: 'center' }}>
+            <T style={{ fontSize: 52 }}>🌉</T>
+            <T style={{ fontSize: 13, color: UI.coral, fontFamily: FONT.black, marginTop: 4 }}>
+              {t.mech_bridge_title}
+            </T>
+          </View>
+        )}
+        {mechanic === 'ice_zone' && (
+          <View style={{ alignItems: 'center' }}>
+            <T style={{ fontSize: 52 }}>❄️</T>
+            <T style={{ fontSize: 13, color: '#0284C7', fontFamily: FONT.black, marginTop: 4 }}>
+              {t.mech_ice_zone_title}
+            </T>
+          </View>
+        )}
+        {mechanic === 'conveyor' && (
+          <View style={{ alignItems: 'center' }}>
+            <T style={{ fontSize: 52 }}>⚙️</T>
+            <T style={{ fontSize: 13, color: UI.gold, fontFamily: FONT.black, marginTop: 4 }}>
+              {t.mech_conveyor_title}
+            </T>
           </View>
         )}
       </View>
