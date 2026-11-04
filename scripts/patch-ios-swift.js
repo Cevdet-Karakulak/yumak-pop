@@ -86,4 +86,28 @@ if (fs.existsSync(jsObjPath)) {
   console.log('[patch-ios-swift] JavaScriptObject.swift not found at:', jsObjPath);
 }
 
+// 3. Patch RuntimeScheduler.h in expo-modules-jsi (strip SWIFT_RETURNS_RETAINED which is unknown in Swift 6.0 / Clang)
+const runtimeSchedulerPath = path.resolve(
+  nodeModulesDir,
+  'expo-modules-jsi',
+  'apple',
+  'Sources',
+  'ExpoModulesJSI-Cxx',
+  'include',
+  'RuntimeScheduler.h'
+);
+
+if (fs.existsSync(runtimeSchedulerPath)) {
+  let content = fs.readFileSync(runtimeSchedulerPath, 'utf8');
+  if (content.includes('SWIFT_RETURNS_RETAINED')) {
+    content = content.replace(/\s*SWIFT_RETURNS_RETAINED/g, '');
+    fs.writeFileSync(runtimeSchedulerPath, content, 'utf8');
+    console.log('[patch-ios-swift] Successfully stripped SWIFT_RETURNS_RETAINED from RuntimeScheduler.h for Swift 6.0!');
+  } else {
+    console.log('[patch-ios-swift] RuntimeScheduler.h already patched.');
+  }
+} else {
+  console.log('[patch-ios-swift] RuntimeScheduler.h not found at:', runtimeSchedulerPath);
+}
+
 console.log('[patch-ios-swift] All Swift compatibility patches applied successfully!');
