@@ -178,7 +178,7 @@ if (fs.existsSync(jsErrPath)) {
   console.log('[patch-ios-swift] JavaScriptError.swift not found at:', jsErrPath);
 }
 
-// 6. Patch JavaScriptActor.swift in expo-modules-jsi (bypass actor hop in assumeIsolated via direct closure unsafeBitCast)
+// 6. Patch JavaScriptActor.swift in expo-modules-jsi (make runIsolated nonisolated taking () -> T so assumeIsolated needs neither actor access nor escaping conversion)
 const jsActorPath = path.resolve(
   nodeModulesDir,
   'expo-modules-jsi',
@@ -193,44 +193,78 @@ if (fs.existsSync(jsActorPath)) {
   let content = fs.readFileSync(jsActorPath, 'utf8');
   let changed = false;
 
-  // Restore @JavaScriptActor to runIsolated if it was previously stripped
-  if (!content.includes('@JavaScriptActor\n  @usableFromInline\n  internal static func runIsolated')) {
+  // Remove @JavaScriptActor from runIsolated / runIsolatedThrowing and from their operation parameter
+  if (content.includes('@JavaScriptActor\n  @usableFromInline\n  internal static func runIsolated')) {
     content = content.replace(
-      /@usableFromInline\s*\n\s*internal static func runIsolated/g,
-      '@JavaScriptActor\n  @usableFromInline\n  internal static func runIsolated'
+      /@JavaScriptActor\s*\n\s*@usableFromInline\s*\n\s*internal static func runIsolated/g,
+      '@usableFromInline\n  internal static func runIsolated'
     );
     changed = true;
   }
 
-  // Patch assumeIsolated non-throwing overload
-  const targetAssume = `    let runner = unsafeBitCast(runIsolated as IsolatedRunner, to: NonisolatedRunner.self)
-    return runner(operation)`;
-  const replaceAssume = `    typealias NonisolatedOp = () -> T
-    let raw = unsafeBitCast(operation, to: NonisolatedOp.self)
-    return raw()`;
-
-  if (content.includes(targetAssume)) {
-    content = content.replace(targetAssume, replaceAssume);
+  if (content.includes('internal static func runIsolated<T: ~Copyable>(_ operation: @JavaScriptActor () -> T) -> T')) {
+    content = content.replace(
+      'internal static func runIsolated<T: ~Copyable>(_ operation: @JavaScriptActor () -> T) -> T',
+      'internal static func runIsolated<T: ~Copyable>(_ operation: () -> T) -> T'
+    );
     changed = true;
   }
 
-  // Patch assumeIsolated throwing overload
-  const targetAssumeThrowing = `    let runner = unsafeBitCast(runIsolatedThrowing as IsolatedRunner, to: NonisolatedRunner.self)
-    return try runner(operation)`;
-  const replaceAssumeThrowing = `    typealias NonisolatedOp = () throws -> T
+  if (content.includes('internal static func runIsolatedThrowing<T: ~Copyable>(_ operation: @JavaScriptActor () throws -> T) throws -> T')) {
+    content = content.replace(
+      'internal static func runIsolatedThrowing<T: ~Copyable>(_ operation: @JavaScriptActor () throws -> T) throws -> T',
+      'internal static func runIsolatedThrowing<T: ~Copyable>(_ operation: () throws -> T) throws -> T'
+    );
+    changed = true;
+  }
+
+  // Update IsolatedRunner typealiases in assumeIsolated to match nonisolated runIsolated
+  if (content.includes('typealias IsolatedRunner = @JavaScriptActor (@JavaScriptActor () -> T) -> T')) {
+    content = content.replace(
+      'typealias IsolatedRunner = @JavaScriptActor (@JavaScriptActor () -> T) -> T',
+      'typealias IsolatedRunner = (() -> T) -> T'
+    );
+    changed = true;
+  }
+
+  if (content.includes('typealias IsolatedRunner = @JavaScriptActor (@JavaScriptActor () throws -> T) throws -> T')) {
+    content = content.replace(
+      'typealias IsolatedRunner = @JavaScriptActor (@JavaScriptActor () throws -> T) throws -> T',
+      'typealias IsolatedRunner = (() throws -> T) -> T'
+    );
+    changed = true;
+  }
+
+  // Restore runner call if previously replaced with NonisolatedOp
+  const prevNonisolatedOp = `    typealias NonisolatedOp = () -> T
+    let raw = unsafeBitCast(operation, to: NonisolatedOp.self)
+    return raw()`;
+  if (content.includes(prevNonisolatedOp)) {
+    content = content.replace(
+      prevNonisolatedOp,
+      `    let runner = unsafeBitCast(runIsolated as IsolatedRunner, to: NonisolatedRunner.self)
+    return runner(operation)`
+    );
+    changed = true;
+  }
+
+  const prevNonisolatedOpThrowing = `    typealias NonisolatedOp = () throws -> T
     let raw = unsafeBitCast(operation, to: NonisolatedOp.self)
     return try raw()`;
-
-  if (content.includes(targetAssumeThrowing)) {
-    content = content.replace(targetAssumeThrowing, replaceAssumeThrowing);
+  if (content.includes(prevNonisolatedOpThrowing)) {
+    content = content.replace(
+      prevNonisolatedOpThrowing,
+      `    let runner = unsafeBitCast(runIsolatedThrowing as IsolatedRunner, to: NonisolatedRunner.self)
+    return try runner(operation)`
+    );
     changed = true;
   }
 
   if (changed) {
     fs.writeFileSync(jsActorPath, content, 'utf8');
-    console.log('[patch-ios-swift] Successfully patched JavaScriptActor.swift assumeIsolated for Swift 6!');
+    console.log('[patch-ios-swift] Successfully patched JavaScriptActor.swift assumeIsolated & runIsolated for Swift 6.0!');
   } else {
-    console.log('[patch-ios-swift] JavaScriptActor.swift assumeIsolated already patched.');
+    console.log('[patch-ios-swift] JavaScriptActor.swift already patched.');
   }
 } else {
   console.log('[patch-ios-swift] JavaScriptActor.swift not found at:', jsActorPath);
@@ -294,7 +328,7 @@ if (fs.existsSync(jsPromisePath)) {
   console.log('[patch-ios-swift] JavaScriptPromise.swift not found at:', jsPromisePath);
 }
 
-// 9. Patch JavaScriptCallback.swift in expo-modules-jsi (remove @JavaScriptActor from LongLivedState and add nonisolated init)
+// 9. Patch JavaScriptCallback.swift in expo-modules-jsi (LongLivedState nonisolated init + @Sendable on local @JavaScriptActor func call)
 const jsCallbackPath = path.resolve(
   nodeModulesDir,
   'expo-modules-jsi',
@@ -316,6 +350,27 @@ if (fs.existsSync(jsCallbackPath)) {
     changed = true;
     console.log('[patch-ios-swift] Successfully patched LongLivedState in JavaScriptCallback.swift!');
   }
+
+  // In Swift 6.0 (Xcode 16), local @JavaScriptActor functions are not inferred as @Sendable when passed as function values
+  if (content.includes('    @JavaScriptActor\n    func call(_ function: borrowing JavaScriptFunction, _ runtime: JavaScriptRuntime)')) {
+    content = content.replace(
+      /    @JavaScriptActor\n    func call\(_ function: borrowing JavaScriptFunction, _ runtime: JavaScriptRuntime\)/g,
+      '    @JavaScriptActor @Sendable\n    func call(_ function: borrowing JavaScriptFunction, _ runtime: JavaScriptRuntime)'
+    );
+    changed = true;
+    console.log('[patch-ios-swift] Added @Sendable to local func call in JavaScriptCallback.swift!');
+  }
+
+  // Also ensure @escaping @JavaScriptActor closures captured by local func call are explicitly @Sendable
+  if (content.includes('@escaping @JavaScriptActor (')) {
+    content = content.replace(
+      /@escaping @JavaScriptActor \(/g,
+      '@escaping @JavaScriptActor @Sendable ('
+    );
+    changed = true;
+    console.log('[patch-ios-swift] Added @Sendable to @escaping @JavaScriptActor closures in JavaScriptCallback.swift!');
+  }
+
   if (changed) {
     fs.writeFileSync(jsCallbackPath, content, 'utf8');
   } else {
@@ -323,6 +378,29 @@ if (fs.existsSync(jsCallbackPath)) {
   }
 } else {
   console.log('[patch-ios-swift] JavaScriptCallback.swift not found at:', jsCallbackPath);
+}
+
+// 10. Patch build-xcframework.sh in expo-modules-jsi to pass SWIFT_STRICT_CONCURRENCY=minimal
+const buildXcfPath = path.resolve(
+  nodeModulesDir,
+  'expo-modules-jsi',
+  'apple',
+  'scripts',
+  'build-xcframework.sh'
+);
+
+if (fs.existsSync(buildXcfPath)) {
+  let content = fs.readFileSync(buildXcfPath, 'utf8');
+  if (!content.includes('SWIFT_STRICT_CONCURRENCY=minimal') && content.includes('SWIFT_COMPILATION_MODE=wholemodule')) {
+    content = content.replace(
+      'SWIFT_COMPILATION_MODE=wholemodule \\',
+      'SWIFT_COMPILATION_MODE=wholemodule \\\n    SWIFT_STRICT_CONCURRENCY=minimal \\'
+    );
+    fs.writeFileSync(buildXcfPath, content, 'utf8');
+    console.log('[patch-ios-swift] Added SWIFT_STRICT_CONCURRENCY=minimal to build-xcframework.sh!');
+  } else {
+    console.log('[patch-ios-swift] build-xcframework.sh already patched.');
+  }
 }
 
 console.log('[patch-ios-swift] All Swift compatibility patches applied successfully!');

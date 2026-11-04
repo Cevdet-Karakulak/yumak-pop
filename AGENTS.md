@@ -9,9 +9,9 @@
    - `RuntimeScheduler.h` içindeki `SWIFT_RETURNS_RETAINED` makrosu Swift 6.0 / Clang C++ derleyicisinde tanınmaz ve `expected ';' at end of declaration list` hatası verir. Bu makro temizlenmelidir.
    - `JavaScriptRef.swift` içindeki `, Escapable` ibaresi kaldırılmalıdır (`type 'Escapable' requires -enable-experimental-feature NonescapableTypes`).
    - `JavaScriptError.swift` içindeki `CppError` uzantısında `public var message` -> `var message` yapılarak library evolution ABI hatası önlenmelidir.
-   - `JavaScriptActor.swift` dosyasındaki `assumeIsolated` fonksiyonları `unsafeBitCast(operation, to: NonisolatedOp.self)()` ile doğrudan çağrılmalı; actor hop ve nonisolated statik metot erişim hataları tamamen engellenmelidir.
+   - `JavaScriptActor.swift` dosyasındaki `runIsolated` ve `runIsolatedThrowing` fonksiyonları `nonisolated` yapılmalı ve parametreleri `() -> T` / `() throws -> T` olarak güncellenmelidir (`IsolatedRunner = (() -> T) -> T`); böylece `assumeIsolated` içinde ne actor izolasyon hatası ne de non-escaping generic dönüşüm hatası oluşur.
    - `JavaScriptRuntime.swift` içindeki bare-slash regex (`/^[a-zA-Z_$][a-zA-Z0-9_$]*$/`) Swift 5 modunda integer literal olarak yorumlanıp patlar (`'$' is not a valid digit in integer literal`); `range(of: ..., options: .regularExpression)` ile değiştirilmelidir.
-   - `JavaScriptPromise.swift` ve `JavaScriptCallback.swift` içindeki `LongLivedState` sınıfından `@JavaScriptActor` kaldırılarak veya `nonisolated init()` eklenerek nonisolated bağlamdan çağrılabilmesi sağlanmalıdır.
+   - `JavaScriptPromise.swift` ve `JavaScriptCallback.swift` içindeki `LongLivedState` sınıfından `@JavaScriptActor` kaldırılarak `nonisolated init()` eklenmeli; ayrıca `JavaScriptCallback.swift` içindeki yerel `@JavaScriptActor func call` fonksiyonlarına `@Sendable` eklenmelidir.
    - `JavaScriptObject.swift` içinde Swift 6 actor veri yarışı için pointer UInt üzerinden cast edilmelidir.
    - Bu adımlar `scripts/patch-ios-swift.js` içinde otomatik uygulanmalıdır.
 
