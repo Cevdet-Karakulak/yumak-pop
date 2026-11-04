@@ -1,0 +1,252 @@
+name: "Build Mobile Lab (APK & iOS IPA via GitHub Actions)"
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Derleme Hedefi"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - "all"
+          - "android-only"
+          - "ios-only"
+  push:
+    branches:
+      - lab-sandbox-v2
+
+permissions:
+  contents: write
+
+jobs:
+  # ==========================================
+  # ANDROID BUILD (APK - Zero EAS Quota)
+  # ==========================================
+  build-android:
+    name: "Android APK Build (Ubuntu Runner)"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || inputs.target != 'ios-only'
+    timeout-minutes: 30
+
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v4
+
+      - name: "Setup Java 17"
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: "Setup Node.js 20"
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: "Install dependencies"
+        run: npm ci
+
+      - name: "Expo Android Prebuild"
+        run: npx expo prebuild --platform android --no-install --clean
+
+      - name: "Generate Keystore"
+        run: |
+          keytool -genkeypair -v \
+            -keystore android/app/release.keystore \
+            -alias yumakpop \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass yumakpop2026 \
+            -keypass yumakpop2026 \
+            -dname "CN=FloppaTech, OU=Mobile, O=FloppaTech Corp, L=Istanbul, ST=Istanbul, C=TR"
+
+      - name: "Build Android Release APK"
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+          cd ..
+
+      - name: "Sign Release APK"
+        run: |
+          BT_DIR=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -n 1)
+          echo "Using Android Build Tools: $BT_DIR"
+          
+          RAW_APK=$(find android/app/build/outputs/apk/release -name "*.apk" | head -n 1)
+          echo "Found Raw APK at: $RAW_APK"
+          
+          $BT_DIR/zipalign -v -p 4 "$RAW_APK" android/app/build/outputs/apk/release/app-aligned.apk || cp "$RAW_APK" android/app/build/outputs/apk/release/app-aligned.apk
+          $BT_DIR/apksigner sign --ks android/app/release.keystore --ks-pass pass:yumakpop2026 --ks-key-alias yumakpop --key-pass pass:yumakpop2026 --out YumakPop-Lab-release.apk android/app/build/outputs/apk/release/app-aligned.apk
+          $BT_DIR/apksigner verify YumakPop-Lab-release.apk
+          ls -lh YumakPop-Lab-release.apk
+
+      - name: "Upload Android APK Artifact"
+        uses: actions/upload-artifact@v4
+        with:
+          name: "android-lab-apk"
+          path: "YumakPop-Lab-release.apk"
+          if-no-files-found: error
+          retention-days: 14
+
+  # ==========================================
+  # iOS BUILD (IPA - Zero EAS Quota)
+  # ==========================================
+  build-ios:
+    name: "iOS IPA Build (macOS Runner)"
+    runs-on: macos-14
+    if: github.event_name == 'push' || inputs.target != 'android-only'
+    timeout-minutes: 45
+
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v4
+
+      - name: "Select Xcode"
+        run: |
+          LATEST_XCODE=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -n 1)
+          if [ -n "$LATEST_XCODE" ]; then
+            echo "Selecting Xcode: $LATEST_XCODE"
+            sudo xcode-select -switch "$LATEST_XCODE"
+          fi
+          xcodebuild -version
+          swift --version
+
+      - name: "Setup Node.js 20"
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: "Install dependencies"
+        run: npm ci
+
+      - name: "Apply Swift Compatibility Patches"
+        run: node scripts/patch-ios-swift.js
+
+      - name: "Expo iOS Prebuild"
+        run: npx expo prebuild --platform ios --clean --no-install
+
+      - name: "CocoaPods install"
+        run: |
+          cd ios
+          pod install
+          cd ..
+
+      - name: "Detect Workspace and Scheme"
+        id: detect
+        run: |
+          WS=$(find ios -name "*.xcworkspace" -maxdepth 1 | head -n 1)
+          SCHEME=$(basename "$WS" .xcworkspace)
+          echo "Found workspace: $WS"
+          echo "Found scheme: $SCHEME"
+          echo "workspace=$WS" >> $GITHUB_OUTPUT
+          echo "scheme=$SCHEME" >> $GITHUB_OUTPUT
+
+      - name: "Build iOS Device App (Release ARM64)"
+        run: |
+          xcodebuild -workspace "${{ steps.detect.outputs.workspace }}" \
+            -scheme "${{ steps.detect.outputs.scheme }}" \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build_device \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            SWIFT_STRICT_CONCURRENCY=minimal \
+            build
+
+          APP_PATH=$(find build_device/Build/Products -name "*.app" | grep -v "Pods" | head -n 1)
+          echo "Found Device App at: $APP_PATH"
+          mkdir -p Payload
+          cp -r "$APP_PATH" Payload/
+          zip -r YumakPop-Lab-unsigned.ipa Payload/
+          ls -lh YumakPop-Lab-unsigned.ipa
+
+      - name: "Build iOS Simulator App"
+        run: |
+          xcodebuild -workspace "${{ steps.detect.outputs.workspace }}" \
+            -scheme "${{ steps.detect.outputs.scheme }}" \
+            -configuration Release \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build_sim \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            SWIFT_STRICT_CONCURRENCY=minimal \
+            build
+
+          SIM_APP_PATH=$(find build_sim/Build/Products -name "*.app" | grep -v "Pods" | head -n 1)
+          echo "Found Simulator App at: $SIM_APP_PATH"
+          cd "$(dirname "$SIM_APP_PATH")"
+          zip -r "$GITHUB_WORKSPACE/YumakPop-Lab-Simulator.zip" "$(basename "$SIM_APP_PATH")"
+          cd "$GITHUB_WORKSPACE"
+          ls -lh YumakPop-Lab-Simulator.zip
+
+      - name: "Upload iOS Artifacts"
+        uses: actions/upload-artifact@v4
+        with:
+          name: "ios-lab-builds"
+          path: |
+            YumakPop-Lab-unsigned.ipa
+            YumakPop-Lab-Simulator.zip
+          if-no-files-found: error
+          retention-days: 14
+
+  # ==========================================
+  # AUTOMATIC GITHUB RELEASE WITH DOWNLOAD LINKS
+  # ==========================================
+  create-release:
+    name: "Publish GitHub Release"
+    runs-on: ubuntu-latest
+    needs: [build-android, build-ios]
+    if: always() && (needs.build-android.result == 'success' || needs.build-ios.result == 'success')
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v4
+
+      - name: "Download Android Artifacts"
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: "android-lab-apk"
+          path: "release-files/"
+
+      - name: "Download iOS Artifacts"
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: "ios-lab-builds"
+          path: "release-files/"
+
+      - name: "List release files"
+        run: ls -la release-files/ || true
+
+      - name: "Create GitHub Release"
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "v1.0.0-lab-build.${{ github.run_number }}"
+          name: "Yumak Pop Lab v1.0.0 (Build #${{ github.run_number }})"
+          body: |
+            ## 🧶 Yumak Pop Lab (Yenilikler Sandbox v2)
+
+            Bu derleme **GitHub Actions** üzerinde EAS kotası harcanmadan otomatik olarak üretilmiştir.
+
+            ### 📦 İndirilebilir Paketler:
+            * **`YumakPop-Lab-release.apk`**: Android cihazlar için imzalı, doğrudan yüklenebilir APK dosyası.
+            * **`YumakPop-Lab-unsigned.ipa`**: iPhone / iPad cihazlar için IPA paketi (Sideloadly, AltStore, Scarlet, TrollStore ile tek tıkla kurulabilir).
+            * **`YumakPop-Lab-Simulator.zip`**: Mac Xcode iOS Simulator için sürükle-bırak test paketi.
+
+            ### 🧪 Bu Sürümdeki Yenilikler:
+            * 🪵 **Bobbin'in Gerçekçi Ahşap Atölyesi** (Stop-motion diorama, torna kayın sallanan koltuk, kışlık zanaatkar kostümü)
+            * 🎵 **Sakin ASMR Kalimba Akorları** (Do-Mi-Sol-Si-Do tınıları & %25 yumuşak Slo-Mo modu)
+            * 🔀 **Seçici Çatal Parkur (Bölüm 115)** (Y-kavşağında iki kuyuya akan çift başlı yılan)
+
+            ---
+            *FloppaTech Corp - Tüm Hakları Saklıdır.*
+          files: |
+            release-files/*
+          draft: false
+          prerelease: true
