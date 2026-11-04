@@ -3,7 +3,7 @@ const path = require('path');
 
 console.log('[patch-ios-swift] Running Swift compatibility patches...');
 
-// 1. Patch Package.swift files to swift-tools-version: 6.0
+// 1. Patch Package.swift files to swift-tools-version: 6.0 and swiftLanguageModes: [.v5]
 function patchPackageSwift(dir) {
   if (!fs.existsSync(dir)) return;
   const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -21,6 +21,11 @@ function patchPackageSwift(dir) {
           content = content.replace(/swift-tools-version:\s*6\.2/g, 'swift-tools-version: 6.0');
           changed = true;
           console.log(`[patch-ios-swift] Downgraded swift-tools-version to 6.0 in: ${fullPath}`);
+        }
+        if (content.includes('swiftLanguageModes: [.v6]')) {
+          content = content.replace(/swiftLanguageModes:\s*\[\.v6\]/g, 'swiftLanguageModes: [.v5]');
+          changed = true;
+          console.log(`[patch-ios-swift] Changed swiftLanguageModes to [.v5] in: ${fullPath}`);
         }
         // Remove invalid -Werror warning group flags (e.g. "-Werror", "ImplicitStrongCapture") rejected by Swift 6.0 driver
         if (content.includes('-Werror')) {
@@ -108,6 +113,90 @@ if (fs.existsSync(runtimeSchedulerPath)) {
   }
 } else {
   console.log('[patch-ios-swift] RuntimeScheduler.h not found at:', runtimeSchedulerPath);
+}
+
+// 4. Patch JavaScriptRef.swift in expo-modules-jsi (strip Escapable which requires experimental NonescapableTypes in Swift 6.0)
+const jsRefPath = path.resolve(
+  nodeModulesDir,
+  'expo-modules-jsi',
+  'apple',
+  'Sources',
+  'ExpoModulesJSI',
+  'Runtime',
+  'JavaScriptRef.swift'
+);
+
+if (fs.existsSync(jsRefPath)) {
+  let content = fs.readFileSync(jsRefPath, 'utf8');
+  if (content.includes(', Escapable')) {
+    content = content.replace(/,\s*Escapable/g, '');
+    fs.writeFileSync(jsRefPath, content, 'utf8');
+    console.log('[patch-ios-swift] Successfully stripped Escapable from JavaScriptRef.swift!');
+  } else {
+    console.log('[patch-ios-swift] JavaScriptRef.swift already patched.');
+  }
+} else {
+  console.log('[patch-ios-swift] JavaScriptRef.swift not found at:', jsRefPath);
+}
+
+// 5. Patch JavaScriptError.swift in expo-modules-jsi (remove public from CppError extension to prevent library evolution error)
+const jsErrPath = path.resolve(
+  nodeModulesDir,
+  'expo-modules-jsi',
+  'apple',
+  'Sources',
+  'ExpoModulesJSI',
+  'Runtime',
+  'Values',
+  'JavaScriptError.swift'
+);
+
+if (fs.existsSync(jsErrPath)) {
+  let content = fs.readFileSync(jsErrPath, 'utf8');
+  const target = `extension expo.CppError: Error {
+  public var message: String {`;
+  const replacement = `extension expo.CppError: Error {
+  var message: String {`;
+  if (content.includes(target)) {
+    content = content.replace(target, replacement);
+    fs.writeFileSync(jsErrPath, content, 'utf8');
+    console.log('[patch-ios-swift] Successfully patched JavaScriptError.swift CppError extension!');
+  } else {
+    console.log('[patch-ios-swift] JavaScriptError.swift already patched.');
+  }
+} else {
+  console.log('[patch-ios-swift] JavaScriptError.swift not found at:', jsErrPath);
+}
+
+// 6. Patch JavaScriptActor.swift in expo-modules-jsi (remove @JavaScriptActor from static runIsolated to allow nonisolated callers)
+const jsActorPath = path.resolve(
+  nodeModulesDir,
+  'expo-modules-jsi',
+  'apple',
+  'Sources',
+  'ExpoModulesJSI',
+  'Runtime',
+  'JavaScriptActor.swift'
+);
+
+if (fs.existsSync(jsActorPath)) {
+  let content = fs.readFileSync(jsActorPath, 'utf8');
+  let changed = false;
+  if (content.includes('@JavaScriptActor\n  @usableFromInline\n  internal static func runIsolated')) {
+    content = content.replace(
+      /@JavaScriptActor\s*\n\s*@usableFromInline\s*\n\s*internal static func runIsolated/g,
+      '@usableFromInline\n  internal static func runIsolated'
+    );
+    changed = true;
+    console.log('[patch-ios-swift] Successfully made runIsolated nonisolated in JavaScriptActor.swift!');
+  }
+  if (changed) {
+    fs.writeFileSync(jsActorPath, content, 'utf8');
+  } else {
+    console.log('[patch-ios-swift] JavaScriptActor.swift runIsolated already patched.');
+  }
+} else {
+  console.log('[patch-ios-swift] JavaScriptActor.swift not found at:', jsActorPath);
 }
 
 console.log('[patch-ios-swift] All Swift compatibility patches applied successfully!');

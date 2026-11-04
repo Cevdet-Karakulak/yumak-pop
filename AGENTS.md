@@ -3,9 +3,13 @@
 ## 🛠️ iOS & Android Derleme Hafızası (Sıfır EAS Kotası)
 1. **Xcode 16 (Apple Swift 6.0) Manifest & Compiler Düzeltmeleri**:
    - `Package.swift` içinde `swift-tools-version: 6.2` görüldüğünde derhal `6.0` seviyesine çekilmelidir.
+   - `swiftLanguageModes: [.v6]` -> `[.v5]` seviyesine çekilerek katı concurrency ve Sendable kilitlenmeleri önlenmelidir.
    - Swift 6.0 manifest sözdiziminde argüman listesi sonundaki virgüller (`,\s*\)`) yasaktır (`unexpected ',' separator`).
    - `unsafeFlags` içindeki `"-Werror", "<WarningName>"` ikilileri (örn: `ImplicitStrongCapture`, `NoUsage`) Xcode 27 içindir; Swift 6.0 derleyici sürücüsü bunu `Driver threw unknown argument: '-Werror'` diyerek patlatır. Bunlar temizlenmelidir.
    - `RuntimeScheduler.h` içindeki `SWIFT_RETURNS_RETAINED` makrosu Swift 6.0 / Clang C++ derleyicisinde tanınmaz ve `expected ';' at end of declaration list` hatası verir. Bu makro temizlenmelidir.
+   - `JavaScriptRef.swift` içindeki `, Escapable` ibaresi kaldırılmalıdır (`type 'Escapable' requires -enable-experimental-feature NonescapableTypes`).
+   - `JavaScriptError.swift` içindeki `CppError` uzantısında `public var message` -> `var message` yapılarak library evolution ABI hatası önlenmelidir.
+   - `JavaScriptActor.swift` dosyasındaki `runIsolated` fonksiyonları `nonisolated` yapılmalıdır.
    - `JavaScriptObject.swift` içinde Swift 6 actor veri yarışı için pointer UInt üzerinden cast edilmelidir.
    - Bu adımlar `scripts/patch-ios-swift.js` içinde otomatik uygulanmalıdır.
 
