@@ -145,7 +145,7 @@ jobs:
           IOS_PROFILE_BASE64: ${{ secrets.IOS_PROFILE_BASE64 }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          SIGN_DIR=$(mktemp -d "$RUNNER_TEMP/yumak-signing.XXXXXX")
+          export SIGN_DIR=$(mktemp -d "$RUNNER_TEMP/yumak-signing.XXXXXX")
           KEYCHAIN="$SIGN_DIR/yumak.keychain-db"
           KEYCHAIN_PASS=$(openssl rand -hex 24)
           echo "SIGN_DIR=$SIGN_DIR" >> $GITHUB_ENV
