@@ -14,6 +14,8 @@
    - `JavaScriptPromise.swift` ve `JavaScriptCallback.swift` içindeki `LongLivedState` sınıfından `@JavaScriptActor` kaldırılarak `nonisolated init()` eklenmeli; ayrıca `JavaScriptCallback.swift` içindeki yerel `@JavaScriptActor func call` fonksiyonları `@Sendable` yerel fonksiyon olamayacağı için `let call: @JavaScriptActor @Sendable (...) = { ... }` olarak yazılmalıdır.
    - `Task+immediate.swift` içindeki `Task.immediate` ve `Task(name:)` çağrıları iOS 26 SDK gerektirdiğinden Xcode 16 için `Task(priority: priority ?? .high, operation: operation)` olarak sadeleştirilmelidir.
    - `JavaScriptRuntime.swift` içindeki `vector.push_back(consuming: propNameId)` ve `expo.HostFunctionClosure(context, call, deallocate)` çağrıları Swift 6.0 C++ interop kısıtlamaları nedeniyle `HostObjectCallbacks::pushPropNameId` ve `HostFunctionClosure::make` C++ statik yardımcıları üzerinden çağrılmalıdır.
+   - `JavaScriptObject.swift`, `JavaScriptArray.swift` ve `JavaScriptPromise.swift` içindeki `~Copyable` delegating `self.init(...)` çağrıları Swift 6.0 derleyici hatasını (`copy of noncopyable typed value. This is a compiler bug`) tetikler; doğrudan stored property atamalarına (`self.runtimeHandle = ...; self.pointee = ...`) açılmalıdır.
+   - `JavaScriptRuntime.swift` ve `JavaScriptFunction.swift` içindeki closure parametrelerinde `consuming` sahipliği açıkça yazılmalı (`(arguments: consuming JavaScriptValuesBuffer) in`), `JavaScriptFunction.swift` içindeki stack pointer'ları `UncheckedSendable` ile sarmalanmalıdır.
    - `JavaScriptObject.swift` içinde Swift 6 actor veri yarışı için pointer UInt üzerinden cast edilmelidir.
    - Bu adımlar `scripts/patch-ios-swift.js` içinde otomatik uygulanmalıdır.
 

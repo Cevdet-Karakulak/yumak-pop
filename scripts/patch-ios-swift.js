@@ -533,4 +533,155 @@ if (fs.existsSync(jsRuntimePath)) {
   }
 }
 
+// 13. Patch Swift 6.0 ~Copyable self.init bugs, consuming closure parameter inference, and UncheckedSendable pointer captures
+if (fs.existsSync(jsObjPath)) {
+  let content = fs.readFileSync(jsObjPath, 'utf8');
+  const initRegex = /  public init\(_ runtime: borrowing JavaScriptRuntime\) \{\r?\n    self\.init\(runtime, facebook\.jsi\.Object\(runtime\.pointee\)\)\r?\n  \}/;
+  const replacementInit = `  public init(_ runtime: borrowing JavaScriptRuntime) {
+    self.runtimeHandle = runtime.handle
+    self.pointee = facebook.jsi.Object(runtime.pointee)
+  }`;
+  if (initRegex.test(content)) {
+    content = content.replace(initRegex, replacementInit);
+    fs.writeFileSync(jsObjPath, content, 'utf8');
+    console.log('[patch-ios-swift] Patched ~Copyable self.init in JavaScriptObject.swift!');
+  }
+}
+
+const jsArrayPath = path.resolve(
+  nodeModulesDir,
+  'expo-modules-jsi',
+  'apple',
+  'Sources',
+  'ExpoModulesJSI',
+  'Runtime',
+  'Values',
+  'JavaScriptArray.swift'
+);
+
+if (fs.existsSync(jsArrayPath)) {
+  let content = fs.readFileSync(jsArrayPath, 'utf8');
+  const targetInit = `  public init(_ runtime: borrowing JavaScriptRuntime, length: Int = 0) {
+    self.init(runtime, facebook.jsi.Array(runtime.pointee, length))
+  }`;
+  const replacementInit = `  public init(_ runtime: borrowing JavaScriptRuntime, length: Int = 0) {
+    self.runtimeHandle = runtime.handle
+    self.pointee = facebook.jsi.Array(runtime.pointee, length)
+  }`;
+  if (content.includes(targetInit)) {
+    content = content.replace(targetInit, replacementInit);
+    fs.writeFileSync(jsArrayPath, content, 'utf8');
+    console.log('[patch-ios-swift] Patched ~Copyable self.init in JavaScriptArray.swift!');
+  }
+}
+
+if (fs.existsSync(jsPromisePath)) {
+  let content = fs.readFileSync(jsPromisePath, 'utf8');
+  const targetInit = `  @JavaScriptActor
+  internal init(_ runtime: borrowing JavaScriptRuntime, _ object: consuming facebook.jsi.Object) throws {
+    try self.init(runtime, JavaScriptObject(runtime, object))
+  }`;
+  const replacementInit = `  @JavaScriptActor
+  internal init(_ runtime: borrowing JavaScriptRuntime, _ object: consuming facebook.jsi.Object) throws {
+    let jsObj = JavaScriptObject(runtime, object)
+    self.scheduler = runtime.scheduler
+    _ = try jsObj.getPropertyAsFunction(.cached(runtime, "then"))
+    longLivedState.object = jsObj.asValue()
+    runtime.longLivedObjects.add(longLivedState)
+  }`;
+  if (content.includes(targetInit)) {
+    content = content.replace(targetInit, replacementInit);
+    fs.writeFileSync(jsPromisePath, content, 'utf8');
+    console.log('[patch-ios-swift] Patched ~Copyable self.init in JavaScriptPromise.swift!');
+  }
+}
+
+if (fs.existsSync(jsRuntimePath)) {
+  let content = fs.readFileSync(jsRuntimePath, 'utf8');
+  const targetClosure = `    let nativeConstructor = createFunction(name) { this, arguments in
+      return try constructor(this, arguments)
+    }`;
+  const replacementClosure = `    let nativeConstructor = createFunction(name) { (this: consuming JavaScriptValue, arguments: consuming JavaScriptValuesBuffer) in
+      return try constructor(this, arguments)
+    }`;
+  if (content.includes(targetClosure)) {
+    content = content.replace(targetClosure, replacementClosure);
+    fs.writeFileSync(jsRuntimePath, content, 'utf8');
+    console.log('[patch-ios-swift] Patched consuming closure parameters in JavaScriptRuntime.swift!');
+  }
+}
+
+const jsFuncPath = path.resolve(
+  nodeModulesDir,
+  'expo-modules-jsi',
+  'apple',
+  'Sources',
+  'ExpoModulesJSI',
+  'Runtime',
+  'Values',
+  'JavaScriptFunction.swift'
+);
+
+if (fs.existsSync(jsFuncPath)) {
+  let content = fs.readFileSync(jsFuncPath, 'utf8');
+  let changed = false;
+
+  if (content.includes('    ) { arguments in')) {
+    content = content.replace(
+      /    \) \{ arguments in/g,
+      '    ) { (arguments: consuming JavaScriptValuesBuffer) in'
+    );
+    changed = true;
+    console.log('[patch-ios-swift] Patched consuming arguments closure parameter in JavaScriptFunction.swift!');
+  }
+
+  const targetAlloc = `      nonisolated(unsafe) let arguments = storage.baseAddress!
+      nonisolated(unsafe) let result = arguments + argumentCount
+      for index in 0...argumentCount {
+        expo.emplaceUndefined(arguments + index)
+      }
+      defer {
+        expo.destroyValues(arguments, argumentCount + 1)
+      }
+      try JavaScriptActor.assumeIsolated {
+        try emplacing(JavaScriptValuesBuffer(runtime, start: arguments, count: argumentCount), runtime)
+      }
+      try throwCppErrorUnlessSucceeded(
+        expo.callFunctionInto(runtime.pointee, pointee, arguments, argumentCount, result)
+      )
+      try JavaScriptActor.assumeIsolated {
+        try withResult(JavaScriptUnownedValue(runtime.pointee, result), runtime)
+      }`;
+
+  const replacementAlloc = `      let arguments = storage.baseAddress!
+      let result = arguments + argumentCount
+      let sendableArguments = UncheckedSendable(arguments)
+      let sendableResult = UncheckedSendable(result)
+      for index in 0...argumentCount {
+        expo.emplaceUndefined(arguments + index)
+      }
+      defer {
+        expo.destroyValues(arguments, argumentCount + 1)
+      }
+      try JavaScriptActor.assumeIsolated {
+        try emplacing(JavaScriptValuesBuffer(runtime, start: sendableArguments.value, count: argumentCount), runtime)
+      }
+      try throwCppErrorUnlessSucceeded(
+        expo.callFunctionInto(runtime.pointee, pointee, arguments, argumentCount, result)
+      )
+      try JavaScriptActor.assumeIsolated {
+        try withResult(JavaScriptUnownedValue(runtime.pointee, sendableResult.value), runtime)
+      }`;
+
+  if (content.includes(targetAlloc)) {
+    content = content.replace(targetAlloc, replacementAlloc);
+    changed = true;
+    console.log('[patch-ios-swift] Patched UncheckedSendable pointer captures in JavaScriptFunction.swift!');
+  }
+
+  if (changed) {
+    fs.writeFileSync(jsFuncPath, content, 'utf8');
+  }
+}
+
 console.log('[patch-ios-swift] All Swift compatibility patches applied successfully!');
