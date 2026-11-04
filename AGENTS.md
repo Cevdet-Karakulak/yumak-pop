@@ -11,7 +11,9 @@
    - `JavaScriptError.swift` içindeki `CppError` uzantısında `public var message` -> `var message` yapılarak library evolution ABI hatası önlenmelidir.
    - `JavaScriptActor.swift` dosyasındaki `runIsolated` ve `runIsolatedThrowing` fonksiyonları `nonisolated` yapılmalı ve parametreleri `() -> T` / `() throws -> T` olarak güncellenmelidir (`IsolatedRunner = (() -> T) -> T`); böylece `assumeIsolated` içinde ne actor izolasyon hatası ne de non-escaping generic dönüşüm hatası oluşur.
    - `JavaScriptRuntime.swift` içindeki bare-slash regex (`/^[a-zA-Z_$][a-zA-Z0-9_$]*$/`) Swift 5 modunda integer literal olarak yorumlanıp patlar (`'$' is not a valid digit in integer literal`); `range(of: ..., options: .regularExpression)` ile değiştirilmelidir.
-   - `JavaScriptPromise.swift` ve `JavaScriptCallback.swift` içindeki `LongLivedState` sınıfından `@JavaScriptActor` kaldırılarak `nonisolated init()` eklenmeli; ayrıca `JavaScriptCallback.swift` içindeki yerel `@JavaScriptActor func call` fonksiyonlarına `@Sendable` eklenmelidir.
+   - `JavaScriptPromise.swift` ve `JavaScriptCallback.swift` içindeki `LongLivedState` sınıfından `@JavaScriptActor` kaldırılarak `nonisolated init()` eklenmeli; ayrıca `JavaScriptCallback.swift` içindeki yerel `@JavaScriptActor func call` fonksiyonları `@Sendable` yerel fonksiyon olamayacağı için `let call: @JavaScriptActor @Sendable (...) = { ... }` olarak yazılmalıdır.
+   - `Task+immediate.swift` içindeki `Task.immediate` ve `Task(name:)` çağrıları iOS 26 SDK gerektirdiğinden Xcode 16 için `Task(priority: priority ?? .high, operation: operation)` olarak sadeleştirilmelidir.
+   - `JavaScriptRuntime.swift` içindeki `vector.push_back(consuming: propNameId)` ve `expo.HostFunctionClosure(context, call, deallocate)` çağrıları Swift 6.0 C++ interop kısıtlamaları nedeniyle `HostObjectCallbacks::pushPropNameId` ve `HostFunctionClosure::make` C++ statik yardımcıları üzerinden çağrılmalıdır.
    - `JavaScriptObject.swift` içinde Swift 6 actor veri yarışı için pointer UInt üzerinden cast edilmelidir.
    - Bu adımlar `scripts/patch-ios-swift.js` içinde otomatik uygulanmalıdır.
 

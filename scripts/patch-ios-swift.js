@@ -416,4 +416,121 @@ if (fs.existsSync(buildXcfPath)) {
   }
 }
 
+// 11. Patch Task+immediate.swift in expo-modules-jsi (Task.immediate and Task(name:) require iOS 26 SDK / Swift 6.2+)
+const taskImmediatePath = path.resolve(
+  nodeModulesDir,
+  'expo-modules-jsi',
+  'apple',
+  'Sources',
+  'ExpoModulesJSI',
+  'Extensions',
+  'Task+immediate.swift'
+);
+
+if (fs.existsSync(taskImmediatePath)) {
+  let content = fs.readFileSync(taskImmediatePath, 'utf8');
+  if (content.includes('Task.immediate(') || content.includes('Task(name: name,')) {
+    const newTaskImmediate = `// swift-format-ignore-file: AlwaysUseLowerCamelCase
+
+extension Task where Failure == any Error {
+  @discardableResult
+  public static func immediate_polyfill(
+    name: String? = nil,
+    priority: TaskPriority? = nil,
+    @_inheritActorContext @_implicitSelfCapture operation: sending @escaping @isolated(any) () async throws -> Success
+  ) -> Task<Success, any Error> {
+    return Task(priority: priority ?? .high, operation: operation)
+  }
+}
+`;
+    fs.writeFileSync(taskImmediatePath, newTaskImmediate, 'utf8');
+    console.log('[patch-ios-swift] Successfully patched Task+immediate.swift for Xcode 16 / Swift 6.0!');
+  } else {
+    console.log('[patch-ios-swift] Task+immediate.swift already patched.');
+  }
+}
+
+// 12. Patch HostObjectCallbacks.h, HostFunctionClosure.h, and JavaScriptRuntime.swift for C++ interop in Swift 6.0
+const hostObjCallbacksPath = path.resolve(
+  nodeModulesDir,
+  'expo-modules-jsi',
+  'apple',
+  'Sources',
+  'ExpoModulesJSI-Cxx',
+  'include',
+  'HostObjectCallbacks.h'
+);
+
+if (fs.existsSync(hostObjCallbacksPath)) {
+  let content = fs.readFileSync(hostObjCallbacksPath, 'utf8');
+  if (!content.includes('static inline void pushPropNameId(')) {
+    content = content.replace(
+      'using PropNameIds = std::vector<facebook::jsi::PropNameID>;',
+      `using PropNameIds = std::vector<facebook::jsi::PropNameID>;
+  static inline void pushPropNameId(PropNameIds &vec, facebook::jsi::PropNameID propNameId) {
+    vec.push_back(std::move(propNameId));
+  }`
+    );
+    fs.writeFileSync(hostObjCallbacksPath, content, 'utf8');
+    console.log('[patch-ios-swift] Added pushPropNameId helper to HostObjectCallbacks.h!');
+  } else {
+    console.log('[patch-ios-swift] HostObjectCallbacks.h already patched.');
+  }
+}
+
+const hostFuncClosurePath = path.resolve(
+  nodeModulesDir,
+  'expo-modules-jsi',
+  'apple',
+  'Sources',
+  'ExpoModulesJSI-Cxx',
+  'include',
+  'HostFunctionClosure.h'
+);
+
+if (fs.existsSync(hostFuncClosurePath)) {
+  let content = fs.readFileSync(hostFuncClosurePath, 'utf8');
+  if (!content.includes('static inline HostFunctionClosure *_Nonnull make(')) {
+    content = content.replace(
+      'explicit HostFunctionClosure(Context context, Closure closure, Deallocator deallocator) : RetainedSwiftPointer(context, deallocator), _closure(closure) {};',
+      `explicit HostFunctionClosure(Context context, Closure closure, Deallocator deallocator) : RetainedSwiftPointer(context, deallocator), _closure(closure) {};
+
+  static inline HostFunctionClosure *_Nonnull make(Context context, Closure closure, Deallocator deallocator) {
+    return new HostFunctionClosure(context, closure, deallocator);
+  }`
+    );
+    fs.writeFileSync(hostFuncClosurePath, content, 'utf8');
+    console.log('[patch-ios-swift] Added HostFunctionClosure::make factory to HostFunctionClosure.h!');
+  } else {
+    console.log('[patch-ios-swift] HostFunctionClosure.h already patched.');
+  }
+}
+
+if (fs.existsSync(jsRuntimePath)) {
+  let content = fs.readFileSync(jsRuntimePath, 'utf8');
+  let changed = false;
+
+  if (content.includes('vector.push_back(consuming: propNameId)')) {
+    content = content.replace(
+      'vector.push_back(consuming: propNameId)',
+      'expo.HostObjectCallbacks.pushPropNameId(&vector, propNameId)'
+    );
+    changed = true;
+    console.log('[patch-ios-swift] Replaced vector.push_back(consuming:) in JavaScriptRuntime.swift!');
+  }
+
+  if (content.includes('return expo.HostFunctionClosure(context, call, deallocate)')) {
+    content = content.replace(
+      'return expo.HostFunctionClosure(context, call, deallocate)',
+      'return expo.HostFunctionClosure.make(context, call, deallocate)'
+    );
+    changed = true;
+    console.log('[patch-ios-swift] Replaced expo.HostFunctionClosure(...) with HostFunctionClosure.make(...) in JavaScriptRuntime.swift!');
+  }
+
+  if (changed) {
+    fs.writeFileSync(jsRuntimePath, content, 'utf8');
+  }
+}
+
 console.log('[patch-ios-swift] All Swift compatibility patches applied successfully!');
