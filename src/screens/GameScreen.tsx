@@ -846,9 +846,13 @@ export function GameScreen({
           {/* ASMR Combo & Yarn Fever Floating Status Pill */}
           {(comboCount >= 2 || isFever) && (
             <Animated.View
+              pointerEvents="none"
               style={{
+                position: 'absolute',
+                top: -34,
+                zIndex: 99,
                 alignSelf: 'center',
-                backgroundColor: isFever ? '#FEF3C7' : 'rgba(255, 255, 255, 0.94)',
+                backgroundColor: isFever ? '#FEF3C7' : 'rgba(255, 255, 255, 0.96)',
                 paddingHorizontal: 14,
                 paddingVertical: 5,
                 borderRadius: 16,
@@ -857,8 +861,7 @@ export function GameScreen({
                 flexDirection: 'row',
                 alignItems: 'center',
                 gap: 6,
-                marginBottom: 6,
-                shadowColor: isFever ? '#F59E0B' : '#000',
+                                shadowColor: isFever ? '#F59E0B' : '#000',
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: isFever ? 0.35 : 0.1,
                 shadowRadius: 4,

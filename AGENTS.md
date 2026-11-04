@@ -3,13 +3,13 @@
 ## 🛠️ iOS & Android Derleme Hafızası (Sıfır EAS Kotası)
 1. **Xcode 16 (Apple Swift 6.0) Manifest & Compiler Düzeltmeleri**:
    - `Package.swift` içinde `swift-tools-version: 6.2` görüldüğünde derhal `6.0` seviyesine çekilmelidir.
-   - `swiftLanguageModes: [.v6]` -> `[.v5]` seviyesine çekilerek katı concurrency ve Sendable kilitlenmeleri önlenmelidir.
+   - `swiftLanguageModes: [.v6]` ExpoModulesJSI için zorunludur (C++ interop, Task.immediate ve consuming: etiketleri gerektirir). Asla [.v5]'e çekilmemeli; katı concurrency hatalarını önlemek için `unsafeFlags` içine `"-Xfrontend", "-strict-concurrency=minimal"` eklenmelidir.
    - Swift 6.0 manifest sözdiziminde argüman listesi sonundaki virgüller (`,\s*\)`) yasaktır (`unexpected ',' separator`).
    - `unsafeFlags` içindeki `"-Werror", "<WarningName>"` ikilileri (örn: `ImplicitStrongCapture`, `NoUsage`) Xcode 27 içindir; Swift 6.0 derleyici sürücüsü bunu `Driver threw unknown argument: '-Werror'` diyerek patlatır. Bunlar temizlenmelidir.
    - `RuntimeScheduler.h` içindeki `SWIFT_RETURNS_RETAINED` makrosu Swift 6.0 / Clang C++ derleyicisinde tanınmaz ve `expected ';' at end of declaration list` hatası verir. Bu makro temizlenmelidir.
    - `JavaScriptRef.swift` içindeki `, Escapable` ibaresi kaldırılmalıdır (`type 'Escapable' requires -enable-experimental-feature NonescapableTypes`).
    - `JavaScriptError.swift` içindeki `CppError` uzantısında `public var message` -> `var message` yapılarak library evolution ABI hatası önlenmelidir.
-   - `JavaScriptActor.swift` dosyasındaki `runIsolated` fonksiyonları `nonisolated` yapılmalıdır.
+   - `JavaScriptActor.swift` dosyasındaki `assumeIsolated` fonksiyonları `unsafeBitCast(operation, to: NonisolatedOp.self)()` ile doğrudan çağrılmalı; actor hop ve nonisolated statik metot erişim hataları tamamen engellenmelidir.
    - `JavaScriptRuntime.swift` içindeki bare-slash regex (`/^[a-zA-Z_$][a-zA-Z0-9_$]*$/`) Swift 5 modunda integer literal olarak yorumlanıp patlar (`'$' is not a valid digit in integer literal`); `range(of: ..., options: .regularExpression)` ile değiştirilmelidir.
    - `JavaScriptPromise.swift` ve `JavaScriptCallback.swift` içindeki `LongLivedState` sınıfından `@JavaScriptActor` kaldırılarak veya `nonisolated init()` eklenerek nonisolated bağlamdan çağrılabilmesi sağlanmalıdır.
    - `JavaScriptObject.swift` içinde Swift 6 actor veri yarışı için pointer UInt üzerinden cast edilmelidir.

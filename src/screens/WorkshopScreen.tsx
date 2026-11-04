@@ -119,6 +119,7 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
   const totalStars = Object.values(data.stars).reduce((a, b) => a + b, 0);
   const unlockedItems = new Set(data.workshopItems || ['rocking_chair']);
   const currentOutfit = data.bobbinOutfit || 'classic_honey';
+  const activeOutfit = KNITWEAR_CATALOG.find((o) => o.id === currentOutfit) || KNITWEAR_CATALOG[0];
 
   const [activeTab, setActiveTab] = useState<'room' | 'knitwear'>('room');
   const [speech, setSpeech] = useState(

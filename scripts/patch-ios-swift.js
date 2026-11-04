@@ -3,7 +3,7 @@ const path = require('path');
 
 console.log('[patch-ios-swift] Running Swift compatibility patches...');
 
-// 1. Patch Package.swift files to swift-tools-version: 6.0 and swiftLanguageModes: [.v5]
+// 1. Patch Package.swift files to swift-tools-version: 6.0 and ensure swiftLanguageModes: [.v6] with minimal concurrency
 function patchPackageSwift(dir) {
   if (!fs.existsSync(dir)) return;
   const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -22,10 +22,20 @@ function patchPackageSwift(dir) {
           changed = true;
           console.log(`[patch-ios-swift] Downgraded swift-tools-version to 6.0 in: ${fullPath}`);
         }
-        if (content.includes('swiftLanguageModes: [.v6]')) {
-          content = content.replace(/swiftLanguageModes:\s*\[\.v6\]/g, 'swiftLanguageModes: [.v5]');
+        // Swift 6 mode is strictly required by ExpoModulesJSI for C++ interop, Task.immediate and consuming: labels
+        if (content.includes('swiftLanguageModes: [.v5]')) {
+          content = content.replace(/swiftLanguageModes:\s*\[\.v5\]/g, 'swiftLanguageModes: [.v6]');
           changed = true;
-          console.log(`[patch-ios-swift] Changed swiftLanguageModes to [.v5] in: ${fullPath}`);
+          console.log(`[patch-ios-swift] Set swiftLanguageModes to [.v6] in: ${fullPath}`);
+        }
+        // Add minimal strict concurrency flag to suppress fatal data-race errors in Swift 6 mode
+        if (!content.includes('"-strict-concurrency=minimal"') && content.includes('"-enable-library-evolution"')) {
+          content = content.replace(
+            /["']-enable-library-evolution["'],/g,
+            `"-enable-library-evolution",\n          "-Xfrontend",\n          "-strict-concurrency=minimal",`
+          );
+          changed = true;
+          console.log(`[patch-ios-swift] Added -strict-concurrency=minimal to: ${fullPath}`);
         }
         // Remove invalid -Werror warning group flags (e.g. "-Werror", "ImplicitStrongCapture") rejected by Swift 6.0 driver
         if (content.includes('-Werror')) {
@@ -168,7 +178,7 @@ if (fs.existsSync(jsErrPath)) {
   console.log('[patch-ios-swift] JavaScriptError.swift not found at:', jsErrPath);
 }
 
-// 6. Patch JavaScriptActor.swift in expo-modules-jsi (remove @JavaScriptActor from static runIsolated to allow nonisolated callers)
+// 6. Patch JavaScriptActor.swift in expo-modules-jsi (bypass actor hop in assumeIsolated via direct closure unsafeBitCast)
 const jsActorPath = path.resolve(
   nodeModulesDir,
   'expo-modules-jsi',
@@ -182,18 +192,45 @@ const jsActorPath = path.resolve(
 if (fs.existsSync(jsActorPath)) {
   let content = fs.readFileSync(jsActorPath, 'utf8');
   let changed = false;
-  if (content.includes('@JavaScriptActor\n  @usableFromInline\n  internal static func runIsolated')) {
+
+  // Restore @JavaScriptActor to runIsolated if it was previously stripped
+  if (!content.includes('@JavaScriptActor\n  @usableFromInline\n  internal static func runIsolated')) {
     content = content.replace(
-      /@JavaScriptActor\s*\n\s*@usableFromInline\s*\n\s*internal static func runIsolated/g,
-      '@usableFromInline\n  internal static func runIsolated'
+      /@usableFromInline\s*\n\s*internal static func runIsolated/g,
+      '@JavaScriptActor\n  @usableFromInline\n  internal static func runIsolated'
     );
     changed = true;
-    console.log('[patch-ios-swift] Successfully made runIsolated nonisolated in JavaScriptActor.swift!');
   }
+
+  // Patch assumeIsolated non-throwing overload
+  const targetAssume = `    let runner = unsafeBitCast(runIsolated as IsolatedRunner, to: NonisolatedRunner.self)
+    return runner(operation)`;
+  const replaceAssume = `    typealias NonisolatedOp = () -> T
+    let raw = unsafeBitCast(operation, to: NonisolatedOp.self)
+    return raw()`;
+
+  if (content.includes(targetAssume)) {
+    content = content.replace(targetAssume, replaceAssume);
+    changed = true;
+  }
+
+  // Patch assumeIsolated throwing overload
+  const targetAssumeThrowing = `    let runner = unsafeBitCast(runIsolatedThrowing as IsolatedRunner, to: NonisolatedRunner.self)
+    return try runner(operation)`;
+  const replaceAssumeThrowing = `    typealias NonisolatedOp = () throws -> T
+    let raw = unsafeBitCast(operation, to: NonisolatedOp.self)
+    return try raw()`;
+
+  if (content.includes(targetAssumeThrowing)) {
+    content = content.replace(targetAssumeThrowing, replaceAssumeThrowing);
+    changed = true;
+  }
+
   if (changed) {
     fs.writeFileSync(jsActorPath, content, 'utf8');
+    console.log('[patch-ios-swift] Successfully patched JavaScriptActor.swift assumeIsolated for Swift 6!');
   } else {
-    console.log('[patch-ios-swift] JavaScriptActor.swift runIsolated already patched.');
+    console.log('[patch-ios-swift] JavaScriptActor.swift assumeIsolated already patched.');
   }
 } else {
   console.log('[patch-ios-swift] JavaScriptActor.swift not found at:', jsActorPath);

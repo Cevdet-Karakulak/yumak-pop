@@ -460,43 +460,16 @@ export function HomeScreen({
             </View>
           </View>
 
-          {/* Bobbin's Cozy Workshop Feature Button */}
+          {/* Bobbin's Cozy Workshop Button (Clean 3D Clay/Yarn Button matching game aesthetic) */}
           {Boolean(onWorkshop) && (
-            <Bouncy
-              onPress={onWorkshop}
-              style={{
-                width: '100%',
-                backgroundColor: '#78350F',
-                paddingVertical: 12,
-                borderRadius: 20,
-                alignItems: 'center',
-                flexDirection: 'row',
-                justifyContent: 'center',
-                gap: 8,
-                marginTop: 8,
-                borderWidth: 2,
-                borderColor: '#FDE68A',
-                elevation: 4,
-              }}
-            >
-              <Ionicons name="home" size={18} color="#FDE68A" />
-              <T style={{ color: '#fff', fontWeight: 'bold', fontSize: 14 }}>
-                🪵 Bobbin'in Atölyesi
-              </T>
-              <View
-                style={{
-                  backgroundColor: '#FEF3C7',
-                  paddingHorizontal: 8,
-                  paddingVertical: 2,
-                  borderRadius: 10,
-                  marginLeft: 4,
-                }}
-              >
-                <T style={{ color: '#92400E', fontSize: 11.5, fontWeight: 'bold' }}>
-                  ⭐ {totalStars} Yıldız
-                </T>
-              </View>
-            </Bouncy>
+            <YarnButton
+              small
+              label={`BOBBİN'İN ATÖLYESİ  ⭐ ${totalStars}`}
+              icon="home"
+              color="gold"
+              onPress={() => onWorkshop?.()}
+              style={{ width: '100%', marginTop: 8 }}
+            />
           )}
         </View>
       </View>
