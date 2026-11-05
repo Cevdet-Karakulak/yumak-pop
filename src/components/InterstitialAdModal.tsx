@@ -76,106 +76,118 @@ export function InterstitialAdModal({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" statusBarTranslucent>
-      <View style={styles.backdrop}>
-        <View style={styles.container}>
-          {/* Top Bar with Ad Tag & Close Timer */}
-          <View style={styles.header}>
-            <View style={styles.adTag}>
-              <Ionicons name="megaphone" size={14} color="#FFF" style={{ marginRight: 4 }} />
-              <Text style={styles.adTagText}>{isRewarded ? 'Ödüllü Reklam' : 'Sponsorlu Reklam'}</Text>
+    <View
+      style={[
+        styles.backdrop,
+        StyleSheet.absoluteFill,
+        { zIndex: 99999, elevation: 99999 },
+      ]}
+      pointerEvents="auto"
+    >
+      <View style={styles.container}>
+        {/* Top Bar with Ad Tag & Close Timer */}
+        <View style={styles.header}>
+          <View style={styles.adTag}>
+            <Ionicons name="megaphone" size={14} color="#FFF" style={{ marginRight: 4 }} />
+            <Text style={styles.adTagText}>{isRewarded ? 'Ödüllü Reklam' : 'Sponsorlu Reklam'}</Text>
+          </View>
+
+          {canClose ? (
+            <TouchableOpacity
+              onPress={handleDismiss}
+              activeOpacity={0.8}
+              style={styles.closeBtnActive}
+            >
+              <Ionicons name="close" size={18} color="#FFF" />
+              <Text style={styles.closeBtnText}>Kapat</Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.timerPill}>
+              <Ionicons name="time-outline" size={14} color="#FFF" style={{ marginRight: 4 }} />
+              <Text style={styles.timerText}>{secondsLeft}s</Text>
             </View>
+          )}
+        </View>
 
-            {canClose ? (
-              <TouchableOpacity
-                onPress={handleDismiss}
-                activeOpacity={0.8}
-                style={styles.closeBtnActive}
-              >
-                <Ionicons name="close" size={18} color="#FFF" />
-                <Text style={styles.closeBtnText}>Kapat</Text>
-              </TouchableOpacity>
-            ) : (
-              <View style={styles.timerPill}>
-                <Ionicons name="time-outline" size={14} color="#FFF" style={{ marginRight: 4 }} />
-                <Text style={styles.timerText}>{secondsLeft}s</Text>
-              </View>
-            )}
-          </View>
+        {/* Linear Progress Bar at top */}
+        <View style={styles.progressBarTrack}>
+          <Animated.View
+            style={[
+              styles.progressBarFill,
+              {
+                width: progressAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ['0%', '100%'],
+                }),
+              },
+            ]}
+          />
+        </View>
 
-          {/* Linear Progress Bar at top */}
-          <View style={styles.progressBarTrack}>
-            <Animated.View
-              style={[
-                styles.progressBarFill,
-                {
-                  width: progressAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ['0%', '100%'],
-                  }),
-                },
-              ]}
+        {/* Ad Creative Card */}
+        <View style={styles.adCard}>
+          {/* Visual Header / Banner */}
+          <View style={styles.bannerWrap}>
+            <Image
+              source={require('../../assets/images/bg.jpg')}
+              style={StyleSheet.absoluteFill}
+              resizeMode="cover"
             />
+            <View style={styles.mascotShowcase}>
+              <Image
+                source={require('../../assets/images/mascot.png')}
+                style={styles.showcaseImg}
+                resizeMode="contain"
+              />
+            </View>
+            <View style={styles.bannerBadge}>
+              <Text style={styles.bannerBadgeText}>✨ EN ÇOK SEVİLEN ÖRGÜ OYUNU</Text>
+            </View>
           </View>
 
-          {/* Ad Creative Card */}
-          <View style={styles.adCard}>
-            {/* Visual Header / Banner */}
-            <View style={styles.bannerWrap}>
+          {/* App Info & Description */}
+          <View style={styles.infoArea}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <Image
-                source={require('../../assets/images/bg.jpg')}
-                style={StyleSheet.absoluteFill}
+                source={require('../../assets/icon.png')}
+                style={styles.appIcon}
                 resizeMode="cover"
               />
-              <View style={styles.mascotShowcase}>
-                <Image
-                  source={require('../../assets/images/mascot.png')}
-                  style={styles.showcaseImg}
-                  resizeMode="contain"
-                />
-              </View>
-              <View style={styles.bannerBadge}>
-                <Text style={styles.bannerBadgeText}>✨ EN ÇOK SEVİLEN ÖRGÜ OYUNU</Text>
-              </View>
-            </View>
-
-            {/* App Info & Description */}
-            <View style={styles.infoArea}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <Image
-                  source={require('../../assets/icon.png')}
-                  style={styles.appIcon}
-                  resizeMode="cover"
-                />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.appTitle}>Yumak Pop 3D</Text>
-                  <Text style={styles.appSubtitle}>FloppaTech Corp • Ücretsiz Bulmaca</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2, gap: 4 }}>
-                    <Text style={styles.stars}>★★★★★</Text>
-                    <Text style={styles.ratingText}>4.9 (100K+ Oyuncu)</Text>
-                  </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.appTitle}>Yumak Pop 3D</Text>
+                <Text style={styles.appSubtitle}>FloppaTech Corp • Ücretsiz Bulmaca</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2, gap: 4 }}>
+                  <Text style={styles.stars}>★★★★★</Text>
+                  <Text style={styles.ratingText}>4.9 (100K+ Oyuncu)</Text>
                 </View>
               </View>
-
-              <Text style={styles.adDescription}>
-                Makaraları sar, rengarenk örgü yılanları kuyuya çekilmeden çöz! 18 farklı usta işi ahşap parkur seni bekliyor.
-              </Text>
             </View>
 
-            {/* Install / Action Button */}
-            <View style={styles.actionWrap}>
-              <YarnButton
-                label="HEMEN OYNA"
-                icon="download"
-                color="mint"
-                onPress={handleDismiss}
-                style={{ width: '100%' }}
-              />
-            </View>
+            <Text style={styles.adDescription}>
+              Makaraları sar, rengarenk örgü yılanları kuyuya çekilmeden çöz! 18 farklı usta işi ahşap parkur seni bekliyor.
+            </Text>
+          </View>
+
+          {/* Continue / Action Button */}
+          <View style={styles.actionWrap}>
+            <YarnButton
+              label={
+                canClose
+                  ? isRewarded
+                    ? 'ÖDÜLÜ AL VE DEVAM ET'
+                    : 'SONRAKİ BÖLÜME GEÇ'
+                  : `Reklam Bitiyor... (${secondsLeft}s)`
+              }
+              icon={canClose ? 'play' : 'time'}
+              color={canClose ? 'mint' : 'plum'}
+              disabled={!canClose}
+              onPress={handleDismiss}
+              style={{ width: '100%' }}
+            />
           </View>
         </View>
       </View>
-    </Modal>
+    </View>
   );
 }
 

@@ -544,19 +544,23 @@ export function GameScreen({
   };
 
   const handleRevive = (isAd: boolean) => {
+    setResult(null);
     if (isAd) {
-      setResult(null);
       setTimeout(() => {
-        const shown = showAdMobInterstitial(() => {
-          setAdReviveUsed(true);
-          executeRevive(true);
-        });
+        const shown = showAdMobInterstitial(
+          () => {
+            setAdReviveUsed(true);
+            executeRevive(true);
+          },
+          () => {
+            setShowRewardedReviveAd(true);
+          },
+        );
         if (!shown) {
           setShowRewardedReviveAd(true);
         }
-      }, 100);
+      }, 60);
     } else {
-      setResult(null);
       setNormalReviveUsed(true);
       executeRevive(false);
     }
@@ -585,13 +589,18 @@ export function GameScreen({
   const handleWatchAdForSlot = () => {
     setUnlockSlotIdx(null);
     setTimeout(() => {
-      const shown = showAdMobInterstitial(() => {
-        grantSlotReward();
-      });
+      const shown = showAdMobInterstitial(
+        () => {
+          grantSlotReward();
+        },
+        () => {
+          setShowRewardedSlotAd(true);
+        },
+      );
       if (!shown) {
         setShowRewardedSlotAd(true);
       }
-    }, 100);
+    }, 60);
   };
 
   const handleWatchAdForSwap = () => {
@@ -599,14 +608,20 @@ export function GameScreen({
     const targetSlot = swapSlotIdx;
     setSwapSlotIdx(null);
     setTimeout(() => {
-      const shown = showAdMobInterstitial(() => {
-        executeColorSwap(targetSlot);
-      });
+      const shown = showAdMobInterstitial(
+        () => {
+          executeColorSwap(targetSlot);
+        },
+        () => {
+          setPendingSwapSlot(targetSlot);
+          setShowRewardedSwapAd(true);
+        },
+      );
       if (!shown) {
         setPendingSwapSlot(targetSlot);
         setShowRewardedSwapAd(true);
       }
-    }, 100);
+    }, 60);
   };
 
   const executeColorSwap = (slotIdx: number) => {
@@ -668,16 +683,24 @@ export function GameScreen({
 
   const handleNextLevel = () => {
     const nextLvl = level + 1;
+    setResult(null);
     // Every 3 levels successfully passed: show interstitial ad before advancing to the new level
     const passed = data.completedLevels || 0;
-    if (passed > 0 && passed % 3 === 0) {
+    if (level % 3 === 0 || (passed > 0 && passed % 3 === 0)) {
       setPendingNextLevel(nextLvl);
-      const shown = showAdMobInterstitial(() => {
-        onLevelAdDismiss(nextLvl);
-      });
-      if (!shown) {
-        setShowLevelAd(true);
-      }
+      setTimeout(() => {
+        const shown = showAdMobInterstitial(
+          () => {
+            onLevelAdDismiss(nextLvl);
+          },
+          () => {
+            setShowLevelAd(true);
+          },
+        );
+        if (!shown) {
+          setShowLevelAd(true);
+        }
+      }, 60);
     } else {
       onNext(nextLvl);
     }

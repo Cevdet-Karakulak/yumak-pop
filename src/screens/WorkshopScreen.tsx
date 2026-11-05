@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
-  Dimensions,
   Image,
+  ImageSourcePropType,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
@@ -13,102 +13,146 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { buzz, playAsmrComboTone, playAsmrFeverChord } from '../audio';
 import { Bouncy, FONT, RoundIcon, T } from '../components/ui';
 import { useSave } from '../save';
-import { UI, YARN } from '../theme';
+import { UI } from '../theme';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+// 6 Progressive 3D Miniature Diorama Room Stages (Camera-locked sequential progression)
+const WORKSHOP_STAGE_IMAGES: Record<number, ImageSourcePropType> = {
+  0: require('../../assets/images/workshop_stage_0.jpg'), // Sade boş ahşap oda
+  1: require('../../assets/images/workshop_stage_1.jpg'), // + Sallanan Ahşap Koltuk
+  2: require('../../assets/images/workshop_stage_2.jpg'), // + Köy Tuğlası Şömine
+  3: require('../../assets/images/workshop_stage_3.jpg'), // + El Dokuması Kelt Halısı
+  4: require('../../assets/images/workshop_stage_4.jpg'), // + Ihlamur & Demlik Köşesi
+  5: require('../../assets/images/workshop_stage_5.jpg'), // + Antika Ahşap Çıkrık & Yumak Vitrini
+};
 
-const WORKSHOP_UNIFIED_IMAGE = require('../../assets/images/bobbin_workshop.jpg');
+// 5 Real 3D Bobbin Character Sprites with Ground Contact Shadows (Alpha RGBA PNGs)
+const BOBBIN_OUTFIT_IMAGES: Record<string, ImageSourcePropType> = {
+  none: require('../../assets/images/bobbin_none.png'),
+  classic_honey: require('../../assets/images/bobbin_honey.png'),
+  arctic_sky: require('../../assets/images/bobbin_arctic.png'),
+  emerald_moss: require('../../assets/images/bobbin_emerald.png'),
+  royal_berry: require('../../assets/images/bobbin_royal.png'),
+};
 
 interface WorkshopItem {
   id: string;
+  step: number; // 1..5 sequential room stage
   name: string;
+  shortLabel: string;
   desc: string;
   starsRequired: number;
-  icon: string;
-  category: 'room' | 'knitwear';
+  icon: keyof typeof Ionicons.glyphMap;
   colorTag: string;
 }
 
 const WORKSHOP_CATALOG: WorkshopItem[] = [
   {
     id: 'rocking_chair',
+    step: 1,
     name: 'Sallanan Ahşap Koltuk',
-    desc: 'Torna kayın ağacından oyulmuş, mercan yün minderli dinlenme koltuğu.',
-    starsRequired: 5,
-    icon: 'rocking-chair',
-    category: 'room',
+    shortLabel: '1. Koltuk',
+    desc: 'Torna kayın ağacından oyulmuş, mercan yün minderli dinlenme koltuğu odaya eklenir.',
+    starsRequired: 2,
+    icon: 'PartlySunny' as any,
     colorTag: '#E06D53',
   },
   {
     id: 'fireplace',
+    step: 2,
     name: 'Köy Tuğlası Şömine',
-    desc: 'Atölyeyi sımsıcak tutan kor ateş ve çıtırdayan meşe odunları.',
-    starsRequired: 15,
+    shortLabel: '2. Şömine',
+    desc: 'Sol duvara atölyeyi sımsıcak tutan kor ateşli tuğla şömine inşa edilir.',
+    starsRequired: 5,
     icon: 'flame',
-    category: 'room',
     colorTag: '#F59E0B',
   },
   {
     id: 'woven_rug',
+    step: 3,
     name: 'El Dokuması Kelt Halısı',
-    desc: 'Herringbone parkeyi süsleyen yumuşacık geometrik örgü halı.',
-    starsRequired: 30,
+    shortLabel: '3. Halı',
+    desc: 'Ahşap parkenin üzerine el dokuması geometrik desenli yün halı serilir.',
+    starsRequired: 9,
     icon: 'color-palette',
-    category: 'room',
     colorTag: '#10B981',
   },
   {
     id: 'tea_station',
+    step: 4,
     name: 'Ihlamur & Demlik Köşesi',
-    desc: 'Sıcak ıhlamur çayı ve tarçın kokulu seramik kupa.',
-    starsRequired: 50,
+    shortLabel: '4. Demlik',
+    desc: 'Koltuğun yanına dumanı tüten seramik demlik, ıhlamur fincanı ve sehpa eklenir.',
+    starsRequired: 15,
     icon: 'cafe',
-    category: 'room',
     colorTag: '#6366F1',
   },
   {
     id: 'antique_loom',
-    name: 'Antika Ahşap Çıkrık',
-    desc: 'Usta zanaatkârın en sevdiği el yapımı meşe iplik eğirme tezgâhı.',
-    starsRequired: 75,
+    step: 5,
+    name: 'Antika Çıkrık & Yumak Vitrini',
+    shortLabel: '5. Çıkrık',
+    desc: 'Arka köşeye usta işi ahşap iplik çıkrığı ve rengârenk yumak rafları kurulur.',
+    starsRequired: 24,
     icon: 'construct',
-    category: 'room',
     colorTag: '#EC4899',
   },
 ];
 
-const KNITWEAR_CATALOG = [
+interface KnitwearItem {
+  id: string;
+  name: string;
+  desc: string;
+  starsRequired: number;
+  color: string;
+  accentEmoji: string;
+  image: ImageSourcePropType;
+}
+
+const KNITWEAR_CATALOG: KnitwearItem[] = [
+  {
+    id: 'none',
+    name: 'Sade Ahşap Gövde (Kıyafetsiz)',
+    desc: 'Bobbin’in üzerinde hiçbir atkı veya yelek olmadan doğal ceviz ağacı görünümü.',
+    starsRequired: 0,
+    color: '#92400E',
+    accentEmoji: '🪵',
+    image: BOBBIN_OUTFIT_IMAGES.none,
+  },
   {
     id: 'classic_honey',
     name: 'Klasik Bal Sarısı Atkı',
-    desc: 'Bobbin’in ilk günden beri boynundan çıkarmadığı sıcacık yün.',
-    starsRequired: 0,
+    desc: 'Bobbin’in boynuna el örgüsü sıcacık püsküllü bal sarısı yün atkı takılır.',
+    starsRequired: 2,
     color: '#F59E0B',
     accentEmoji: '🧣',
+    image: BOBBIN_OUTFIT_IMAGES.classic_honey,
   },
   {
     id: 'arctic_sky',
-    name: 'Kutup Mavisi Kaşmir',
-    desc: 'Kar fırtınalarında Bobbin’i koruyan çift kat gök mavisi örgü.',
-    starsRequired: 20,
+    name: 'Kutup Mavisi Kaşmir Atkı',
+    desc: 'Kar tanesi motifli, çift kat gök mavisi yumuşacık kaşmir atkı.',
+    starsRequired: 6,
     color: '#0EA5E9',
     accentEmoji: '❄️',
+    image: BOBBIN_OUTFIT_IMAGES.arctic_sky,
   },
   {
     id: 'emerald_moss',
-    name: 'Zümrüt Ormanı Yeleği',
-    desc: 'Orman yosunlarından ilham alan taze nane ve zümrüt tonları.',
-    starsRequired: 40,
+    name: 'Zümrüt Ormanı Örgü Yelek',
+    desc: 'Bobbin’in gövdesini saran saç örgülü zümrüt yeşili usta zanaatkâr yeleği.',
+    starsRequired: 12,
     color: '#10B981',
     accentEmoji: '🌲',
+    image: BOBBIN_OUTFIT_IMAGES.emerald_moss,
   },
   {
     id: 'royal_berry',
-    name: 'Kraliyet Böğürtlen Fuları',
-    desc: 'Büyük Usta turnuvalarında giyilen asil mürdüm kaşmir fular.',
-    starsRequired: 65,
+    name: 'Kraliyet Böğürtlen Pelerini',
+    desc: 'Altın makara broşlu, asil mürdüm ve altın işlemeli başusta pelerini.',
+    starsRequired: 20,
     color: '#8B5CF6',
     accentEmoji: '👑',
+    image: BOBBIN_OUTFIT_IMAGES.royal_berry,
   },
 ];
 
@@ -117,46 +161,132 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
   const insets = useSafeAreaInsets();
 
   const totalStars = Object.values(data.stars).reduce((a, b) => a + b, 0);
-  const unlockedItems = new Set(data.workshopItems || ['rocking_chair']);
-  const currentOutfit = data.bobbinOutfit || 'classic_honey';
-  const activeOutfit = KNITWEAR_CATALOG.find((o) => o.id === currentOutfit) || KNITWEAR_CATALOG[0];
+  const unlockedList = data.workshopItems || [];
+  const unlockedSet = new Set(unlockedList);
+
+  // Highest sequential stage unlocked (0..5)
+  let highestUnlockedStage = 0;
+  for (const item of WORKSHOP_CATALOG) {
+    if (unlockedSet.has(item.id)) {
+      highestUnlockedStage = Math.max(highestUnlockedStage, item.step);
+    }
+  }
+
+  // Allow player to preview/toggle any stage up to highestUnlockedStage (defaults to highestUnlockedStage)
+  const [displayedStage, setDisplayedStage] = useState<number>(highestUnlockedStage);
+  useEffect(() => {
+    setDisplayedStage(highestUnlockedStage);
+  }, [highestUnlockedStage]);
+
+  const currentOutfitId = data.bobbinOutfit || 'none';
+  const activeOutfit =
+    KNITWEAR_CATALOG.find((o) => o.id === currentOutfitId) || KNITWEAR_CATALOG[0];
 
   const [activeTab, setActiveTab] = useState<'room' | 'knitwear'>('room');
   const [speech, setSpeech] = useState(
-    'Hoş geldin! Bölümlerden topladığın yıldızlarla atölyemizi ilmek ilmek sıcacık bir yuvaya dönüştürelim!'
+    highestUnlockedStage === 0 && currentOutfitId === 'none'
+      ? 'Atölyemiz şu an sade ve boş! Bölümlerden kazandığın yıldızlarla önce Sallanan Koltuğu, sonra Şömine ve Halıyı odaya ekleyelim!'
+      : 'Hoş geldin! Yıldızlarınla atölyemize yeni eşyalar ekleyebilir veya Bobbin’e gerçek el örgüsü atkı ve yelekler giydirebilirsin!'
   );
 
-  // Subtle breathing animation for diorama view
-  const breatheAnim = useRef(new Animated.Value(1)).current;
+  // Pop animation when room stage or Bobbin outfit changes
+  const characterPop = useRef(new Animated.Value(1)).current;
+  const roomFade = useRef(new Animated.Value(1)).current;
 
-  const handleUnlockItem = (item: WorkshopItem) => {
-    if (unlockedItems.has(item.id)) {
-      setSpeech(`${item.name} atölyemizde harika duruyor! Çıtırtısını ve huzurunu hissedebiliyor musun?`);
+  const animateRoomChange = () => {
+    roomFade.setValue(0.82);
+    Animated.spring(roomFade, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 24,
+      bounciness: 6,
+    }).start();
+  };
+
+  const animateCharacterPop = () => {
+    characterPop.setValue(0.88);
+    Animated.spring(characterPop, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 28,
+      bounciness: 12,
+    }).start();
+  };
+
+  const handleRoomItemAction = (item: WorkshopItem) => {
+    const isUnlocked = unlockedSet.has(item.id);
+
+    // If already unlocked: toggle between showing up to this stage vs hiding it (going 1 stage back)
+    if (isUnlocked) {
+      if (displayedStage === item.step) {
+        const prevStage = item.step - 1;
+        setDisplayedStage(prevStage);
+        animateRoomChange();
+        setSpeech(
+          prevStage === 0
+            ? `${item.name} geçici olarak gizlendi. Şu an sade başlangıç odasını görüyorsun.`
+            : `${item.name} gizlendi; ${prevStage}. aşama görünümü aktif.`
+        );
+      } else {
+        setDisplayedStage(item.step);
+        animateRoomChange();
+        setSpeech(`${item.name} tekrar odadaki yerini aldı!`);
+      }
       playAsmrComboTone(1);
       buzz('light');
       return;
     }
 
-    if (totalStars < item.starsRequired) {
-      setSpeech(`Bu güzellik için ${item.starsRequired} yıldıza ihtiyacımız var. Biraz daha bölüm tamamlayalım!`);
+    // Sequential check: must unlock previous step first so the 3D room builds up naturally
+    const prevItem = WORKSHOP_CATALOG.find((x) => x.step === item.step - 1);
+    if (prevItem && !unlockedSet.has(prevItem.id)) {
+      setSpeech(
+        `Odayı sırayla dekore ediyoruz! Önce "${prevItem.name}" (${prevItem.starsRequired} ⭐) eşyasını atölyeye ekleyelim.`
+      );
       buzz('error');
       return;
     }
 
-    // Unlock item
+    if (totalStars < item.starsRequired) {
+      setSpeech(
+        `"${item.name}" için toplam ${item.starsRequired} yıldıza ihtiyacımız var (Şu an: ${totalStars} ⭐). Birkaç bölüm daha tamamlayalım!`
+      );
+      buzz('error');
+      return;
+    }
+
+    // Unlock item and advance stage immediately!
+    const nextUnlocked = Array.from(new Set([...unlockedList, item.id]));
     update((d) => ({
       ...d,
-      workshopItems: [...(d.workshopItems || []), item.id],
+      workshopItems: nextUnlocked,
     }));
-
-    setSpeech(`Harika! ${item.name} atölyemize eklendi. Burası artık çok daha huzurlu!`);
+    setDisplayedStage(item.step);
+    animateRoomChange();
+    animateCharacterPop();
+    setSpeech(`Harika! ${item.name} gerçekten odaya eklendi! Yukarıdaki sahneye bak!`);
     playAsmrFeverChord();
     buzz('success');
   };
 
-  const handleSelectOutfit = (outfit: (typeof KNITWEAR_CATALOG)[0]) => {
+  const handleSelectOutfit = (outfit: KnitwearItem) => {
+    // If tapping already equipped outfit (other than 'none'), unequip back to 'none'
+    if (currentOutfitId === outfit.id && outfit.id !== 'none') {
+      update((d) => ({
+        ...d,
+        bobbinOutfit: 'none',
+      }));
+      animateCharacterPop();
+      setSpeech(`${outfit.name} çıkarıldı. Bobbin şimdi sade ahşap görünümünde!`);
+      playAsmrComboTone(1);
+      buzz('light');
+      return;
+    }
+
     if (totalStars < outfit.starsRequired) {
-      setSpeech(`Bu özel örgü aksesuar için ${outfit.starsRequired} yıldız gerekiyor. Hadi birkaç bölüm daha örelim!`);
+      setSpeech(
+        `"${outfit.name}" için ${outfit.starsRequired} yıldız gerekiyor (Şu an: ${totalStars} ⭐). Biraz daha bölüm geçelim!`
+      );
       buzz('error');
       return;
     }
@@ -165,14 +295,22 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
       ...d,
       bobbinOutfit: outfit.id,
     }));
-
-    setSpeech(`Bobbin yeni ${outfit.name} atkısını taktı! Çok yakıştı değil mi?`);
+    animateCharacterPop();
+    setSpeech(
+      outfit.id === 'none'
+        ? 'Bobbin tüm aksesuarlarını çıkardı, doğal ceviz ağacı gövdesiyle duruyor!'
+        : `Harika! Bobbin "${outfit.name}" aksesuarını boynuna taktı!`
+    );
     playAsmrComboTone(3);
     buzz('success');
   };
 
-  const unlockedCount = WORKSHOP_CATALOG.filter((i) => unlockedItems.has(i.id)).length;
+  const unlockedCount = WORKSHOP_CATALOG.filter((i) => unlockedSet.has(i.id)).length;
   const progressRatio = Math.min(1, unlockedCount / WORKSHOP_CATALOG.length);
+  const currentRoomImage =
+    WORKSHOP_STAGE_IMAGES[displayedStage] || WORKSHOP_STAGE_IMAGES[0];
+  const currentBobbinImage =
+    BOBBIN_OUTFIT_IMAGES[activeOutfit.id] || BOBBIN_OUTFIT_IMAGES.none;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -181,7 +319,7 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
         <RoundIcon icon="arrow-back" onPress={onBack} bg="#FDE68A" />
         <View style={styles.titleWrap}>
           <T style={styles.titleText}>🪵 Bobbin'in Atölyesi</T>
-          <T style={styles.subtitleText}>Ahşap & Örgü Dinlenme Odası</T>
+          <T style={styles.subtitleText}>Canlı 3D Oda & Gardırop Geliştirme</T>
         </View>
         <View style={styles.starPill}>
           <T style={{ fontSize: 16 }}>⭐</T>
@@ -194,35 +332,44 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Unified 3D Stop-Motion Miniature Diorama Showcase (100% Unobstructed) */}
-        <View style={styles.dioramaCard}>
+        {/* Live Progressive 3D Diorama Room + Real 3D Outfitted Bobbin */}
+        <Animated.View style={[styles.dioramaCard, { opacity: roomFade }]}>
+          {/* Layer 1: Progressive 3D Room Background (Stage 0..5) */}
           <Image
-            source={WORKSHOP_UNIFIED_IMAGE}
+            source={currentRoomImage}
             style={styles.dioramaImage}
             resizeMode="cover"
           />
 
-          {/* Warm Vintage Vignette Gradient Border */}
-          <View style={styles.dioramaBorderOverlay} pointerEvents="none" />
-
-          {/* Visual Knitwear Scarf / Collar Overlay on Bobbin */}
-          <View
+          {/* Layer 2: Real 3D Bobbin with Equipped Knitwear (or Bare Wood) Standing in Room */}
+          <Animated.View
             pointerEvents="none"
             style={[
-              styles.bobbinScarfCollar,
-              {
-                borderColor: activeOutfit.color,
-                backgroundColor: `${activeOutfit.color}40`,
-                shadowColor: activeOutfit.color,
-              },
+              styles.bobbinCharacterContainer,
+              { transform: [{ scale: characterPop }] },
             ]}
           >
-            <View style={[styles.bobbinScarfKnot, { backgroundColor: activeOutfit.color }]}>
-              <T style={{ fontSize: 13 }}>{activeOutfit.accentEmoji}</T>
-            </View>
+            <Image
+              source={currentBobbinImage}
+              style={styles.bobbinCharacterImage}
+              resizeMode="contain"
+            />
+          </Animated.View>
+
+          {/* Warm Vintage Vignette Frame */}
+          <View style={styles.dioramaBorderOverlay} pointerEvents="none" />
+
+          {/* Top-Left Live Stage Status Pill */}
+          <View style={styles.stageStatusPill}>
+            <Ionicons name="home" size={12} color="#FDE68A" />
+            <T style={styles.stageStatusText}>
+              {displayedStage === 0
+                ? 'Oda: Sade Başlangıç (0/5)'
+                : `Oda Aşaması: ${displayedStage}/5 Eşya`}
+            </T>
           </View>
 
-          {/* Compact Pointer Tag at Bottom-Right Pointing to Bobbin's Equipped Knitwear */}
+          {/* Bottom-Right Active Outfit Indicator Pill */}
           <TouchableOpacity
             activeOpacity={0.85}
             onPress={() => {
@@ -238,15 +385,70 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
               <T style={{ fontSize: 11 }}>{activeOutfit.accentEmoji}</T>
             </View>
             <T style={styles.equippedPinText}>
-              ↑ Bobbin'de Takılı: {activeOutfit.name}
+              {activeOutfit.id === 'none'
+                ? 'Kıyafet: Sade (Atkısız)'
+                : `Takılı: ${activeOutfit.name}`}
             </T>
           </TouchableOpacity>
-        </View>
+        </Animated.View>
 
-        {/* Bobbin Dialogue Card (Placed Outside Diorama So Room & Character Stay 100% Visible) */}
+        {/* Quick Stage Switcher Bar (When at least 1 furniture item is unlocked, lets user compare Sade Oda vs Stages!) */}
+        {highestUnlockedStage > 0 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.stageSwitcherRow}
+          >
+            <TouchableOpacity
+              onPress={() => {
+                setDisplayedStage(0);
+                animateRoomChange();
+                buzz('light');
+              }}
+              style={[
+                styles.stageChip,
+                displayedStage === 0 && styles.stageChipActive,
+              ]}
+            >
+              <T
+                style={[
+                  styles.stageChipText,
+                  displayedStage === 0 && styles.stageChipTextActive,
+                ]}
+              >
+                0. Sade Oda
+              </T>
+            </TouchableOpacity>
+
+            {WORKSHOP_CATALOG.filter((i) => i.step <= highestUnlockedStage).map((item) => {
+              const active = displayedStage === item.step;
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  onPress={() => {
+                    setDisplayedStage(item.step);
+                    animateRoomChange();
+                    buzz('light');
+                  }}
+                  style={[styles.stageChip, active && styles.stageChipActive]}
+                >
+                  <T style={[styles.stageChipText, active && styles.stageChipTextActive]}>
+                    + {item.shortLabel}
+                  </T>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        )}
+
+        {/* Bobbin Dialogue Card (Placed Outside Diorama So Room & Character Stay 100% Unobstructed) */}
         <View style={styles.speechCardOutside}>
           <View style={styles.speechAvatarBadge}>
-            <T style={{ fontSize: 18 }}>🪵</T>
+            <Image
+              source={currentBobbinImage}
+              style={{ width: 30, height: 30 }}
+              resizeMode="contain"
+            />
           </View>
           <T style={styles.speechText}>{speech}</T>
         </View>
@@ -254,23 +456,23 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
         {/* Room Restoration Progress Gauge */}
         <View style={styles.progressCard}>
           <View style={styles.progressHeader}>
-            <T style={styles.progressTitle}>Atölye Tamamlanma Oranı</T>
+            <T style={styles.progressTitle}>Atölye Geliştirme İlerlemesi</T>
             <T style={styles.progressPercent}>{Math.round(progressRatio * 100)}%</T>
           </View>
           <View style={styles.progressBarTrack}>
             <View
               style={[
                 styles.progressBarFill,
-                { width: `${Math.max(8, progressRatio * 100)}%` },
+                { width: `${Math.max(4, progressRatio * 100)}%` },
               ]}
             />
           </View>
           <T style={styles.progressSub}>
-            {unlockedCount} / {WORKSHOP_CATALOG.length} Eşya Yerleştirildi
+            {unlockedCount} / {WORKSHOP_CATALOG.length} Eşya Odaya Eklendi
           </T>
         </View>
 
-        {/* Category Tabs: Atölye Eşyaları & Örgü Gardırobu */}
+        {/* Category Tabs: Atölye Eşyaları & Örgü Aksesuarları */}
         <View style={styles.tabRow}>
           <TouchableOpacity
             style={[styles.tabButton, activeTab === 'room' && styles.tabButtonActive]}
@@ -290,7 +492,7 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
                 activeTab === 'room' && styles.tabTextActive,
               ]}
             >
-              Atölye Eşyaları
+              Atölye Eşyaları ({unlockedCount}/5)
             </T>
           </TouchableOpacity>
 
@@ -312,59 +514,84 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
                 activeTab === 'knitwear' && styles.tabTextActive,
               ]}
             >
-              Örgü Aksesuarları
+              Bobbin Kıyafetleri
             </T>
           </TouchableOpacity>
         </View>
 
-        {/* Tab 1: Atölye Eşyaları (Room Items) */}
+        {/* Tab 1: Atölye Eşyaları (Sequential Real 3D Room Upgrades) */}
         {activeTab === 'room' && (
           <View style={styles.itemList}>
             {WORKSHOP_CATALOG.map((item) => {
-              const isUnlocked = unlockedItems.has(item.id);
-              const canAfford = totalStars >= item.starsRequired;
+              const isUnlocked = unlockedSet.has(item.id);
+              const isVisibleInRoom = isUnlocked && displayedStage >= item.step;
+              const isNextStep = item.step === highestUnlockedStage + 1;
+              const canAfford = totalStars >= item.starsRequired && isNextStep;
 
               return (
-                <View key={item.id} style={styles.itemCard}>
+                <View
+                  key={item.id}
+                  style={[
+                    styles.itemCard,
+                    isNextStep && { borderColor: '#F59E0B', borderWidth: 2 },
+                  ]}
+                >
                   <View
                     style={[
                       styles.itemIconWrap,
-                      { backgroundColor: isUnlocked ? item.colorTag : '#E5E7EB' },
+                      { backgroundColor: isUnlocked ? item.colorTag : isNextStep ? '#FEF3C7' : '#E5E7EB' },
                     ]}
                   >
                     <Ionicons
                       name={
-                        item.icon === 'flame'
+                        item.id === 'rocking_chair'
+                          ? 'bed'
+                          : item.id === 'fireplace'
                           ? 'flame'
-                          : item.icon === 'cafe'
+                          : item.id === 'woven_rug'
+                          ? 'grid'
+                          : item.id === 'tea_station'
                           ? 'cafe'
-                          : item.icon === 'color-palette'
-                          ? 'color-palette'
-                          : item.icon === 'construct'
-                          ? 'construct'
-                          : 'cube'
+                          : 'construct'
                       }
-                      size={26}
-                      color={isUnlocked ? '#fff' : '#9CA3AF'}
+                      size={24}
+                      color={isUnlocked ? '#fff' : isNextStep ? '#D97706' : '#9CA3AF'}
                     />
+                    <View style={styles.stepNumberBadge}>
+                      <T style={styles.stepNumberText}>{item.step}</T>
+                    </View>
                   </View>
 
                   <View style={styles.itemInfo}>
                     <T style={styles.itemName}>{item.name}</T>
                     <T style={styles.itemDesc}>{item.desc}</T>
                     <View style={styles.itemMeta}>
-                      <T style={{ fontSize: 13, color: '#F59E0B', fontWeight: 'bold' }}>
-                        ⭐ {item.starsRequired} Yıldız Gereklidir
+                      <T
+                        style={{
+                          fontSize: 12.5,
+                          color: isUnlocked ? '#10B981' : '#F59E0B',
+                          fontFamily: FONT.bold,
+                        }}
+                      >
+                        {isUnlocked
+                          ? isVisibleInRoom
+                            ? '✓ Odada Görünüyor'
+                            : '👁️ Odada Gizli (Göster için dokun)'
+                          : isNextStep
+                          ? `⭐ ${item.starsRequired} Yıldız (Sıradaki Geliştirme)`
+                          : `🔒 ${item.step - 1}. Adım Sonrası Açılır (⭐ ${item.starsRequired})`}
                       </T>
                     </View>
                   </View>
 
                   <Bouncy
-                    onPress={() => handleUnlockItem(item)}
+                    onPress={() => handleRoomItemAction(item)}
                     style={[
                       styles.actionBtn,
                       isUnlocked
-                        ? styles.actionBtnActive
+                        ? isVisibleInRoom
+                          ? styles.actionBtnActive
+                          : styles.actionBtnAfford
                         : canAfford
                         ? styles.actionBtnAfford
                         : styles.actionBtnLocked,
@@ -373,10 +600,16 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
                     <T
                       style={[
                         styles.actionBtnText,
-                        isUnlocked && styles.actionBtnTextActive,
+                        (isUnlocked || canAfford) && styles.actionBtnTextActive,
                       ]}
                     >
-                      {isUnlocked ? '✓ Yerinde' : canAfford ? 'Oluştur' : '🔒 Kilitli'}
+                      {isUnlocked
+                        ? isVisibleInRoom
+                          ? '✓ Odada'
+                          : 'Göster'
+                        : canAfford
+                        ? '✨ Ekle'
+                        : '🔒 Kilitli'}
                     </T>
                   </Bouncy>
                 </View>
@@ -385,39 +618,58 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
           </View>
         )}
 
-        {/* Tab 2: Örgü Aksesuarları (Knitwear for Bobbin) */}
+        {/* Tab 2: Bobbin Kıyafetleri (Real 3D Scarves & Vests on Bobbin) */}
         {activeTab === 'knitwear' && (
           <View style={styles.itemList}>
             <View style={styles.identityNotice}>
               <Ionicons name="sparkles" size={18} color="#D97706" />
               <T style={styles.identityNoticeText}>
-                Bobbin daima kendi sevimli kimliğini korur. Burada kazandığın yıldızlarla Bobbin’e sıcacık el örgüsü kaşmir atkılar ve aksesuarlar hediye edebilirsin!
+                Seçtiğin atkı veya örgü yelek yukarıdaki atölyede Bobbin’in boynuna ve gövdesine gerçek 3D olarak giydirilir!
               </T>
             </View>
 
             {KNITWEAR_CATALOG.map((outfit) => {
-              const isEquipped = currentOutfit === outfit.id;
+              const isEquipped = currentOutfitId === outfit.id;
               const isUnlocked = totalStars >= outfit.starsRequired;
 
               return (
-                <View key={outfit.id} style={styles.itemCard}>
+                <View
+                  key={outfit.id}
+                  style={[
+                    styles.itemCard,
+                    isEquipped && { borderColor: '#10B981', borderWidth: 2 },
+                  ]}
+                >
+                  {/* Real 3D Miniature Preview of Bobbin Wearing This Exact Outfit */}
                   <View
                     style={[
-                      styles.itemIconWrap,
-                      { backgroundColor: outfit.color },
+                      styles.outfitThumbWrap,
+                      { borderColor: isEquipped ? '#10B981' : outfit.color },
                     ]}
                   >
-                    <T style={{ fontSize: 24 }}>{outfit.accentEmoji}</T>
+                    <Image
+                      source={outfit.image}
+                      style={styles.outfitThumbImage}
+                      resizeMode="contain"
+                    />
                   </View>
 
                   <View style={styles.itemInfo}>
                     <T style={styles.itemName}>{outfit.name}</T>
                     <T style={styles.itemDesc}>{outfit.desc}</T>
                     <View style={styles.itemMeta}>
-                      <T style={{ fontSize: 13, color: '#F59E0B', fontWeight: 'bold' }}>
+                      <T
+                        style={{
+                          fontSize: 12.5,
+                          color: isEquipped ? '#10B981' : '#F59E0B',
+                          fontFamily: FONT.bold,
+                        }}
+                      >
                         {outfit.starsRequired === 0
-                          ? '🌟 Başlangıç Hediyesi'
-                          : `⭐ ${outfit.starsRequired} Yıldız`}
+                          ? '🌟 Başlangıç Görünümü'
+                          : isEquipped
+                          ? '✓ Şu An Bobbin’in Üzerinde'
+                          : `⭐ ${outfit.starsRequired} Yıldız Gereklidir`}
                       </T>
                     </View>
                   </View>
@@ -436,10 +688,18 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
                     <T
                       style={[
                         styles.actionBtnText,
-                        isEquipped && styles.actionBtnTextActive,
+                        (isEquipped || isUnlocked) && styles.actionBtnTextActive,
                       ]}
                     >
-                      {isEquipped ? '✓ Takılı' : isUnlocked ? 'Kullan' : '🔒 Kilitli'}
+                      {isEquipped
+                        ? outfit.id === 'none'
+                          ? '✓ Aktif'
+                          : '✓ Takılı'
+                        : isUnlocked
+                        ? outfit.id === 'none'
+                          ? 'Sade Yap'
+                          : 'Giydir'
+                        : '🔒 Kilitli'}
                     </T>
                   </Bouncy>
                 </View>
@@ -504,7 +764,7 @@ const styles = StyleSheet.create({
   },
   dioramaCard: {
     width: '100%',
-    height: 350,
+    height: 330,
     borderRadius: 24,
     overflow: 'hidden',
     backgroundColor: '#29180C',
@@ -521,64 +781,97 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  bobbinCharacterContainer: {
+    position: 'absolute',
+    right: '4%',
+    bottom: '6%',
+    width: '42%',
+    height: '76%',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+  bobbinCharacterImage: {
+    width: '100%',
+    height: '100%',
+  },
   dioramaBorderOverlay: {
     ...StyleSheet.absoluteFill,
     borderRadius: 21,
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.25)',
   },
-  bobbinScarfCollar: {
+  stageStatusPill: {
     position: 'absolute',
-    right: '14%',
-    bottom: '22%',
-    width: 108,
-    height: 34,
-    borderRadius: 18,
-    borderWidth: 3,
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    paddingRight: 4,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.6,
-    shadowRadius: 6,
-    elevation: 5,
-  },
-  bobbinScarfKnot: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    top: 10,
+    left: 10,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: '#FFFDF9',
+    gap: 5,
+    backgroundColor: 'rgba(28, 17, 10, 0.82)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(253, 230, 138, 0.5)',
+  },
+  stageStatusText: {
+    fontSize: 11,
+    color: '#FEF3C7',
+    fontFamily: FONT.bold,
   },
   equippedPinBadge: {
     position: 'absolute',
-    bottom: 10,
-    right: 10,
+    bottom: 8,
+    right: 8,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(28, 17, 10, 0.86)',
+    backgroundColor: 'rgba(28, 17, 10, 0.88)',
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 4,
     borderRadius: 14,
     borderWidth: 1.5,
   },
   equippedColorDot: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
   },
   equippedPinText: {
-    fontSize: 11.5,
+    fontSize: 11,
     color: '#FEF3C7',
     fontFamily: FONT.bold,
   },
+  stageSwitcherRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 10,
+    paddingVertical: 2,
+  },
+  stageChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    backgroundColor: '#F9F5EE',
+    borderWidth: 1.5,
+    borderColor: '#E6D5BE',
+  },
+  stageChipActive: {
+    backgroundColor: '#78350F',
+    borderColor: '#D97706',
+  },
+  stageChipText: {
+    fontSize: 12,
+    fontFamily: FONT.bold,
+    color: '#78350F',
+  },
+  stageChipTextActive: {
+    color: '#FEF3C7',
+  },
   speechCardOutside: {
-    marginTop: 12,
+    marginTop: 10,
     backgroundColor: '#FFFBEB',
     borderRadius: 16,
     paddingHorizontal: 12,
@@ -595,14 +888,15 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   speechAvatarBadge: {
-    width: 34,
-    height: 34,
+    width: 38,
+    height: 38,
     borderRadius: 12,
     backgroundColor: '#FEF3C7',
     borderWidth: 1,
     borderColor: '#F59E0B',
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   speechText: {
     flex: 1,
@@ -615,7 +909,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEF3C7',
     borderRadius: 18,
     padding: 14,
-    marginTop: 14,
+    marginTop: 12,
     borderWidth: 1.5,
     borderColor: '#FDE68A',
   },
@@ -655,7 +949,7 @@ const styles = StyleSheet.create({
   tabRow: {
     flexDirection: 'row',
     gap: 10,
-    marginTop: 14,
+    marginTop: 12,
   },
   tabButton: {
     flex: 1,
@@ -682,7 +976,7 @@ const styles = StyleSheet.create({
     color: '#78350F',
   },
   itemList: {
-    marginTop: 14,
+    marginTop: 12,
     gap: 10,
   },
   identityNotice: {
@@ -717,11 +1011,45 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   itemIconWrap: {
-    width: 48,
-    height: 48,
+    width: 52,
+    height: 52,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
+  },
+  stepNumberBadge: {
+    position: 'absolute',
+    top: -4,
+    left: -4,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#451A03',
+    borderWidth: 1.5,
+    borderColor: '#FEF3C7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepNumberText: {
+    fontSize: 10,
+    color: '#FEF3C7',
+    fontFamily: FONT.black,
+  },
+  outfitThumbWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: 14,
+    backgroundColor: '#29180C',
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    padding: 2,
+  },
+  outfitThumbImage: {
+    width: '100%',
+    height: '100%',
   },
   itemInfo: {
     flex: 1,
@@ -746,6 +1074,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+    minWidth: 78,
   },
   actionBtnAfford: {
     backgroundColor: '#D97706',

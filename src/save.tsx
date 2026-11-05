@@ -22,6 +22,7 @@ export interface SaveData {
   completedLevels: number;
   workshopItems: string[];
   bobbinOutfit: string;
+  workshopVersion?: number;
 }
 
 const KEY = 'yumakpop:save:v1';
@@ -40,8 +41,9 @@ const DEFAULT: SaveData = {
   seenMechanics: {},
   deaths: 0,
   completedLevels: 0,
-  workshopItems: ['rocking_chair'],
-  bobbinOutfit: 'classic_honey',
+  workshopItems: [],
+  bobbinOutfit: 'none',
+  workshopVersion: 2,
 };
 
 export const BOOSTER_PRICE: Record<BoosterKind, number> = { undo: 60, slot: 120, magnet: 150 };
@@ -73,9 +75,13 @@ export function SaveProvider({ children }: { children: React.ReactNode }) {
       .then((raw) => {
         if (raw) {
           const parsed = JSON.parse(raw);
+          const isLegacyWorkshop = parsed.workshopVersion !== 2;
           setData({
             ...DEFAULT,
             ...parsed,
+            workshopItems: isLegacyWorkshop ? [] : (parsed.workshopItems ?? []),
+            bobbinOutfit: isLegacyWorkshop ? 'none' : (parsed.bobbinOutfit ?? 'none'),
+            workshopVersion: 2,
             boosters: { ...DEFAULT.boosters, ...parsed.boosters },
             seenMechanics: { ...DEFAULT.seenMechanics, ...parsed.seenMechanics },
           });

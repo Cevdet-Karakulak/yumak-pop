@@ -131,21 +131,20 @@ export function CoinBadge({ coins }: { coins: number }) {
 }
 
 export function Sheet({ visible, onClose, children, title }: { visible: boolean; onClose?: () => void; children: React.ReactNode; title?: string }) {
+  if (!visible) return null;
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
-      <View style={styles.backdrop}>
-        <View style={styles.sheet}>
-          <View style={styles.sheetStitch} pointerEvents="none" />
-          {title && <T style={styles.sheetTitle}>{title}</T>}
-          {onClose && (
-            <View style={{ position: 'absolute', right: 10, top: 10 }}>
-              <RoundIcon icon="close" onPress={onClose} size={38} bg={UI.peach} />
-            </View>
-          )}
-          {children}
-        </View>
+    <View style={[styles.backdrop, StyleSheet.absoluteFill, { zIndex: 9500, elevation: 9500 }]} pointerEvents="auto">
+      <View style={styles.sheet}>
+        <View style={styles.sheetStitch} pointerEvents="none" />
+        {title && <T style={styles.sheetTitle}>{title}</T>}
+        {onClose && (
+          <View style={{ position: 'absolute', right: 10, top: 10, zIndex: 10 }}>
+            <RoundIcon icon="close" onPress={onClose} size={38} bg={UI.peach} />
+          </View>
+        )}
+        {children}
       </View>
-    </Modal>
+    </View>
   );
 }
 
