@@ -2,14 +2,22 @@ import { Platform } from 'react-native';
 import { pauseMusic, syncMusic } from '../audio';
 
 // Production Google AdMob IDs (FloppaTech Corp / Yumak Pop)
-export const ADMOB_APP_ID = 'ca-app-pub-9426623468970945~7281224562';
-export const ADMOB_INTERSTITIAL_ID = 'ca-app-pub-9426623468970945/5968142896';
+export const ADMOB_ANDROID_APP_ID = 'ca-app-pub-9426623468970945~7281224562';
+export const ADMOB_ANDROID_INTERSTITIAL_ID = 'ca-app-pub-9426623468970945/5968142896';
 
-// Google AdMob Standard Test ID for Interstitial
-export const ADMOB_TEST_INTERSTITIAL_ID = 'ca-app-pub-3940256099942544/1033173712';
+// iOS AdMob IDs (AdMob konsolunda Yumak Pop iOS açıldığında buraya ID girilebilir; boşken Google iOS test birimi kullanılır)
+export const ADMOB_IOS_APP_ID = 'ca-app-pub-9426623468970945~7281224562';
+export const ADMOB_IOS_INTERSTITIAL_ID = ''; // iOS için özel AdMob geçiş reklamı açılınca buraya eklenebilir
 
-// Use production ID in release builds, test ID in development to prevent account policy strikes
-const INTERSTITIAL_UNIT_ID = __DEV__ ? ADMOB_TEST_INTERSTITIAL_ID : ADMOB_INTERSTITIAL_ID;
+// Google AdMob Standard Test IDs for Interstitials
+export const ADMOB_TEST_INTERSTITIAL_ANDROID = 'ca-app-pub-3940256099942544/1033173712';
+export const ADMOB_TEST_INTERSTITIAL_IOS = 'ca-app-pub-3940256099942544/4411468910';
+
+// Platform-aware unit selection: If iOS ad unit is not yet defined, use official iOS test ad unit so iOS doesn't crash or reject Android ad units
+const INTERSTITIAL_UNIT_ID = Platform.select({
+  ios: (__DEV__ || !ADMOB_IOS_INTERSTITIAL_ID) ? ADMOB_TEST_INTERSTITIAL_IOS : ADMOB_IOS_INTERSTITIAL_ID,
+  default: __DEV__ ? ADMOB_TEST_INTERSTITIAL_ANDROID : ADMOB_ANDROID_INTERSTITIAL_ID,
+})!;
 
 let interstitialAd: any = null;
 let isAdLoaded = false;
@@ -39,7 +47,7 @@ export async function initAdMob(): Promise<void> {
     const mobileAds = mobileAdsModule.default || mobileAdsModule;
     await mobileAds().initialize();
     isInitialized = true;
-    console.log('[AdMob] SDK initialized successfully');
+    console.log('[AdMob] SDK initialized successfully on', Platform.OS);
     preloadInterstitial();
   } catch (err) {
     console.warn('[AdMob] Initialization warning (expected on web or simulators):', err);
@@ -63,7 +71,7 @@ export function preloadInterstitial(): void {
       interstitialAd.addAdEventListener(AdEventType.LOADED, () => {
         isAdLoaded = true;
         isAdLoading = false;
-        console.log('[AdMob] Interstitial Ad loaded and ready to show');
+        console.log('[AdMob] Interstitial Ad loaded and ready to show on', Platform.OS);
       });
 
       if (AdEventType.OPENED) {
@@ -96,7 +104,7 @@ export function preloadInterstitial(): void {
         isAdLoaded = false;
         isAdLoading = false;
         isAdOpened = false;
-        console.warn('[AdMob] Interstitial Ad error:', error);
+        console.warn('[AdMob] Interstitial Ad error on', Platform.OS, error);
         syncMusic();
         if (onAdFallbackCallback) {
           const fb = onAdFallbackCallback;

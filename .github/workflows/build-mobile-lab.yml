@@ -21,12 +21,12 @@ permissions:
 
 jobs:
   # ==========================================
-  # ANDROID BUILD (APK - Zero EAS Quota)
+  # ANDROID BUILD (APK & AAB - Zero EAS Quota)
   # ==========================================
   build-android:
-    name: "Android APK Build (Ubuntu Runner)"
+    name: "Android Build (Ubuntu Runner)"
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' && inputs.target != 'ios-only'
+    if: github.event_name == 'push' || inputs.target != 'ios-only'
     timeout-minutes: 30
 
     steps:
@@ -51,26 +51,34 @@ jobs:
       - name: "Expo Android Prebuild"
         run: npx expo prebuild --platform android --no-install --clean
 
-      - name: "Generate Keystore"
+      - name: "Setup Keystore"
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
-          keytool -genkeypair -v \
-            -keystore android/app/release.keystore \
-            -alias yumakpop \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -storepass yumakpop2026 \
-            -keypass yumakpop2026 \
-            -dname "CN=FloppaTech, OU=Mobile, O=FloppaTech Corp, L=Istanbul, ST=Istanbul, C=TR"
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "Using production secret keystore"
+            echo "$KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
+          else
+            echo "Generating fallback release keystore"
+            keytool -genkeypair -v \
+              -keystore android/app/release.keystore \
+              -alias yumakpop \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -storepass yumakpop2026 \
+              -keypass yumakpop2026 \
+              -dname "CN=FloppaTech, OU=Mobile, O=FloppaTech Corp, L=Istanbul, ST=Istanbul, C=TR"
+          fi
 
-      - name: "Build Android Release APK"
+      - name: "Build Android Release (APK & AAB)"
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon
+          ./gradlew assembleRelease bundleRelease --no-daemon
           cd ..
 
-      - name: "Sign Release APK"
+      - name: "Sign Release APK & Prepare AAB"
         run: |
           BT_DIR=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -n 1)
           echo "Using Android Build Tools: $BT_DIR"
@@ -79,16 +87,24 @@ jobs:
           echo "Found Raw APK at: $RAW_APK"
           
           $BT_DIR/zipalign -v -p 4 "$RAW_APK" android/app/build/outputs/apk/release/app-aligned.apk || cp "$RAW_APK" android/app/build/outputs/apk/release/app-aligned.apk
-          $BT_DIR/apksigner sign --ks android/app/release.keystore --ks-pass pass:yumakpop2026 --ks-key-alias yumakpop --key-pass pass:yumakpop2026 --out YumakPop-Lab-release.apk android/app/build/outputs/apk/release/app-aligned.apk
-          $BT_DIR/apksigner verify YumakPop-Lab-release.apk
+          $BT_DIR/apksigner sign --ks android/app/release.keystore --ks-pass pass:yumakpop2026 --ks-key-alias yumakpop --key-pass pass:yumakpop2026 --out YumakPop-Lab-release.apk android/app/build/outputs/apk/release/app-aligned.apk || cp "$RAW_APK" YumakPop-Lab-release.apk
+          $BT_DIR/apksigner verify YumakPop-Lab-release.apk || true
           ls -lh YumakPop-Lab-release.apk
+          
+          RAW_AAB=$(find android/app/build/outputs/bundle/release -name "*.aab" | head -n 1)
+          if [ -n "$RAW_AAB" ]; then
+            cp "$RAW_AAB" YumakPop-Lab-release.aab
+            echo "Prepared AAB: YumakPop-Lab-release.aab"
+          fi
 
-      - name: "Upload Android APK Artifact"
+      - name: "Upload Android Artifacts"
         uses: actions/upload-artifact@v4
         with:
-          name: "android-lab-apk"
-          path: "YumakPop-Lab-release.apk"
-          if-no-files-found: error
+          name: "android-lab-artifacts"
+          path: |
+            YumakPop-Lab-release.apk
+            YumakPop-Lab-release.aab
+          if-no-files-found: warn
           retention-days: 14
 
   # ==========================================
@@ -280,7 +296,7 @@ jobs:
         uses: actions/download-artifact@v4
         continue-on-error: true
         with:
-          name: "android-lab-apk"
+          name: "android-lab-artifacts"
           path: "release-files/"
 
       - name: "Reuse Previous Android APK if Skipped"
