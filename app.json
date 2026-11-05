@@ -12,7 +12,9 @@
       "bundleIdentifier": "com.floppatech.yumakpop",
       "buildNumber": "3",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "GADApplicationIdentifier": "ca-app-pub-9426623468970945~6732669469",
+        "NSUserTrackingUsageDescription": "Bu izin, size ilgi alanlarınıza uygun kaliteli içerik ve reklamlar sunmak için kullanılır."
       }
     },
     "android": {
@@ -56,7 +58,59 @@
         "react-native-google-mobile-ads",
         {
           "androidAppId": "ca-app-pub-9426623468970945~7281224562",
-          "iosAppId": "ca-app-pub-9426623468970945~6732669469"
+          "iosAppId": "ca-app-pub-9426623468970945~6732669469",
+          "userTrackingUsageDescription": "Bu izin, size ilgi alanlarınıza uygun kaliteli içerik ve reklamlar sunmak için kullanılır.",
+          "skAdNetworkItems": [
+            "cstr6suwn9.skadnetwork",
+            "4fzdc2evr5.skadnetwork",
+            "4pfyvq9l8r.skadnetwork",
+            "2fnua5tdw4.skadnetwork",
+            "ydx93a7ass.skadnetwork",
+            "5a6fl7kh64.skadnetwork",
+            "p78axxw29g.skadnetwork",
+            "v72qych544.skadnetwork",
+            "ludvb6z3bs.skadnetwork",
+            "cp8zw746q7.skadnetwork",
+            "3sh42y64q3.skadnetwork",
+            "c6k4g5qg8m.skadnetwork",
+            "s39g8k73mm.skadnetwork",
+            "3qy4746246.skadnetwork",
+            "f38h382jlk.skadnetwork",
+            "hs6bdukanm.skadnetwork",
+            "v4nxqhlyqp.skadnetwork",
+            "wzmmz9fp64.skadnetwork",
+            "yclnxrl5pm.skadnetwork",
+            "t38b2kh725.skadnetwork",
+            "7ug5zh24hu.skadnetwork",
+            "gta9lk7p23.skadnetwork",
+            "vutu7akeur.skadnetwork",
+            "y5ghdn5j9q.skadnetwork",
+            "n6fk4nfna4.skadnetwork",
+            "v9wttpbfk9.skadnetwork",
+            "n38lu8286q.skadnetwork",
+            "47vh42847k.skadnetwork",
+            "kbd7576533.skadnetwork",
+            "9t245vhm4d.skadnetwork",
+            "a2p9lx4jpn.skadnetwork",
+            "22mmun2rn5.skadnetwork",
+            "446h53uzgt.skadnetwork",
+            "glqzh8vgby.skadnetwork",
+            "tl58334a97.skadnetwork",
+            "prcb7njmu6.skadnetwork",
+            "mlmmfzh3r3.skadnetwork",
+            "klf5c3l555.skadnetwork",
+            "7rz58n8ntq.skadnetwork",
+            "9nlqeag3gk.skadnetwork",
+            "cg4yq2srnc.skadnetwork",
+            "ecpz2srf59.skadnetwork",
+            "uw77j3544d.skadnetwork",
+            "pwa73g5rt2.skadnetwork",
+            "e5fvkxwrpn.skadnetwork",
+            "zq4928m337.skadnetwork",
+            "hgevnh5593.skadnetwork",
+            "f73kd4928i.skadnetwork",
+            "w9fl98au80.skadnetwork"
+          ]
         }
       ],
       [
@@ -69,10 +123,6 @@
         }
       ]
     ],
-    "react-native-google-mobile-ads": {
-      "android_app_id": "ca-app-pub-9426623468970945~7281224562",
-      "ios_app_id": "ca-app-pub-9426623468970945~6732669469"
-    },
     "extra": {
       "eas": {
         "projectId": "1e65d64a-65bb-48ac-8750-59f1e089f83b"

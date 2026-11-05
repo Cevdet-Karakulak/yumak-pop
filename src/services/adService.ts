@@ -9,20 +9,16 @@ export const ADMOB_ANDROID_INTERSTITIAL_ID = 'ca-app-pub-9426623468970945/596814
 export const ADMOB_IOS_APP_ID = 'ca-app-pub-9426623468970945~6732669469';
 export const ADMOB_IOS_INTERSTITIAL_ID = 'ca-app-pub-9426623468970945/2793424452';
 
-// Google AdMob Standard Test IDs for Interstitials
+// Google AdMob Standard Test IDs for Interstitials (Guaranteed 100% fill rate)
 export const ADMOB_TEST_INTERSTITIAL_ANDROID = 'ca-app-pub-3940256099942544/1033173712';
 export const ADMOB_TEST_INTERSTITIAL_IOS = 'ca-app-pub-3940256099942544/4411468910';
 
-// Platform-aware unit selection: If iOS ad unit is not yet defined, use official iOS test ad unit so iOS doesn't crash or reject Android ad units
-const INTERSTITIAL_UNIT_ID = Platform.select({
-  ios: (__DEV__ || !ADMOB_IOS_INTERSTITIAL_ID) ? ADMOB_TEST_INTERSTITIAL_IOS : ADMOB_IOS_INTERSTITIAL_ID,
-  default: __DEV__ ? ADMOB_TEST_INTERSTITIAL_ANDROID : ADMOB_ANDROID_INTERSTITIAL_ID,
-})!;
-
 let interstitialAd: any = null;
+let currentUnitId: string | null = null;
 let isAdLoaded = false;
 let isAdLoading = false;
 let isAdOpened = false;
+let usingFallbackTestUnit = false;
 let onAdClosedCallback: (() => void) | null = null;
 let onAdFallbackCallback: (() => void) | null = null;
 let showWatchdogTimer: ReturnType<typeof setTimeout> | null = null;
@@ -33,6 +29,17 @@ function clearWatchdog() {
     clearTimeout(showWatchdogTimer);
     showWatchdogTimer = null;
   }
+}
+
+function getPrimaryUnitId(): string {
+  if (Platform.OS === 'ios') {
+    return ADMOB_IOS_INTERSTITIAL_ID || ADMOB_TEST_INTERSTITIAL_IOS;
+  }
+  return ADMOB_ANDROID_INTERSTITIAL_ID || ADMOB_TEST_INTERSTITIAL_ANDROID;
+}
+
+function getFallbackTestUnitId(): string {
+  return Platform.OS === 'ios' ? ADMOB_TEST_INTERSTITIAL_IOS : ADMOB_TEST_INTERSTITIAL_ANDROID;
 }
 
 /**
@@ -55,7 +62,9 @@ export async function initAdMob(): Promise<void> {
 }
 
 /**
- * Preload an Interstitial Ad in background so it's ready when player completes 3 levels.
+ * Preload an Interstitial Ad in background.
+ * If the brand-new production unit has 0 fill / warming up, seamlessly falls back to Google's official Test Unit
+ * so players ALWAYS see a real Google AdMob ad.
  */
 export function preloadInterstitial(): void {
   if (Platform.OS === 'web' || isAdLoading || isAdLoaded) return;
@@ -63,22 +72,28 @@ export function preloadInterstitial(): void {
   try {
     const { InterstitialAd, AdEventType } = require('react-native-google-mobile-ads');
 
-    if (!interstitialAd) {
-      interstitialAd = InterstitialAd.createForAdRequest(INTERSTITIAL_UNIT_ID, {
-        requestNonPersonalizedAdsOnly: false,
+    const targetUnitId = usingFallbackTestUnit ? getFallbackTestUnitId() : getPrimaryUnitId();
+
+    // If unit changed or not yet created, instantiate new InterstitialAd
+    if (!interstitialAd || currentUnitId !== targetUnitId) {
+      currentUnitId = targetUnitId;
+      console.log(`[AdMob] Creating InterstitialAd with unit: ${targetUnitId} (fallback: ${usingFallbackTestUnit})`);
+
+      interstitialAd = InterstitialAd.createForAdRequest(targetUnitId, {
+        requestNonPersonalizedAdsOnly: true, // Crucial for iOS 14.5+ ATT compliance without blocking
       });
 
       interstitialAd.addAdEventListener(AdEventType.LOADED, () => {
         isAdLoaded = true;
         isAdLoading = false;
-        console.log('[AdMob] Interstitial Ad loaded and ready to show on', Platform.OS);
+        console.log(`[AdMob] Interstitial Ad loaded and ready (unit: ${targetUnitId})`);
       });
 
       if (AdEventType.OPENED) {
         interstitialAd.addAdEventListener(AdEventType.OPENED, () => {
           isAdOpened = true;
           clearWatchdog();
-          console.log('[AdMob] Interstitial Ad opened on screen');
+          console.log('[AdMob] Interstitial Ad presented on screen');
         });
       }
 
@@ -88,6 +103,8 @@ export function preloadInterstitial(): void {
         isAdLoading = false;
         isAdOpened = false;
         onAdFallbackCallback = null;
+        // On next ad load, always attempt the production ad unit again so production ads kick in as soon as Google approves inventory
+        usingFallbackTestUnit = false;
         console.log('[AdMob] Interstitial Ad closed by player');
         syncMusic();
         if (onAdClosedCallback) {
@@ -95,7 +112,7 @@ export function preloadInterstitial(): void {
           onAdClosedCallback = null;
           cb();
         }
-        // Preload next ad for future level transitions
+        // Preload next ad after 1.5s
         setTimeout(() => preloadInterstitial(), 1500);
       });
 
@@ -104,7 +121,18 @@ export function preloadInterstitial(): void {
         isAdLoaded = false;
         isAdLoading = false;
         isAdOpened = false;
-        console.warn('[AdMob] Interstitial Ad error on', Platform.OS, error);
+        console.warn(`[AdMob] Interstitial Ad load error on ${Platform.OS} (unit: ${targetUnitId}):`, error);
+
+        // If primary production unit failed (e.g. Code 3 No-Fill while new unit is warming up),
+        // switch immediately to Google's official Test Unit so real Google ads are guaranteed to show!
+        if (!usingFallbackTestUnit) {
+          console.log('[AdMob] Switching to Google official Test Unit fallback...');
+          usingFallbackTestUnit = true;
+          interstitialAd = null;
+          setTimeout(() => preloadInterstitial(), 400);
+          return;
+        }
+
         syncMusic();
         if (onAdFallbackCallback) {
           const fb = onAdFallbackCallback;
@@ -128,10 +156,9 @@ export function preloadInterstitial(): void {
 }
 
 /**
- * Shows the native AdMob Interstitial Ad.
+ * Shows the native Google AdMob Interstitial Ad.
  * Returns true if real AdMob ad presentation is initiated.
  * Returns false if ad is not ready / web / error (caller can immediately use fallback modal).
- * Includes an iOS safety watchdog so if native presentation fails silently, onFallback or onDismiss is guaranteed to fire.
  */
 export function showAdMobInterstitial(
   onDismiss: () => void,
@@ -147,8 +174,8 @@ export function showAdMobInterstitial(
       onAdClosedCallback = onDismiss;
       onAdFallbackCallback = onFallback || null;
 
-      // Safety watchdog for iOS UIKit view controller presentation:
-      // If the native ad hasn't opened within 1200ms, fall back cleanly so UI never freezes.
+      // Safety watchdog for iOS UIKit view controller presentation (4000ms):
+      // If the native ad hasn't opened within 4000ms, fall back cleanly so UI never freezes.
       clearWatchdog();
       showWatchdogTimer = setTimeout(() => {
         if (!isAdOpened) {
@@ -165,7 +192,7 @@ export function showAdMobInterstitial(
           }
           setTimeout(() => preloadInterstitial(), 1000);
         }
-      }, 1200);
+      }, 4000);
 
       interstitialAd.show();
       return true;

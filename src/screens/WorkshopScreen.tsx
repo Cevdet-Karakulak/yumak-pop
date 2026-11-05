@@ -52,7 +52,7 @@ const WORKSHOP_CATALOG: WorkshopItem[] = [
     name: 'Sallanan Ahşap Koltuk',
     shortLabel: '1. Koltuk',
     desc: 'Torna kayın ağacından oyulmuş, mercan yün minderli dinlenme koltuğu odaya eklenir.',
-    starsRequired: 2,
+    starsRequired: 5,
     icon: 'PartlySunny' as any,
     colorTag: '#E06D53',
   },
@@ -62,7 +62,7 @@ const WORKSHOP_CATALOG: WorkshopItem[] = [
     name: 'Köy Tuğlası Şömine',
     shortLabel: '2. Şömine',
     desc: 'Sol duvara atölyeyi sımsıcak tutan kor ateşli tuğla şömine inşa edilir.',
-    starsRequired: 5,
+    starsRequired: 10,
     icon: 'flame',
     colorTag: '#F59E0B',
   },
@@ -72,7 +72,7 @@ const WORKSHOP_CATALOG: WorkshopItem[] = [
     name: 'El Dokuması Kelt Halısı',
     shortLabel: '3. Halı',
     desc: 'Ahşap parkenin üzerine el dokuması geometrik desenli yün halı serilir.',
-    starsRequired: 9,
+    starsRequired: 15,
     icon: 'color-palette',
     colorTag: '#10B981',
   },
@@ -82,7 +82,7 @@ const WORKSHOP_CATALOG: WorkshopItem[] = [
     name: 'Ihlamur & Demlik Köşesi',
     shortLabel: '4. Demlik',
     desc: 'Koltuğun yanına dumanı tüten seramik demlik, ıhlamur fincanı ve sehpa eklenir.',
-    starsRequired: 15,
+    starsRequired: 20,
     icon: 'cafe',
     colorTag: '#6366F1',
   },
@@ -92,7 +92,7 @@ const WORKSHOP_CATALOG: WorkshopItem[] = [
     name: 'Antika Çıkrık & Yumak Vitrini',
     shortLabel: '5. Çıkrık',
     desc: 'Arka köşeye usta işi ahşap iplik çıkrığı ve rengârenk yumak rafları kurulur.',
-    starsRequired: 24,
+    starsRequired: 30,
     icon: 'construct',
     colorTag: '#EC4899',
   },
@@ -122,7 +122,7 @@ const KNITWEAR_CATALOG: KnitwearItem[] = [
     id: 'classic_honey',
     name: 'Klasik Bal Sarısı Atkı',
     desc: 'Bobbin’in boynuna el örgüsü sıcacık püsküllü bal sarısı yün atkı takılır.',
-    starsRequired: 2,
+    starsRequired: 3,
     color: '#F59E0B',
     accentEmoji: '🧣',
     image: BOBBIN_OUTFIT_IMAGES.classic_honey,
@@ -131,7 +131,7 @@ const KNITWEAR_CATALOG: KnitwearItem[] = [
     id: 'arctic_sky',
     name: 'Kutup Mavisi Kaşmir Atkı',
     desc: 'Kar tanesi motifli, çift kat gök mavisi yumuşacık kaşmir atkı.',
-    starsRequired: 6,
+    starsRequired: 8,
     color: '#0EA5E9',
     accentEmoji: '❄️',
     image: BOBBIN_OUTFIT_IMAGES.arctic_sky,
@@ -140,7 +140,7 @@ const KNITWEAR_CATALOG: KnitwearItem[] = [
     id: 'emerald_moss',
     name: 'Zümrüt Ormanı Örgü Yelek',
     desc: 'Bobbin’in gövdesini saran saç örgülü zümrüt yeşili usta zanaatkâr yeleği.',
-    starsRequired: 12,
+    starsRequired: 16,
     color: '#10B981',
     accentEmoji: '🌲',
     image: BOBBIN_OUTFIT_IMAGES.emerald_moss,
@@ -149,7 +149,7 @@ const KNITWEAR_CATALOG: KnitwearItem[] = [
     id: 'royal_berry',
     name: 'Kraliyet Böğürtlen Pelerini',
     desc: 'Altın makara broşlu, asil mürdüm ve altın işlemeli başusta pelerini.',
-    starsRequired: 20,
+    starsRequired: 25,
     color: '#8B5CF6',
     accentEmoji: '👑',
     image: BOBBIN_OUTFIT_IMAGES.royal_berry,
@@ -160,9 +160,10 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
   const { data, update } = useSave();
   const insets = useSafeAreaInsets();
 
-  const totalStars = Object.values(data.stars).reduce((a, b) => a + b, 0);
+  const availableStars = Math.max(0, Object.values(data.stars || {}).reduce((a, b) => a + (b || 0), 0) - (data.spentStars || 0));
   const unlockedList = data.workshopItems || [];
   const unlockedSet = new Set(unlockedList);
+  const purchasedOutfits = data.purchasedOutfits || ['none'];
 
   // Highest sequential stage unlocked (0..5)
   let highestUnlockedStage = 0;
@@ -247,30 +248,34 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
       return;
     }
 
-    if (totalStars < item.starsRequired) {
+    if (availableStars < item.starsRequired) {
       setSpeech(
-        `"${item.name}" için toplam ${item.starsRequired} yıldıza ihtiyacımız var (Şu an: ${totalStars} ⭐). Birkaç bölüm daha tamamlayalım!`
+        `"${item.name}" için ${item.starsRequired} yıldıza ihtiyacımız var (Kullanılabilir: ${availableStars} ⭐). Birkaç bölüm daha tamamlayıp yıldız toplayalım!`
       );
       buzz('error');
       return;
     }
 
-    // Unlock item and advance stage immediately!
+    // Deduct stars and unlock item!
     const nextUnlocked = Array.from(new Set([...unlockedList, item.id]));
+    const nextRemaining = availableStars - item.starsRequired;
     update((d) => ({
       ...d,
+      spentStars: (d.spentStars || 0) + item.starsRequired,
       workshopItems: nextUnlocked,
     }));
     setDisplayedStage(item.step);
     animateRoomChange();
     animateCharacterPop();
-    setSpeech(`Harika! ${item.name} gerçekten odaya eklendi! Yukarıdaki sahneye bak!`);
+    setSpeech(`Harika! ${item.starsRequired} ⭐ harcandı ve ${item.name} odaya eklendi! Kalan: ${nextRemaining} ⭐`);
     playAsmrFeverChord();
     buzz('success');
   };
 
   const handleSelectOutfit = (outfit: KnitwearItem) => {
-    // If tapping already equipped outfit (other than 'none'), unequip back to 'none'
+    const isOwned = purchasedOutfits.includes(outfit.id) || outfit.id === 'none';
+
+    // If already equipped and not 'none', unequip back to 'none'
     if (currentOutfitId === outfit.id && outfit.id !== 'none') {
       update((d) => ({
         ...d,
@@ -283,24 +288,43 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
       return;
     }
 
-    if (totalStars < outfit.starsRequired) {
+    // If already owned, equip for free!
+    if (isOwned) {
+      update((d) => ({
+        ...d,
+        bobbinOutfit: outfit.id,
+      }));
+      animateCharacterPop();
       setSpeech(
-        `"${outfit.name}" için ${outfit.starsRequired} yıldız gerekiyor (Şu an: ${totalStars} ⭐). Biraz daha bölüm geçelim!`
+        outfit.id === 'none'
+          ? 'Bobbin tüm aksesuarlarını çıkardı, doğal ceviz ağacı gövdesiyle duruyor!'
+          : `Bobbin "${outfit.name}" aksesuarını kuşandı!`
+      );
+      playAsmrComboTone(3);
+      buzz('success');
+      return;
+    }
+
+    // If not owned, check available stars to purchase!
+    if (availableStars < outfit.starsRequired) {
+      setSpeech(
+        `"${outfit.name}" için ${outfit.starsRequired} yıldız gerekiyor (Kullanılabilir: ${availableStars} ⭐). Biraz daha bölüm geçerek yıldız toplayalım!`
       );
       buzz('error');
       return;
     }
 
+    // Deduct stars, add to purchased outfits, and equip!
+    const nextPurchased = Array.from(new Set([...purchasedOutfits, outfit.id]));
+    const nextRemaining = availableStars - outfit.starsRequired;
     update((d) => ({
       ...d,
+      spentStars: (d.spentStars || 0) + outfit.starsRequired,
+      purchasedOutfits: nextPurchased,
       bobbinOutfit: outfit.id,
     }));
     animateCharacterPop();
-    setSpeech(
-      outfit.id === 'none'
-        ? 'Bobbin tüm aksesuarlarını çıkardı, doğal ceviz ağacı gövdesiyle duruyor!'
-        : `Harika! Bobbin "${outfit.name}" aksesuarını boynuna taktı!`
-    );
+    setSpeech(`Harika! ${outfit.starsRequired} ⭐ harcandı ve "${outfit.name}" Bobbin'e giydirildi! Kalan: ${nextRemaining} ⭐`);
     playAsmrComboTone(3);
     buzz('success');
   };
@@ -323,7 +347,7 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
         </View>
         <View style={styles.starPill}>
           <T style={{ fontSize: 16 }}>⭐</T>
-          <T style={styles.starCount}>{totalStars}</T>
+          <T style={styles.starCount}>{availableStars}</T>
         </View>
       </View>
 
@@ -526,7 +550,7 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
               const isUnlocked = unlockedSet.has(item.id);
               const isVisibleInRoom = isUnlocked && displayedStage >= item.step;
               const isNextStep = item.step === highestUnlockedStage + 1;
-              const canAfford = totalStars >= item.starsRequired && isNextStep;
+              const canAfford = availableStars >= item.starsRequired && isNextStep;
 
               return (
                 <View
@@ -578,7 +602,9 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
                             ? '✓ Odada Görünüyor'
                             : '👁️ Odada Gizli (Göster için dokun)'
                           : isNextStep
-                          ? `⭐ ${item.starsRequired} Yıldız (Sıradaki Geliştirme)`
+                          ? canAfford
+                            ? `⭐ ${item.starsRequired} Yıldız ile Alınabilir`
+                            : `⭐ ${item.starsRequired} Yıldız Gerekir (Kalan: ${availableStars} ⭐)`
                           : `🔒 ${item.step - 1}. Adım Sonrası Açılır (⭐ ${item.starsRequired})`}
                       </T>
                     </View>
@@ -608,7 +634,9 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
                           ? '✓ Odada'
                           : 'Göster'
                         : canAfford
-                        ? '✨ Ekle'
+                        ? `✨ ${item.starsRequired} ⭐ Al`
+                        : isNextStep
+                        ? `⭐ ${item.starsRequired}`
                         : '🔒 Kilitli'}
                     </T>
                   </Bouncy>
@@ -630,7 +658,8 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
 
             {KNITWEAR_CATALOG.map((outfit) => {
               const isEquipped = currentOutfitId === outfit.id;
-              const isUnlocked = totalStars >= outfit.starsRequired;
+              const isOwned = purchasedOutfits.includes(outfit.id) || outfit.id === 'none';
+              const canAfford = availableStars >= outfit.starsRequired;
 
               return (
                 <View
@@ -661,7 +690,7 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
                       <T
                         style={{
                           fontSize: 12.5,
-                          color: isEquipped ? '#10B981' : '#F59E0B',
+                          color: isEquipped ? '#10B981' : isOwned ? '#3B82F6' : '#F59E0B',
                           fontFamily: FONT.bold,
                         }}
                       >
@@ -669,7 +698,11 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
                           ? '🌟 Başlangıç Görünümü'
                           : isEquipped
                           ? '✓ Şu An Bobbin’in Üzerinde'
-                          : `⭐ ${outfit.starsRequired} Yıldız Gereklidir`}
+                          : isOwned
+                          ? '✓ Gardıropta (Ücretsiz Kuşan)'
+                          : canAfford
+                          ? `⭐ ${outfit.starsRequired} Yıldız ile Satın Al`
+                          : `⭐ ${outfit.starsRequired} Yıldız Gerekir (Kalan: ${availableStars} ⭐)`}
                       </T>
                     </View>
                   </View>
@@ -680,7 +713,7 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
                       styles.actionBtn,
                       isEquipped
                         ? styles.actionBtnActive
-                        : isUnlocked
+                        : isOwned || canAfford
                         ? styles.actionBtnAfford
                         : styles.actionBtnLocked,
                     ]}
@@ -688,18 +721,20 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
                     <T
                       style={[
                         styles.actionBtnText,
-                        (isEquipped || isUnlocked) && styles.actionBtnTextActive,
+                        (isEquipped || isOwned || canAfford) && styles.actionBtnTextActive,
                       ]}
                     >
                       {isEquipped
                         ? outfit.id === 'none'
-                          ? '✓ Aktif'
-                          : '✓ Takılı'
-                        : isUnlocked
+                          ? '✓ Doğal'
+                          : '✓ Çıkar'
+                        : isOwned
                         ? outfit.id === 'none'
-                          ? 'Sade Yap'
-                          : 'Giydir'
-                        : '🔒 Kilitli'}
+                          ? 'Sadeleş'
+                          : 'Kuşan'
+                        : canAfford
+                        ? `✨ ${outfit.starsRequired} ⭐ Al`
+                        : `⭐ ${outfit.starsRequired}`}
                     </T>
                   </Bouncy>
                 </View>

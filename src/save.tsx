@@ -23,6 +23,8 @@ export interface SaveData {
   workshopItems: string[];
   bobbinOutfit: string;
   workshopVersion?: number;
+  spentStars?: number;
+  purchasedOutfits?: string[];
 }
 
 const KEY = 'yumakpop:save:v1';
@@ -44,7 +46,14 @@ const DEFAULT: SaveData = {
   workshopItems: [],
   bobbinOutfit: 'none',
   workshopVersion: 2,
+  spentStars: 0,
+  purchasedOutfits: ['none'],
 };
+
+export function getAvailableStars(data: SaveData): number {
+  const totalEarned = Object.values(data.stars || {}).reduce((sum, s) => sum + (s || 0), 0);
+  return Math.max(0, totalEarned - (data.spentStars || 0));
+}
 
 export const BOOSTER_PRICE: Record<BoosterKind, number> = { undo: 60, slot: 120, magnet: 150 };
 export const CONTINUE_PRICE = 90;
@@ -76,12 +85,48 @@ export function SaveProvider({ children }: { children: React.ReactNode }) {
         if (raw) {
           const parsed = JSON.parse(raw);
           const isLegacyWorkshop = parsed.workshopVersion !== 2;
+          const initialItems: string[] = isLegacyWorkshop ? [] : (parsed.workshopItems ?? []);
+          const initialOutfit: string = isLegacyWorkshop ? 'none' : (parsed.bobbinOutfit ?? 'none');
+
+          // Ensure spentStars and purchasedOutfits migration
+          let spent = typeof parsed.spentStars === 'number' ? parsed.spentStars : undefined;
+          let outfits: string[] = Array.isArray(parsed.purchasedOutfits) ? [...parsed.purchasedOutfits] : ['none'];
+          if (initialOutfit && !outfits.includes(initialOutfit)) {
+            outfits.push(initialOutfit);
+          }
+
+          if (spent === undefined) {
+            const ITEM_PRICES: Record<string, number> = {
+              rocking_chair: 5,
+              fireplace: 10,
+              woven_rug: 15,
+              tea_station: 20,
+              antique_loom: 30,
+            };
+            const OUTFIT_PRICES: Record<string, number> = {
+              classic_honey: 3,
+              arctic_sky: 8,
+              emerald_moss: 16,
+              royal_berry: 25,
+            };
+            let calc = 0;
+            for (const id of initialItems) {
+              calc += ITEM_PRICES[id] || 0;
+            }
+            for (const id of outfits) {
+              if (id !== 'none') calc += OUTFIT_PRICES[id] || 0;
+            }
+            spent = calc;
+          }
+
           setData({
             ...DEFAULT,
             ...parsed,
-            workshopItems: isLegacyWorkshop ? [] : (parsed.workshopItems ?? []),
-            bobbinOutfit: isLegacyWorkshop ? 'none' : (parsed.bobbinOutfit ?? 'none'),
+            workshopItems: initialItems,
+            bobbinOutfit: initialOutfit,
             workshopVersion: 2,
+            spentStars: spent,
+            purchasedOutfits: outfits,
             boosters: { ...DEFAULT.boosters, ...parsed.boosters },
             seenMechanics: { ...DEFAULT.seenMechanics, ...parsed.seenMechanics },
           });

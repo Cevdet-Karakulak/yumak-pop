@@ -183,7 +183,7 @@ export function HomeScreen({
   };
 
   const current = Math.min(data.unlocked, TOTAL_LEVELS);
-  const totalStars = Object.values(data.stars).reduce((sum, s) => sum + (s || 0), 0);
+  const availableStars = Math.max(0, Object.values(data.stars).reduce((sum, s) => sum + (s || 0), 0) - (data.spentStars || 0));
 
   return (
     <View style={styles.root}>
@@ -423,7 +423,7 @@ export function HomeScreen({
           <View style={styles.levelProgressPill}>
             <Ionicons name="ribbon" size={15} color={UI.coral} />
             <T style={styles.levelProgressText}>
-              {t.level} {current}  •  ⭐ {totalStars} Yıldız
+              {t.level} {current}  •  ⭐ {availableStars} Yıldız
             </T>
           </View>
 
@@ -464,7 +464,7 @@ export function HomeScreen({
           {Boolean(onWorkshop) && (
             <YarnButton
               small
-              label={`BOBBİN'İN ATÖLYESİ  ⭐ ${totalStars}`}
+              label={`BOBBİN'İN ATÖLYESİ  ⭐ ${availableStars}`}
               icon="home"
               color="gold"
               onPress={() => onWorkshop?.()}
