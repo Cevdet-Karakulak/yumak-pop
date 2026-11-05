@@ -5,9 +5,9 @@ import { pauseMusic, syncMusic } from '../audio';
 export const ADMOB_ANDROID_APP_ID = 'ca-app-pub-9426623468970945~7281224562';
 export const ADMOB_ANDROID_INTERSTITIAL_ID = 'ca-app-pub-9426623468970945/5968142896';
 
-// iOS AdMob IDs (AdMob konsolunda Yumak Pop iOS açıldığında buraya ID girilebilir; boşken Google iOS test birimi kullanılır)
-export const ADMOB_IOS_APP_ID = 'ca-app-pub-9426623468970945~7281224562';
-export const ADMOB_IOS_INTERSTITIAL_ID = ''; // iOS için özel AdMob geçiş reklamı açılınca buraya eklenebilir
+// Production iOS AdMob IDs (FloppaTech Corp / Yumak Pop iOS)
+export const ADMOB_IOS_APP_ID = 'ca-app-pub-9426623468970945~6732669469';
+export const ADMOB_IOS_INTERSTITIAL_ID = 'ca-app-pub-9426623468970945/2793424452';
 
 // Google AdMob Standard Test IDs for Interstitials
 export const ADMOB_TEST_INTERSTITIAL_ANDROID = 'ca-app-pub-3940256099942544/1033173712';
