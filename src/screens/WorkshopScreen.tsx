@@ -15,7 +15,7 @@ import { Bouncy, FONT, RoundIcon, T } from '../components/ui';
 import { useSave } from '../save';
 import { UI } from '../theme';
 
-// 6 Progressive 3D Miniature Diorama Room Stages (Camera-locked sequential progression)
+// 6 Progressive 3D Miniature Diorama Room Stages for Room 1: Usta Atölyesi
 const WORKSHOP_STAGE_IMAGES: Record<number, ImageSourcePropType> = {
   0: require('../../assets/images/workshop_stage_0.jpg'), // Sade boş ahşap oda
   1: require('../../assets/images/workshop_stage_1.jpg'), // + Sallanan Ahşap Koltuk
@@ -25,13 +25,24 @@ const WORKSHOP_STAGE_IMAGES: Record<number, ImageSourcePropType> = {
   5: require('../../assets/images/workshop_stage_5.jpg'), // + Antika Ahşap Çıkrık & Yumak Vitrini
 };
 
-// 5 Real 3D Bobbin Character Sprites with Ground Contact Shadows (Alpha RGBA PNGs)
+// 6 Progressive 3D Miniature Diorama Room Stages for Room 2: Kışlık Kar Dağ Evi
+const SKI_LODGE_STAGE_IMAGES: Record<number, ImageSourcePropType> = {
+  0: require('../../assets/images/ski_lodge_stage_0.jpg'), // Sade boş kütük dağ kulübesi
+  1: require('../../assets/images/ski_lodge_stage_1.jpg'), // + Döküm Demir Kuzine Dağ Sobası
+  2: require('../../assets/images/ski_lodge_stage_2.jpg'), // + Peluş Beyaz Koyun Postu & Kütük Sehpa
+  3: require('../../assets/images/ski_lodge_stage_3.jpg'), // + Vintage Ahşap Kros Kayaklar
+  4: require('../../assets/images/ski_lodge_stage_4.jpg'), // + Sıcak Çikolata & Marşmelov
+  5: require('../../assets/images/ski_lodge_stage_5.jpg'), // + Karlı Pencere Sediri & Kar Feneri
+};
+
+// Real 3D Bobbin Character Sprites with Ground Contact Shadows (Alpha RGBA PNGs)
 const BOBBIN_OUTFIT_IMAGES: Record<string, ImageSourcePropType> = {
   none: require('../../assets/images/bobbin_none.png'),
   classic_honey: require('../../assets/images/bobbin_honey.png'),
   arctic_sky: require('../../assets/images/bobbin_arctic.png'),
   emerald_moss: require('../../assets/images/bobbin_emerald.png'),
   royal_berry: require('../../assets/images/bobbin_royal.png'),
+  winter_fur: require('../../assets/images/bobbin_winter_fur.png'),
 };
 
 interface WorkshopItem {
@@ -45,6 +56,7 @@ interface WorkshopItem {
   colorTag: string;
 }
 
+// Room 1 Items: Usta Atölyesi
 const WORKSHOP_CATALOG: WorkshopItem[] = [
   {
     id: 'rocking_chair',
@@ -89,12 +101,66 @@ const WORKSHOP_CATALOG: WorkshopItem[] = [
   {
     id: 'antique_loom',
     step: 5,
-    name: 'Antika Çıkrık & Yumak Vitrini',
+    name: 'Antika Çıkrık & Vitrin',
     shortLabel: '5. Çıkrık',
     desc: 'Arka köşeye usta işi ahşap iplik çıkrığı ve rengârenk yumak rafları kurulur.',
     starsRequired: 30,
     icon: 'construct',
     colorTag: '#EC4899',
+  },
+];
+
+// Room 2 Items: Kışlık Kar Dağ Evi
+const SKI_LODGE_CATALOG: WorkshopItem[] = [
+  {
+    id: 'cast_iron_stove',
+    step: 1,
+    name: 'Döküm Demir Dağ Sobası',
+    shortLabel: '1. Soba',
+    desc: 'Odun çıtırtıları ve pencereli ateş kapağıyla dağ kulübesini ısıtan döküm kuzine soba.',
+    starsRequired: 5,
+    icon: 'flame',
+    colorTag: '#E06D53',
+  },
+  {
+    id: 'sheepskin_rug',
+    step: 2,
+    name: 'Beyaz Koyun Postu & Kütük Sehpa',
+    shortLabel: '2. Post & Sehpa',
+    desc: 'Koyu kütük parkenin üzerine serilen bembeyaz peluş dağ postu ve cilalı kütük sehpa.',
+    starsRequired: 10,
+    icon: 'color-palette',
+    colorTag: '#F59E0B',
+  },
+  {
+    id: 'vintage_skis',
+    step: 3,
+    name: 'Ahşap Kros Kayak Takımı',
+    shortLabel: '3. Kayaklar',
+    desc: 'Kütük duvara çapraz asılı el yapımı vintage ahşap kayak takımı ve deri bağcıklar.',
+    starsRequired: 15,
+    icon: 'snow' as any,
+    colorTag: '#0EA5E9',
+  },
+  {
+    id: 'hot_cocoa',
+    step: 4,
+    name: 'Sıcak Kakao & Marşmelov',
+    shortLabel: '4. Kakao',
+    desc: 'Kütük sehpa üzerinde dumanı tüten köpüklü sıcak çikolata, marşmelov ve çubuk tarçın.',
+    starsRequired: 20,
+    icon: 'cafe',
+    colorTag: '#8B5CF6',
+  },
+  {
+    id: 'tartan_daybed',
+    step: 5,
+    name: 'Pencere Sediri & Kar Feneri',
+    shortLabel: '5. Sedir',
+    desc: 'Karlı dağ penceresinin önünde kalın ekose battaniyeli kütük sedir ve pirinç kar feneri.',
+    starsRequired: 30,
+    icon: 'home',
+    colorTag: '#10B981',
   },
 ];
 
@@ -137,6 +203,15 @@ const KNITWEAR_CATALOG: KnitwearItem[] = [
     image: BOBBIN_OUTFIT_IMAGES.arctic_sky,
   },
   {
+    id: 'winter_fur',
+    name: 'Kürklü Kar Beresi & Polar Boğazlık',
+    desc: 'Kış fırtınalarına karşı Bobbin’in beresine eklenen sıcacık kulaklıklar ve yün polar boğazlık.',
+    starsRequired: 12,
+    color: '#38BDF8',
+    accentEmoji: '🎿',
+    image: BOBBIN_OUTFIT_IMAGES.winter_fur,
+  },
+  {
     id: 'emerald_moss',
     name: 'Zümrüt Ormanı Örgü Yelek',
     desc: 'Bobbin’in gövdesini saran saç örgülü zümrüt yeşili usta zanaatkâr yeleği.',
@@ -156,28 +231,99 @@ const KNITWEAR_CATALOG: KnitwearItem[] = [
   },
 ];
 
+interface RoomDef {
+  id: string;
+  name: string;
+  badge: string;
+  subtitle: string;
+  stages: Record<number, ImageSourcePropType>;
+  catalog: WorkshopItem[];
+  unlockLevel: number;
+  unlockConditionText: string;
+  isComingSoon?: boolean;
+}
+
+const ROOM_DEFINITIONS: RoomDef[] = [
+  {
+    id: 'artisan_loft',
+    name: "Bobbin'in Usta Atölyesi",
+    badge: '🪵 Atölye',
+    subtitle: 'Sonbahar Çatı Katı & Ahşap Dinlenme Odası',
+    stages: WORKSHOP_STAGE_IMAGES,
+    catalog: WORKSHOP_CATALOG,
+    unlockLevel: 1,
+    unlockConditionText: 'Başlangıç Odası',
+  },
+  {
+    id: 'ski_lodge',
+    name: 'Kışlık Kar Dağ Evi',
+    badge: '🏔️ Kar Dağ Evi',
+    subtitle: 'Kuzineli Dağ Kulübesi & Kış Masalı',
+    stages: SKI_LODGE_STAGE_IMAGES,
+    catalog: SKI_LODGE_CATALOG,
+    unlockLevel: 50,
+    unlockConditionText: '50. Seviye veya Atölye %80',
+  },
+  {
+    id: 'holiday_hearth',
+    name: 'Yeni Yıl Şömine Odası',
+    badge: '🎄 Şenlik Odası',
+    subtitle: 'Peri Işıkları & Mini Çam Ağacı',
+    stages: WORKSHOP_STAGE_IMAGES,
+    catalog: [],
+    unlockLevel: 100,
+    unlockConditionText: '100. Seviyede Açılır',
+    isComingSoon: true,
+  },
+  {
+    id: 'coastal_terrace',
+    name: 'Akdeniz Sahil Verandası',
+    badge: '🍋 Sahil Terası',
+    subtitle: 'Limon Ağaçları & Deniz Manzarası',
+    stages: WORKSHOP_STAGE_IMAGES,
+    catalog: [],
+    unlockLevel: 150,
+    unlockConditionText: '150. Seviyede Açılır',
+    isComingSoon: true,
+  },
+];
+
 export function WorkshopScreen({ onBack }: { onBack: () => void }) {
   const { data, update } = useSave();
   const insets = useSafeAreaInsets();
+
+  const [activeRoomId, setActiveRoomId] = useState<string>(data.activeRoomId || 'artisan_loft');
+  const activeRoom = ROOM_DEFINITIONS.find((r) => r.id === activeRoomId) || ROOM_DEFINITIONS[0];
+  const currentCatalog = activeRoom.catalog;
 
   const availableStars = Math.max(0, Object.values(data.stars || {}).reduce((a, b) => a + (b || 0), 0) - (data.spentStars || 0));
   const unlockedList = data.workshopItems || [];
   const unlockedSet = new Set(unlockedList);
   const purchasedOutfits = data.purchasedOutfits || ['none'];
 
-  // Highest sequential stage unlocked (0..5)
+  // Check if a room theme is unlocked (Option A: Natural level / stage progression)
+  const isRoomUnlocked = (roomId: string) => {
+    if (roomId === 'artisan_loft') return true;
+    if (roomId === 'ski_lodge') {
+      const room1Count = WORKSHOP_CATALOG.filter((i) => unlockedSet.has(i.id)).length;
+      return (data.unlocked || 1) >= 50 || room1Count >= 4 || (data.unlockedRooms && data.unlockedRooms.includes('ski_lodge'));
+    }
+    return false;
+  };
+
+  // Highest sequential stage unlocked for the active room (0..5)
   let highestUnlockedStage = 0;
-  for (const item of WORKSHOP_CATALOG) {
+  for (const item of currentCatalog) {
     if (unlockedSet.has(item.id)) {
       highestUnlockedStage = Math.max(highestUnlockedStage, item.step);
     }
   }
 
-  // Allow player to preview/toggle any stage up to highestUnlockedStage (defaults to highestUnlockedStage)
+  // Allow player to preview/toggle any stage up to highestUnlockedStage
   const [displayedStage, setDisplayedStage] = useState<number>(highestUnlockedStage);
   useEffect(() => {
     setDisplayedStage(highestUnlockedStage);
-  }, [highestUnlockedStage]);
+  }, [highestUnlockedStage, activeRoomId]);
 
   const currentOutfitId = data.bobbinOutfit || 'none';
   const activeOutfit =
@@ -186,8 +332,8 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
   const [activeTab, setActiveTab] = useState<'room' | 'knitwear'>('room');
   const [speech, setSpeech] = useState(
     highestUnlockedStage === 0 && currentOutfitId === 'none'
-      ? 'Atölyemiz şu an sade ve boş! Bölümlerden kazandığın yıldızlarla önce Sallanan Koltuğu, sonra Şömine ve Halıyı odaya ekleyelim!'
-      : 'Hoş geldin! Yıldızlarınla atölyemize yeni eşyalar ekleyebilir veya Bobbin’e gerçek el örgüsü atkı ve yelekler giydirebilirsin!'
+      ? `${activeRoom.name} şu an sade ve boş! Yıldızlarınla sırayla eşyaları odaya yerleştirelim!`
+      : `Hoş geldin! ${activeRoom.name} odamıza yeni eşyalar ekleyebilir veya Bobbin'e sıcacık el örgüsü aksesuarlar giydirebilirsin!`
   );
 
   // Pop animation when room stage or Bobbin outfit changes
@@ -212,6 +358,29 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
       speed: 28,
       bounciness: 12,
     }).start();
+  };
+
+  const handleSelectRoom = (room: RoomDef) => {
+    if (room.id === activeRoomId) return;
+    const unlocked = isRoomUnlocked(room.id);
+    if (!unlocked) {
+      if (room.isComingSoon) {
+        setSpeech(`✨ "${room.name}" çok yakında eklenecek yeni tematik güncellememizle açılacak!`);
+      } else {
+        setSpeech(`🏔️ "${room.name}" kilidini açmak için Usta Atölyesi'nde en az 4 eşyayı tamamla veya 50. seviyeye ulaş!`);
+      }
+      playAsmrComboTone(1);
+      buzz('error');
+      return;
+    }
+
+    setActiveRoomId(room.id);
+    update((d) => ({ ...d, activeRoomId: room.id }));
+    animateRoomChange();
+    animateCharacterPop();
+    playAsmrComboTone(2);
+    buzz('light');
+    setSpeech(`"${room.name}" odasına geçildi! Sıcacık dağ evimizi yıldızlarınla adım adım döşeyelim.`);
   };
 
   const handleRoomItemAction = (item: WorkshopItem) => {
@@ -239,10 +408,10 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
     }
 
     // Sequential check: must unlock previous step first so the 3D room builds up naturally
-    const prevItem = WORKSHOP_CATALOG.find((x) => x.step === item.step - 1);
+    const prevItem = currentCatalog.find((x) => x.step === item.step - 1);
     if (prevItem && !unlockedSet.has(prevItem.id)) {
       setSpeech(
-        `Odayı sırayla dekore ediyoruz! Önce "${prevItem.name}" (${prevItem.starsRequired} ⭐) eşyasını atölyeye ekleyelim.`
+        `Odayı sırayla dekore ediyoruz! Önce "${prevItem.name}" (${prevItem.starsRequired} ⭐) eşyasını odaya ekleyelim.`
       );
       buzz('error');
       return;
@@ -329,10 +498,10 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
     buzz('success');
   };
 
-  const unlockedCount = WORKSHOP_CATALOG.filter((i) => unlockedSet.has(i.id)).length;
-  const progressRatio = Math.min(1, unlockedCount / WORKSHOP_CATALOG.length);
+  const unlockedCount = currentCatalog.filter((i) => unlockedSet.has(i.id)).length;
+  const progressRatio = currentCatalog.length > 0 ? Math.min(1, unlockedCount / currentCatalog.length) : 0;
   const currentRoomImage =
-    WORKSHOP_STAGE_IMAGES[displayedStage] || WORKSHOP_STAGE_IMAGES[0];
+    activeRoom.stages[displayedStage] || activeRoom.stages[0];
   const currentBobbinImage =
     BOBBIN_OUTFIT_IMAGES[activeOutfit.id] || BOBBIN_OUTFIT_IMAGES.none;
 
@@ -342,13 +511,53 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
       <View style={styles.topBar}>
         <RoundIcon icon="arrow-back" onPress={onBack} bg="#FDE68A" />
         <View style={styles.titleWrap}>
-          <T style={styles.titleText}>🪵 Bobbin'in Atölyesi</T>
-          <T style={styles.subtitleText}>Canlı 3D Oda & Gardırop Geliştirme</T>
+          <T style={styles.titleText}>{activeRoom.name}</T>
+          <T style={styles.subtitleText}>{activeRoom.subtitle}</T>
         </View>
         <View style={styles.starPill}>
           <T style={{ fontSize: 16 }}>⭐</T>
           <T style={styles.starCount}>{availableStars}</T>
         </View>
+      </View>
+
+      {/* Room Themes Carousel / Selector */}
+      <View style={{ backgroundColor: '#FDF2E2', borderBottomWidth: 1, borderColor: '#F3D5C1' }}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.roomSelectorRow}
+        >
+          {ROOM_DEFINITIONS.map((room) => {
+            const isActive = room.id === activeRoomId;
+            const isUnlocked = isRoomUnlocked(room.id);
+            const count = room.catalog.filter((i) => unlockedSet.has(i.id)).length;
+            const pct = room.catalog.length > 0 ? Math.round((count / room.catalog.length) * 100) : 0;
+
+            return (
+              <TouchableOpacity
+                key={room.id}
+                onPress={() => handleSelectRoom(room)}
+                activeOpacity={0.8}
+                style={[
+                  styles.roomPill,
+                  isActive && styles.roomPillActive,
+                  !isUnlocked && styles.roomPillLocked,
+                ]}
+              >
+                <T style={[styles.roomPillText, isActive && styles.roomPillTextActive]}>
+                  {!isUnlocked ? '🔒 ' : ''}{room.badge}
+                </T>
+                {isUnlocked && room.catalog.length > 0 && (
+                  <View style={[styles.roomPillBadge, isActive && { backgroundColor: '#F59E0B' }]}>
+                    <T style={[styles.roomPillBadgeText, isActive && { color: '#3D2010' }]}>
+                      {pct}%
+                    </T>
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
       </View>
 
       <ScrollView
@@ -388,8 +597,8 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
             <Ionicons name="home" size={12} color="#FDE68A" />
             <T style={styles.stageStatusText}>
               {displayedStage === 0
-                ? 'Oda: Sade Başlangıç (0/5)'
-                : `Oda Aşaması: ${displayedStage}/5 Eşya`}
+                ? `${activeRoom.badge}: Sade Başlangıç`
+                : `${activeRoom.badge}: ${displayedStage}/${currentCatalog.length} Eşya`}
             </T>
           </View>
 
@@ -416,7 +625,7 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
           </TouchableOpacity>
         </Animated.View>
 
-        {/* Quick Stage Switcher Bar (When at least 1 furniture item is unlocked, lets user compare Sade Oda vs Stages!) */}
+        {/* Quick Stage Switcher Bar */}
         {highestUnlockedStage > 0 && (
           <ScrollView
             horizontal
@@ -444,7 +653,7 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
               </T>
             </TouchableOpacity>
 
-            {WORKSHOP_CATALOG.filter((i) => i.step <= highestUnlockedStage).map((item) => {
+            {currentCatalog.filter((i) => i.step <= highestUnlockedStage).map((item) => {
               const active = displayedStage === item.step;
               return (
                 <TouchableOpacity
@@ -465,7 +674,7 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
           </ScrollView>
         )}
 
-        {/* Bobbin Dialogue Card (Placed Outside Diorama So Room & Character Stay 100% Unobstructed) */}
+        {/* Bobbin Dialogue Card */}
         <View style={styles.speechCardOutside}>
           <View style={styles.speechAvatarBadge}>
             <Image
@@ -480,7 +689,7 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
         {/* Room Restoration Progress Gauge */}
         <View style={styles.progressCard}>
           <View style={styles.progressHeader}>
-            <T style={styles.progressTitle}>Atölye Geliştirme İlerlemesi</T>
+            <T style={styles.progressTitle}>{activeRoom.badge} İlerlemesi</T>
             <T style={styles.progressPercent}>{Math.round(progressRatio * 100)}%</T>
           </View>
           <View style={styles.progressBarTrack}>
@@ -492,11 +701,11 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
             />
           </View>
           <T style={styles.progressSub}>
-            {unlockedCount} / {WORKSHOP_CATALOG.length} Eşya Odaya Eklendi
+            {unlockedCount} / {currentCatalog.length} Eşya Odaya Eklendi
           </T>
         </View>
 
-        {/* Category Tabs: Atölye Eşyaları & Örgü Aksesuarları */}
+        {/* Category Tabs: Oda Eşyaları & Bobbin Kıyafetleri */}
         <View style={styles.tabRow}>
           <TouchableOpacity
             style={[styles.tabButton, activeTab === 'room' && styles.tabButtonActive]}
@@ -516,7 +725,7 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
                 activeTab === 'room' && styles.tabTextActive,
               ]}
             >
-              Atölye Eşyaları ({unlockedCount}/5)
+              {activeRoom.badge} ({unlockedCount}/{currentCatalog.length})
             </T>
           </TouchableOpacity>
 
@@ -543,10 +752,10 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
           </TouchableOpacity>
         </View>
 
-        {/* Tab 1: Atölye Eşyaları (Sequential Real 3D Room Upgrades) */}
+        {/* Tab 1: Oda Eşyaları (Sequential Real 3D Room Upgrades) */}
         {activeTab === 'room' && (
           <View style={styles.itemList}>
-            {WORKSHOP_CATALOG.map((item) => {
+            {currentCatalog.map((item) => {
               const isUnlocked = unlockedSet.has(item.id);
               const isVisibleInRoom = isUnlocked && displayedStage >= item.step;
               const isNextStep = item.step === highestUnlockedStage + 1;
@@ -567,17 +776,7 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
                     ]}
                   >
                     <Ionicons
-                      name={
-                        item.id === 'rocking_chair'
-                          ? 'bed'
-                          : item.id === 'fireplace'
-                          ? 'flame'
-                          : item.id === 'woven_rug'
-                          ? 'grid'
-                          : item.id === 'tea_station'
-                          ? 'cafe'
-                          : 'construct'
-                      }
+                      name={item.icon ? (item.icon as any) : 'home'}
                       size={24}
                       color={isUnlocked ? '#fff' : isNextStep ? '#D97706' : '#9CA3AF'}
                     />
@@ -617,7 +816,7 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
                       isUnlocked
                         ? isVisibleInRoom
                           ? styles.actionBtnActive
-                          : styles.actionBtnAfford
+                          : { backgroundColor: '#6B7280' }
                         : canAfford
                         ? styles.actionBtnAfford
                         : styles.actionBtnLocked,
@@ -631,13 +830,13 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
                     >
                       {isUnlocked
                         ? isVisibleInRoom
-                          ? '✓ Odada'
-                          : 'Göster'
+                          ? '✓ Yerinde'
+                          : 'Gizli'
                         : canAfford
-                        ? `✨ ${item.starsRequired} ⭐ Al`
+                        ? 'Satın Al'
                         : isNextStep
-                        ? `⭐ ${item.starsRequired}`
-                        : '🔒 Kilitli'}
+                        ? `${item.starsRequired} ⭐`
+                        : 'Kilitli'}
                     </T>
                   </Bouncy>
                 </View>
@@ -1127,5 +1326,55 @@ const styles = StyleSheet.create({
   },
   actionBtnTextActive: {
     color: '#FFFFFF',
+  },
+  roomSelectorRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 8,
+  },
+  roomPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 13,
+    paddingVertical: 7,
+    borderRadius: 16,
+    backgroundColor: '#FFF6EA',
+    borderWidth: 1.5,
+    borderColor: '#E8D2BE',
+    gap: 6,
+  },
+  roomPillActive: {
+    backgroundColor: '#3D2010',
+    borderColor: '#F59E0B',
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  roomPillLocked: {
+    opacity: 0.65,
+    backgroundColor: '#F3EAE0',
+  },
+  roomPillText: {
+    fontSize: 13,
+    color: '#78350F',
+    fontFamily: FONT.bold,
+  },
+  roomPillTextActive: {
+    color: '#FFF',
+    fontFamily: FONT.black,
+  },
+  roomPillBadge: {
+    backgroundColor: 'rgba(245, 158, 11, 0.25)',
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  roomPillBadgeText: {
+    fontSize: 10.5,
+    color: '#D97706',
+    fontFamily: FONT.black,
   },
 });

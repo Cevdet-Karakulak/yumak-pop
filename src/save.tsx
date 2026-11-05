@@ -25,6 +25,8 @@ export interface SaveData {
   workshopVersion?: number;
   spentStars?: number;
   purchasedOutfits?: string[];
+  activeRoomId?: string;
+  unlockedRooms?: string[];
 }
 
 const KEY = 'yumakpop:save:v1';
@@ -48,6 +50,8 @@ const DEFAULT: SaveData = {
   workshopVersion: 2,
   spentStars: 0,
   purchasedOutfits: ['none'],
+  activeRoomId: 'artisan_loft',
+  unlockedRooms: ['artisan_loft'],
 };
 
 export function getAvailableStars(data: SaveData): number {
@@ -102,12 +106,18 @@ export function SaveProvider({ children }: { children: React.ReactNode }) {
               woven_rug: 15,
               tea_station: 20,
               antique_loom: 30,
+              cast_iron_stove: 5,
+              sheepskin_rug: 10,
+              vintage_skis: 15,
+              hot_cocoa: 20,
+              tartan_daybed: 30,
             };
             const OUTFIT_PRICES: Record<string, number> = {
               classic_honey: 3,
               arctic_sky: 8,
               emerald_moss: 16,
               royal_berry: 25,
+              winter_fur: 12,
             };
             let calc = 0;
             for (const id of initialItems) {
@@ -127,6 +137,8 @@ export function SaveProvider({ children }: { children: React.ReactNode }) {
             workshopVersion: 2,
             spentStars: spent,
             purchasedOutfits: outfits,
+            activeRoomId: parsed.activeRoomId || 'artisan_loft',
+            unlockedRooms: parsed.unlockedRooms || ['artisan_loft'],
             boosters: { ...DEFAULT.boosters, ...parsed.boosters },
             seenMechanics: { ...DEFAULT.seenMechanics, ...parsed.seenMechanics },
           });

@@ -9,7 +9,7 @@ import {
 } from './engine';
 import { createRng, Rng } from './rng';
 
-export const TOTAL_LEVELS = 150;
+export const TOTAL_LEVELS = 200;
 export const BASE_RACK = 3;
 export const LEVELS_PER_CHAPTER = 50;
 
@@ -26,7 +26,7 @@ export const CHAPTERS: Chapter[] = [
   { id: 1, title: 'Atölye Başlangıcı', subtitle: 'İlk İlmekler ve Temeller', startLevel: 1, endLevel: 50, icon: '🧶' },
   { id: 2, title: 'Renkli Yumaklar', subtitle: 'Kelt Labirenti & İkiz Makaralar', startLevel: 51, endLevel: 100, icon: '🌈' },
   { id: 3, title: 'Sihirli İğneler', subtitle: 'Köprüler, Buz Alanları & Yürüyen Bant', startLevel: 101, endLevel: 150, icon: '✨' },
-  { id: 4, title: 'Büyük Örgü Ustası', subtitle: 'Usta İşi Akrobatik Parkurlar', startLevel: 151, endLevel: 200, icon: '👑' },
+  { id: 4, title: 'Kış Zirvesi & Dağ Parkurları', subtitle: 'Buzlu Fiyortlar, Çift Başlı Yılanlar & Zirve Sınavı', startLevel: 151, endLevel: 200, icon: '🏔️' },
   { id: 5, title: 'Gökkuşağı Vadisi', subtitle: 'Buzlu Bobinler ve İki Renkli İpler', startLevel: 201, endLevel: 250, icon: '🌸' },
   { id: 6, title: 'Efsanevi Motifler', subtitle: 'Büyük Usta Mücadeleleri', startLevel: 251, endLevel: 300, icon: '🏆' },
 ];
