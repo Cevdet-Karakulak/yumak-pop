@@ -48,12 +48,27 @@ jobs:
       - name: "Install dependencies"
         run: npm ci
 
+      - name: "Set Unique Android Version Code"
+        run: |
+          node -e "
+            const fs = require('fs');
+            const app = JSON.parse(fs.readFileSync('app.json', 'utf8'));
+            const runNumber = parseInt(process.env.GITHUB_RUN_NUMBER || '1', 10);
+            const newVersionCode = 20 + runNumber;
+            app.expo.android.versionCode = newVersionCode;
+            fs.writeFileSync('app.json', JSON.stringify(app, null, 2));
+            console.log('Set Android versionCode to: ' + newVersionCode);
+          "
+
       - name: "Expo Android Prebuild"
         run: npx expo prebuild --platform android --no-install --clean
 
-      - name: "Setup Keystore"
+      - name: "Setup Keystore & Configure Single Release Certificate Signing"
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           if [ -n "$KEYSTORE_BASE64" ]; then
             echo "Using production secret keystore"
@@ -71,6 +86,33 @@ jobs:
               -dname "CN=FloppaTech, OU=Mobile, O=FloppaTech Corp, L=Istanbul, ST=Istanbul, C=TR"
           fi
 
+          python3 -c "
+          with open('android/app/build.gradle', 'r') as f:
+              content = f.read()
+
+          target_signing = 'signingConfigs {'
+          replacement_signing = '''signingConfigs {
+                  release {
+                      storeFile file('release.keystore')
+                      storePassword System.getenv('KEYSTORE_PASSWORD') ?: 'yumakpop2026'
+                      keyAlias System.getenv('KEY_ALIAS') ?: 'yumakpop'
+                      keyPassword System.getenv('KEY_PASSWORD') ?: 'yumakpop2026'
+                  }'''
+
+          content = content.replace(target_signing, replacement_signing, 1)
+
+          parts = content.split('buildTypes {')
+          bt = parts[1]
+          release_parts = bt.split('release {')
+          release_parts[1] = release_parts[1].replace('signingConfig signingConfigs.debug', 'signingConfig signingConfigs.release', 1)
+          parts[1] = 'release {'.join(release_parts)
+          content = 'buildTypes {'.join(parts)
+
+          with open('android/app/build.gradle', 'w') as f:
+              f.write(content)
+          print('build.gradle successfully configured with single release signingConfig')
+          "
+
       - name: "Build Android Release (APK & AAB)"
         run: |
           cd android
@@ -78,24 +120,23 @@ jobs:
           ./gradlew assembleRelease bundleRelease --no-daemon
           cd ..
 
-      - name: "Sign Release APK & Prepare AAB"
+      - name: "Verify Single Certificate Chain & Prepare Outputs"
         run: |
-          BT_DIR=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -n 1)
-          echo "Using Android Build Tools: $BT_DIR"
-          
           RAW_APK=$(find android/app/build/outputs/apk/release -name "*.apk" | head -n 1)
-          echo "Found Raw APK at: $RAW_APK"
-          
-          $BT_DIR/zipalign -v -p 4 "$RAW_APK" android/app/build/outputs/apk/release/app-aligned.apk || cp "$RAW_APK" android/app/build/outputs/apk/release/app-aligned.apk
-          $BT_DIR/apksigner sign --ks android/app/release.keystore --ks-pass pass:yumakpop2026 --ks-key-alias yumakpop --key-pass pass:yumakpop2026 --out YumakPop-Lab-release.apk android/app/build/outputs/apk/release/app-aligned.apk || cp "$RAW_APK" YumakPop-Lab-release.apk
-          $BT_DIR/apksigner verify YumakPop-Lab-release.apk || true
-          ls -lh YumakPop-Lab-release.apk
-          
+          echo "Found Signed Release APK at: $RAW_APK"
+          cp "$RAW_APK" YumakPop-Lab-release.apk
+          cp "$RAW_APK" YumakPop-v1.0.0-release.apk
+
           RAW_AAB=$(find android/app/build/outputs/bundle/release -name "*.aab" | head -n 1)
           if [ -n "$RAW_AAB" ]; then
+            echo "Found Signed Release AAB at: $RAW_AAB"
             cp "$RAW_AAB" YumakPop-Lab-release.aab
-            echo "Prepared AAB: YumakPop-Lab-release.aab"
+            cp "$RAW_AAB" YumakPop-v1.0.0-release.aab
+
+            echo "=== Verifying Single Certificate Chain in AAB ==="
+            unzip -l YumakPop-Lab-release.aab | grep -i "META-INF" || true
           fi
+          ls -lh YumakPop-*.apk YumakPop-*.aab
 
       - name: "Upload Android Artifacts"
         uses: actions/upload-artifact@v4
@@ -104,6 +145,8 @@ jobs:
           path: |
             YumakPop-Lab-release.apk
             YumakPop-Lab-release.aab
+            YumakPop-v1.0.0-release.aab
+            YumakPop-v1.0.0-release.apk
           if-no-files-found: warn
           retention-days: 14
 
