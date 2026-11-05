@@ -26,13 +26,13 @@ export function InterstitialAdModal({
   title = 'Sponsorlu Reklam',
   isRewarded = false,
 }: Props) {
-  const [secondsLeft, setSecondsLeft] = useState(5);
+  const [secondsLeft, setSecondsLeft] = useState(3);
   const [canClose, setCanClose] = useState(false);
   const progressAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (!visible) {
-      setSecondsLeft(5);
+      setSecondsLeft(3);
       setCanClose(false);
       progressAnim.setValue(0);
       return;
@@ -41,19 +41,19 @@ export function InterstitialAdModal({
     // Pause game music while ad plays
     pauseMusic();
 
-    // 5-second smooth progress bar
+    // 3-second smooth progress bar
     Animated.timing(progressAnim, {
       toValue: 1,
-      duration: 5000,
+      duration: 3000,
       easing: Easing.linear,
       useNativeDriver: false,
     }).start();
 
-    // Countdown interval
-    let remaining = 5;
+    // 3-second countdown interval
+    let remaining = 3;
     const interval = setInterval(() => {
       remaining -= 1;
-      setSecondsLeft(remaining);
+      setSecondsLeft(Math.max(0, remaining));
       if (remaining <= 0) {
         clearInterval(interval);
         setCanClose(true);
@@ -69,7 +69,10 @@ export function InterstitialAdModal({
   if (!visible) return null;
 
   const handleDismiss = () => {
-    if (!canClose) return;
+    if (!canClose) {
+      play('tap');
+      return;
+    }
     play('pop');
     syncMusic();
     onClose();
@@ -174,13 +177,12 @@ export function InterstitialAdModal({
               label={
                 canClose
                   ? isRewarded
-                    ? 'ÖDÜLÜ AL VE DEVAM ET'
-                    : 'SONRAKİ BÖLÜME GEÇ'
-                  : `Reklam Bitiyor... (${secondsLeft}s)`
+                    ? 'ÖDÜLÜ AL VE DEVAM ET ›'
+                    : 'SONRAKİ BÖLÜME GEÇ ›'
+                  : `Reklamı Kapat (${secondsLeft}s)...`
               }
               icon={canClose ? 'play' : 'time'}
               color={canClose ? 'mint' : 'plum'}
-              disabled={!canClose}
               onPress={handleDismiss}
               style={{ width: '100%' }}
             />

@@ -21,12 +21,93 @@ permissions:
 
 jobs:
   # ==========================================
+  # SMART TARGET DETECTION (Zero Redundant Builds)
+  # ==========================================
+  detect-target:
+    name: "Detect Target Platform"
+    runs-on: ubuntu-latest
+    outputs:
+      build_android: ${{ steps.detect.outputs.build_android }}
+      build_ios: ${{ steps.detect.outputs.build_ios }}
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: "Determine target platforms"
+        id: detect
+        run: |
+          EVENT="${{ github.event_name }}"
+          INPUT_TARGET="${{ inputs.target }}"
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          echo "Event: $EVENT"
+          echo "Input target: $INPUT_TARGET"
+          echo "Commit message: $COMMIT_MSG"
+
+          BUILD_ANDROID="false"
+          BUILD_IOS="false"
+
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            if [ "$INPUT_TARGET" = "android-only" ]; then
+              BUILD_ANDROID="true"
+            elif [ "$INPUT_TARGET" = "ios-only" ]; then
+              BUILD_IOS="true"
+            else
+              BUILD_ANDROID="true"
+              BUILD_IOS="true"
+            fi
+          else
+            LOWER_MSG=$(echo "$COMMIT_MSG" | tr '[:upper:]' '[:lower:]')
+
+            if echo "$LOWER_MSG" | grep -qE "\[all\]|\[both\]"; then
+              BUILD_ANDROID="true"
+              BUILD_IOS="true"
+            elif echo "$LOWER_MSG" | grep -qE "\[android\]|\[apk\]|\[aab\]"; then
+              BUILD_ANDROID="true"
+              BUILD_IOS="false"
+            elif echo "$LOWER_MSG" | grep -qE "\[ios\]|\[ipa\]|\[testflight\]"; then
+              BUILD_ANDROID="false"
+              BUILD_IOS="true"
+            else
+              CHANGED_FILES=$(git diff-tree --no-commit-id --name-only -r HEAD || true)
+              echo "Changed files:"
+              echo "$CHANGED_FILES"
+
+              MENTIONS_IOS=$(echo "$LOWER_MSG" | grep -E "ios|apple|testflight|ipa" || true)
+              MENTIONS_ANDROID=$(echo "$LOWER_MSG" | grep -E "android|apk|aab|play console|play store" || true)
+
+              HAS_ANDROID_ONLY_FILES=$(echo "$CHANGED_FILES" | grep -E "^android/" || true)
+              HAS_IOS_ONLY_FILES=$(echo "$CHANGED_FILES" | grep -E "^ios/|scripts/patch-ios-swift" || true)
+              HAS_SRC_FILES=$(echo "$CHANGED_FILES" | grep -E "^src/|^assets/|^app.json|^package.json" || true)
+
+              if [ -n "$MENTIONS_IOS" ] && [ -z "$MENTIONS_ANDROID" ]; then
+                BUILD_IOS="true"
+              elif [ -n "$MENTIONS_ANDROID" ] && [ -z "$MENTIONS_IOS" ]; then
+                BUILD_ANDROID="true"
+              elif [ -n "$HAS_ANDROID_ONLY_FILES" ] && [ -z "$HAS_IOS_ONLY_FILES" ] && [ -z "$HAS_SRC_FILES" ]; then
+                BUILD_ANDROID="true"
+              elif [ -n "$HAS_IOS_ONLY_FILES" ] && [ -z "$HAS_ANDROID_ONLY_FILES" ] && [ -z "$HAS_SRC_FILES" ]; then
+                BUILD_IOS="true"
+              else
+                BUILD_ANDROID="true"
+                BUILD_IOS="true"
+              fi
+            fi
+          fi
+
+          echo "Target Decision -> Android: $BUILD_ANDROID | iOS: $BUILD_IOS"
+          echo "build_android=$BUILD_ANDROID" >> $GITHUB_OUTPUT
+          echo "build_ios=$BUILD_IOS" >> $GITHUB_OUTPUT
+
+  # ==========================================
   # ANDROID BUILD (APK & AAB - Zero EAS Quota)
   # ==========================================
   build-android:
     name: "Android Build (Ubuntu Runner)"
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || inputs.target != 'ios-only'
+    needs: [detect-target]
+    if: needs.detect-target.outputs.build_android == 'true'
     timeout-minutes: 30
 
     steps:
@@ -156,7 +237,8 @@ jobs:
   build-ios:
     name: "iOS IPA Build (macOS Runner)"
     runs-on: macos-15
-    if: github.event_name == 'push' || inputs.target != 'android-only'
+    needs: [detect-target]
+    if: needs.detect-target.outputs.build_ios == 'true'
     timeout-minutes: 45
 
     steps:
@@ -329,7 +411,7 @@ jobs:
   create-release:
     name: "Publish GitHub Release"
     runs-on: ubuntu-latest
-    needs: [build-android, build-ios]
+    needs: [detect-target, build-android, build-ios]
     if: always() && (needs.build-android.result == 'success' || needs.build-ios.result == 'success')
     steps:
       - name: "Checkout"
