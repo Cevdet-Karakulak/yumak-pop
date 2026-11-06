@@ -18,6 +18,8 @@ import { HomeScreen } from './src/screens/HomeScreen';
 import { MapScreen } from './src/screens/MapScreen';
 import { initAdMob } from './src/services/adService';
 import { WorkshopScreen } from './src/screens/WorkshopScreen';
+import { RatingModal } from './src/components/RatingModal';
+import { shouldPromptReview } from './src/services/reviewService';
 import { UI } from './src/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -29,11 +31,40 @@ type Route =
   | { name: 'workshop' };
 
 function Root() {
-  const { loaded, data } = useSave();
+  const { loaded, data, update } = useSave();
   const [fontsLoaded] = useFonts({ Baloo2_500Medium, Baloo2_700Bold, Baloo2_800ExtraBold });
   const [route, setRoute] = useState<Route>({ name: 'home' });
   const [gameKey, setGameKey] = useState(0);
   const [splashFinished, setSplashFinished] = useState(false);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [isManualRating, setIsManualRating] = useState(false);
+
+  // Active in-game play time accumulator (records active seconds every 15s)
+  useEffect(() => {
+    if (!loaded) return;
+    const interval = setInterval(() => {
+      if (AppState.currentState === 'active') {
+        update((d) => ({
+          ...d,
+          totalPlayTimeSeconds: (d.totalPlayTimeSeconds || 0) + 15,
+        }));
+      }
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [loaded, update]);
+
+  // Check if review prompt should trigger when in home screen
+  useEffect(() => {
+    if (loaded && splashFinished && route.name === 'home') {
+      if (shouldPromptReview(data)) {
+        const timer = setTimeout(() => {
+          setIsManualRating(false);
+          setShowRatingModal(true);
+        }, 1200);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [loaded, splashFinished, route.name, data]);
 
   useEffect(() => {
     // Hide static native splash immediately so our interactive animated splash screen takes over
@@ -69,6 +100,10 @@ function Root() {
           onLevels={() => setRoute({ name: 'map' })}
           onPlayTutorial={() => openLevel(1, true)}
           onWorkshop={() => setRoute({ name: 'workshop' })}
+          onRateApp={() => {
+            setIsManualRating(true);
+            setShowRatingModal(true);
+          }}
         />
       )}
       {route.name === 'workshop' && (
@@ -86,6 +121,13 @@ function Root() {
           onNext={(n) => openLevel(n)}
         />
       )}
+
+      {/* In-App Bobbin Star Rating & Review Modal */}
+      <RatingModal
+        visible={showRatingModal}
+        isManual={isManualRating}
+        onClose={() => setShowRatingModal(false)}
+      />
 
       {/* Interactive Animated Splash Overlay */}
       {!splashFinished && (

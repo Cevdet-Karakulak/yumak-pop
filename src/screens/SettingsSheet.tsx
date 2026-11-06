@@ -14,10 +14,12 @@ export function SettingsSheet({
   visible,
   onClose,
   onOpenLab,
+  onRateApp,
 }: {
   visible: boolean;
   onClose: () => void;
   onOpenLab?: () => void;
+  onRateApp?: () => void;
 }) {
   const { data, update, t, lang, reset } = useSave();
   const [confirm, setConfirm] = useState(false);
@@ -93,6 +95,18 @@ export function SettingsSheet({
           })}
         </ScrollView>
       </View>
+
+      <YarnButton
+        small
+        label={t.rateMenuBtn}
+        icon="star"
+        color="gold"
+        onPress={() => {
+          onClose();
+          onRateApp?.();
+        }}
+        style={{ marginTop: 12, alignSelf: 'stretch' }}
+      />
 
       {confirm ? (
         <View style={{ alignSelf: 'stretch', marginTop: 10, alignItems: 'center' }}>

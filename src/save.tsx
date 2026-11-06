@@ -27,6 +27,12 @@ export interface SaveData {
   purchasedOutfits?: string[];
   activeRoomId?: string;
   unlockedRooms?: string[];
+  totalPlayTimeSeconds?: number;
+  hasRatedApp?: boolean;
+  lastReviewPromptTime?: number;
+  reviewPromptDismissCount?: number;
+  userGivenRating?: number;
+  bonusStars?: number;
 }
 
 const KEY = 'yumakpop:save:v1';
@@ -52,10 +58,17 @@ const DEFAULT: SaveData = {
   purchasedOutfits: ['none'],
   activeRoomId: 'artisan_loft',
   unlockedRooms: ['artisan_loft'],
+  totalPlayTimeSeconds: 0,
+  hasRatedApp: false,
+  lastReviewPromptTime: 0,
+  reviewPromptDismissCount: 0,
+  userGivenRating: 0,
+  bonusStars: 0,
 };
 
 export function getAvailableStars(data: SaveData): number {
-  const totalEarned = Object.values(data.stars || {}).reduce((sum, s) => sum + (s || 0), 0);
+  const totalEarned =
+    Object.values(data.stars || {}).reduce((sum, s) => sum + (s || 0), 0) + (data.bonusStars || 0);
   return Math.max(0, totalEarned - (data.spentStars || 0));
 }
 

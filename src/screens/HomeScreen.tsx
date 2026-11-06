@@ -32,12 +32,14 @@ export function HomeScreen({
   onPlayTutorial,
   onOpenLab,
   onWorkshop,
+  onRateApp,
 }: {
   onPlay: () => void;
   onLevels: () => void;
   onPlayTutorial: () => void;
   onOpenLab?: () => void;
   onWorkshop?: () => void;
+  onRateApp?: () => void;
 }) {
   const { data, t } = useSave();
   const insets = useSafeAreaInsets();
@@ -474,7 +476,7 @@ export function HomeScreen({
         </View>
       </View>
 
-      <SettingsSheet visible={settings} onClose={() => setSettings(false)} onOpenLab={onOpenLab} />
+      <SettingsSheet visible={settings} onClose={() => setSettings(false)} onOpenLab={onOpenLab} onRateApp={onRateApp} />
       <HowToPlaySheet
         visible={howTo}
         onClose={() => setHowTo(false)}

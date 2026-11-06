@@ -147,7 +147,20 @@ const tr = {
   "bridgeUnder": "🌉 Köprü Altında! (Korumalı)",
   "iceFrozenZone": "❄️ Buzlu Bölge! (İpler Dondu)",
   "conveyorShift": "⚙️ Yürüyen Bant Döndü!",
-  "conveyorBadge": "⚙️ Yürüyen Bant"
+  "conveyorBadge": "⚙️ Yürüyen Bant",
+  "rateTitle": "Yumak Pop'u Beğendin mi?",
+  "rateSubtitle": "Görüşlerin bizim için çok kıymetli! Bobbin'in atölyesine kaç yıldız verirsin?",
+  "rateHint": "Bobbin'e puan vermek için yıldızlara dokun!",
+  "rateHighTitle": "Harikasın! 💖",
+  "rateHighDesc": "Desteğin Bobbin'i çok mutlu etti! Mağazada 5 yıldızla bize destek olmak ister misin?",
+  "rateRewardBadge": "🎁 Teşekkür Hediyesi: +5 Yıldız & +100 Altın!",
+  "rateStoreBtn": "⭐ MAĞAZADA DEĞERLENDİR ⭐",
+  "rateLowTitle": "Görüşün Çok Önemli 💡",
+  "rateLowDesc": "Deneyimini daha iyi yapmak için bize ilet, hemen geliştirelim!",
+  "rateFeedbackBtn": "💬 Geri Bildirim Gönder",
+  "rateLater": "Belki Daha Sonra",
+  "rateThanks": "Desteğin İçin Teşekkürler! 💖",
+  "rateMenuBtn": "⭐ Oyunu Değerlendir"
 };
 
 export type Strings = typeof tr;
@@ -278,7 +291,20 @@ const en: Strings = {
   "bridgeUnder": "🌉 Under Bridge! (Protected)",
   "iceFrozenZone": "❄️ Frost Zone! (Yarn Frozen)",
   "conveyorShift": "⚙️ Conveyor Shifted!",
-  "conveyorBadge": "⚙️ Conveyor"
+  "conveyorBadge": "⚙️ Conveyor",
+  "rateTitle": "Loving Yumak Pop?",
+  "rateSubtitle": "Your feedback means the world to us! How many stars would you give Bobbin's workshop?",
+  "rateHint": "Tap the stars above to rate Bobbin!",
+  "rateHighTitle": "You're Amazing! 💖",
+  "rateHighDesc": "Bobbin is thrilled with your support! Would you help us with 5 stars on the store?",
+  "rateRewardBadge": "🎁 Thank You Gift: +5 Stars & +100 Coins!",
+  "rateStoreBtn": "⭐ RATE ON STORE ⭐",
+  "rateLowTitle": "Your Feedback Matters 💡",
+  "rateLowDesc": "How can we make your experience even better? Let us know!",
+  "rateFeedbackBtn": "💬 Send Feedback",
+  "rateLater": "Maybe Later",
+  "rateThanks": "Thank You for Your Support! 💖",
+  "rateMenuBtn": "⭐ Rate Game"
 };
 
 const de: Strings = {
@@ -407,7 +433,20 @@ const de: Strings = {
   "bridgeUnder": "🌉 Unter der Brücke! (Geschützt)",
   "iceFrozenZone": "❄️ Eiszone! (Wolle gefroren)",
   "conveyorShift": "⚙️ Förderband weitergerückt!",
-  "conveyorBadge": "⚙️ Förderband"
+  "conveyorBadge": "⚙️ Förderband",
+  "rateTitle": "Gefällt dir Yumak Pop?",
+  "rateSubtitle": "Deine Meinung ist uns wichtig! Wie viele Sterne gibst du Bobbins Werkstatt?",
+  "rateHint": "Tippe auf die Sterne, um Bobbin zu bewerten!",
+  "rateHighTitle": "Großartig! 💖",
+  "rateHighDesc": "Bobbin freut sich riesig über deine Unterstützung! Möchtest du uns im Store 5 Sterne geben?",
+  "rateRewardBadge": "🎁 Dankeschön: +5 Sterne & +100 Münzen!",
+  "rateStoreBtn": "⭐ IM STORE BEWERTEN ⭐",
+  "rateLowTitle": "Dein Feedback ist wichtig 💡",
+  "rateLowDesc": "Wie können wir dein Spielerlebnis verbessern? Schreib uns!",
+  "rateFeedbackBtn": "💬 Feedback senden",
+  "rateLater": "Vielleicht später",
+  "rateThanks": "Danke für deine Unterstützung! 💖",
+  "rateMenuBtn": "⭐ Spiel bewerten"
 };
 
 const es: Strings = {
@@ -536,7 +575,20 @@ const es: Strings = {
   "bridgeUnder": "🌉 ¡Bajo el puente! (Protegido)",
   "iceFrozenZone": "❄️ ¡Zona Helada! (Lana congelada)",
   "conveyorShift": "⚙️ ¡Cinta transportadora movida!",
-  "conveyorBadge": "⚙️ Transportador"
+  "conveyorBadge": "⚙️ Transportador",
+  "rateTitle": "¿Te gusta Yumak Pop?",
+  "rateSubtitle": "¡Tu opinión es muy importante! ¿Cuántas estrellas le das al taller de Bobbin?",
+  "rateHint": "¡Toca las estrellas para calificar a Bobbin!",
+  "rateHighTitle": "¡Genial! 💖",
+  "rateHighDesc": "¡Bobbin está encantado con tu apoyo! ¿Te gustaría calificarnos con 5 estrellas en la tienda?",
+  "rateRewardBadge": "🎁 Regalo de agradecimiento: +5 Estrellas y +100 Monedas!",
+  "rateStoreBtn": "⭐ CALIFICAR EN LA TIENDA ⭐",
+  "rateLowTitle": "Tu opinión nos importa 💡",
+  "rateLowDesc": "¿Cómo podemos mejorar tu experiencia? ¡Cuéntanos!",
+  "rateFeedbackBtn": "💬 Enviar comentarios",
+  "rateLater": "Tal vez luego",
+  "rateThanks": "¡Gracias por tu apoyo! 💖",
+  "rateMenuBtn": "⭐ Calificar juego"
 };
 
 const fr: Strings = {
@@ -665,7 +717,20 @@ const fr: Strings = {
   "bridgeUnder": "🌉 Sous le pont ! (Protégé)",
   "iceFrozenZone": "❄️ Zone de glace ! (Laine gelée)",
   "conveyorShift": "⚙️ Tapis roulant déplacé !",
-  "conveyorBadge": "⚙️ Tapis roulant"
+  "conveyorBadge": "⚙️ Tapis roulant",
+  "rateTitle": "Vous aimez Yumak Pop ?",
+  "rateSubtitle": "Votre avis compte énormément ! Combien d'étoiles donneriez-vous à l'atelier de Bobbin ?",
+  "rateHint": "Touchez les étoiles pour noter Bobbin !",
+  "rateHighTitle": "Formidable ! 💖",
+  "rateHighDesc": "Bobbin est ravi de votre soutien ! Aimeriez-vous nous soutenir avec 5 étoiles sur le Store ?",
+  "rateRewardBadge": "🎁 Cadeau de remerciement : +5 Étoiles & +100 Pièces !",
+  "rateStoreBtn": "⭐ NOTER SUR LE STORE ⭐",
+  "rateLowTitle": "Votre avis compte 💡",
+  "rateLowDesc": "Comment pouvons-nous améliorer votre expérience ? Dites-le-nous !",
+  "rateFeedbackBtn": "💬 Envoyer un commentaire",
+  "rateLater": "Plus tard",
+  "rateThanks": "Merci pour votre soutien ! 💖",
+  "rateMenuBtn": "⭐ Noter le jeu"
 };
 
 const it: Strings = {
@@ -794,7 +859,20 @@ const it: Strings = {
   "bridgeUnder": "🌉 Sotto il ponte! (Protetto)",
   "iceFrozenZone": "❄️ Zona ghiacciata! (Lana gelata)",
   "conveyorShift": "⚙️ Nastro trasportatore avanzato!",
-  "conveyorBadge": "⚙️ Trasportatore"
+  "conveyorBadge": "⚙️ Trasportatore",
+  "rateTitle": "Ti piace Yumak Pop?",
+  "rateSubtitle": "La tua opinione è preziosa! Quante stelle dai alla bottega di Bobbin?",
+  "rateHint": "Tocca le stelle per votare Bobbin!",
+  "rateHighTitle": "Fantastico! 💖",
+  "rateHighDesc": "Bobbin è felicissimo del tuo supporto! Ti va di valutarci con 5 stelle nello store?",
+  "rateRewardBadge": "🎁 Regalo di ringraziamento: +5 Stelle e +100 Monete!",
+  "rateStoreBtn": "⭐ VALUTA SULLO STORE ⭐",
+  "rateLowTitle": "La tua opinione conta 💡",
+  "rateLowDesc": "Come possiamo migliorare la tua esperienza? Faccelo sapere!",
+  "rateFeedbackBtn": "💬 Invia feedback",
+  "rateLater": "Forse più tardi",
+  "rateThanks": "Grazie per il tuo supporto! 💖",
+  "rateMenuBtn": "⭐ Valuta il gioco"
 };
 
 const pt: Strings = {
@@ -923,7 +1001,20 @@ const pt: Strings = {
   "bridgeUnder": "🌉 Sob a ponte! (Protegido)",
   "iceFrozenZone": "❄️ Zona Congelada! (Lã congelada)",
   "conveyorShift": "⚙️ Esteira rolante avançou!",
-  "conveyorBadge": "⚙️ Esteira"
+  "conveyorBadge": "⚙️ Esteira",
+  "rateTitle": "Curtindo o Yumak Pop?",
+  "rateSubtitle": "Sua opinião é muito importante! Quantas estrelas você daria para a oficina do Bobbin?",
+  "rateHint": "Toque nas estrelas para avaliar o Bobbin!",
+  "rateHighTitle": "Incrível! 💖",
+  "rateHighDesc": "O Bobbin adorou seu apoio! Gostaria de nos apoiar com 5 estrelas na loja?",
+  "rateRewardBadge": "🎁 Presente de agradecimento: +5 Estrelas e +100 Moedas!",
+  "rateStoreBtn": "⭐ AVALIAR NA LOJA ⭐",
+  "rateLowTitle": "Sua opinião importa 💡",
+  "rateLowDesc": "Como podemos tornar sua experiência ainda melhor? Conte-nos!",
+  "rateFeedbackBtn": "💬 Enviar feedback",
+  "rateLater": "Talvez depois",
+  "rateThanks": "Obrigado pelo seu apoio! 💖",
+  "rateMenuBtn": "⭐ Avaliar jogo"
 };
 
 const ru: Strings = {
@@ -1052,7 +1143,20 @@ const ru: Strings = {
   "bridgeUnder": "🌉 Под мостом! (Защищено)",
   "iceFrozenZone": "❄️ Ледяная зона! (Пряжа замёрзла)",
   "conveyorShift": "⚙️ Конвейер сместился!",
-  "conveyorBadge": "⚙️ Конвейер"
+  "conveyorBadge": "⚙️ Конвейер",
+  "rateTitle": "Нравится Yumak Pop?",
+  "rateSubtitle": "Ваше мнение очень важно! Сколько звёзд вы поставите мастерской Боббина?",
+  "rateHint": "Нажмите на звёзды, чтобы оценить Боббина!",
+  "rateHighTitle": "Потрясающе! 💖",
+  "rateHighDesc": "Боббин в восторге от вашей поддержки! Поставьте нам 5 звёзд в магазине?",
+  "rateRewardBadge": "🎁 Подарок за отзыв: +5 Звёзд и +100 Монет!",
+  "rateStoreBtn": "⭐ ОЦЕНИТЬ В МАГАЗИНЕ ⭐",
+  "rateLowTitle": "Ваш отзыв важен 💡",
+  "rateLowDesc": "Как мы можем улучшить игру? Напишите нам!",
+  "rateFeedbackBtn": "💬 Отправить отзыв",
+  "rateLater": "Позже",
+  "rateThanks": "Спасибо за поддержку! 💖",
+  "rateMenuBtn": "⭐ Оценить игру"
 };
 
 const ja: Strings = {
@@ -1181,7 +1285,20 @@ const ja: Strings = {
   "bridgeUnder": "🌉 橋の下！（保護中）",
   "iceFrozenZone": "❄️ 凍結エリア！（毛糸凍結中）",
   "conveyorShift": "⚙️ コンベアが動きました！",
-  "conveyorBadge": "⚙️ コンベア"
+  "conveyorBadge": "⚙️ コンベア",
+  "rateTitle": "Yumak Popを楽しんでいますか？",
+  "rateSubtitle": "あなたのご意見はとても大切です！ボビンの工房に何つ星をつけますか？",
+  "rateHint": "星をタップしてボビンを評価してください！",
+  "rateHighTitle": "素晴らしい！💖",
+  "rateHighDesc": "ボビンはあなたの応援をとても喜んでいます！ストアで星5つのレビューをお願いできますか？",
+  "rateRewardBadge": "🎁 感謝のギフト：+5 星 & +100 コイン！",
+  "rateStoreBtn": "⭐ ストアで評価する ⭐",
+  "rateLowTitle": "ご意見をお聞かせください 💡",
+  "rateLowDesc": "どうすればより良いゲームにできるか、ぜひ教えてください！",
+  "rateFeedbackBtn": "💬 フィードバックを送る",
+  "rateLater": "あとで",
+  "rateThanks": "応援ありがとうございます！💖",
+  "rateMenuBtn": "⭐ ゲームを評価する"
 };
 
 const ko: Strings = {
@@ -1310,7 +1427,20 @@ const ko: Strings = {
   "bridgeUnder": "🌉 다리 밑! (보호됨)",
   "iceFrozenZone": "❄️ 빙판 구역! (실 얼어붙음)",
   "conveyorShift": "⚙️ 컨베이어 이동 완료!",
-  "conveyorBadge": "⚙️ 컨베이어"
+  "conveyorBadge": "⚙️ 컨베이어",
+  "rateTitle": "Yumak Pop이 마음에 드시나요?",
+  "rateSubtitle": "당신의 의견은 매우 소중합니다! 보빈의 공방에 별 몇 개를 주시겠어요?",
+  "rateHint": "위의 별을 눌러 보빈을 평가해주세요!",
+  "rateHighTitle": "최고예요! 💖",
+  "rateHighDesc": "보빈이 당신의 응원에 크게 감동했습니다! 스토어에서 별 5개로 응원해주시겠어요?",
+  "rateRewardBadge": "🎁 감사의 선물: +5 별 & +100 코인!",
+  "rateStoreBtn": "⭐ 스토어에서 평가하기 ⭐",
+  "rateLowTitle": "소중한 의견을 들려주세요 💡",
+  "rateLowDesc": "어떻게 하면 더 좋은 경험을 드릴 수 있을까요? 알려주세요!",
+  "rateFeedbackBtn": "💬 피드백 보내기",
+  "rateLater": "나중에",
+  "rateThanks": "응원해주셔서 감사합니다! 💖",
+  "rateMenuBtn": "⭐ 게임 평가하기"
 };
 
 const zh: Strings = {
@@ -1439,7 +1569,20 @@ const zh: Strings = {
   "bridgeUnder": "🌉 桥底穿行！（受保护）",
   "iceFrozenZone": "❄️ 冰冻区域！（毛线冻结）",
   "conveyorShift": "⚙️ 传送带已旋转！",
-  "conveyorBadge": "⚙️ 传送带"
+  "conveyorBadge": "⚙️ 传送带",
+  "rateTitle": "喜欢《Yumak Pop》吗？",
+  "rateSubtitle": "您的反馈对我们至关重要！您会给博宾的工作室打几颗星？",
+  "rateHint": "轻点上方星星为博宾评分！",
+  "rateHighTitle": "太棒了！💖",
+  "rateHighDesc": "博宾非常感谢您的支持！您愿意在应用商店给我们留下5星好评吗？",
+  "rateRewardBadge": "🎁 感谢礼包：+5 颗星星 & +100 金币！",
+  "rateStoreBtn": "⭐ 在应用商店评分 ⭐",
+  "rateLowTitle": "您的反馈很重要 💡",
+  "rateLowDesc": "我们如何能让您的游戏体验更上一层楼？请告诉我们！",
+  "rateFeedbackBtn": "💬 发送反馈",
+  "rateLater": "稍后再说",
+  "rateThanks": "感谢您的支持！💖",
+  "rateMenuBtn": "⭐ 评价游戏"
 };
 
 const ar: Strings = {
@@ -1568,7 +1711,20 @@ const ar: Strings = {
   "bridgeUnder": "🌉 تحت الجسر! (محمي)",
   "iceFrozenZone": "❄️ منطقة جليدية! (الصوف متجمد)",
   "conveyorShift": "⚙️ تحرك حزام النقل!",
-  "conveyorBadge": "⚙️ حزام النقل"
+  "conveyorBadge": "⚙️ حزام النقل",
+  "rateTitle": "هل أعجبتك Yumak Pop؟",
+  "rateSubtitle": "رأيك يهمنا جداً! كم نجمة تمنح ورشة بوبين؟",
+  "rateHint": "المس النجوم لتقييم بوبين!",
+  "rateHighTitle": "رائع جداً! 💖",
+  "rateHighDesc": "بوبين سعيد جداً بدعمك! هل تود دعمنا بـ 5 نجوم في المتجر؟",
+  "rateRewardBadge": "🎁 هدية شكر: +5 نجوم و +100 عملة!",
+  "rateStoreBtn": "⭐ تقييم في المتجر ⭐",
+  "rateLowTitle": "رأيك يهمنا 💡",
+  "rateLowDesc": "كيف يمكننا تحسين تجربتك؟ شاركنا اقتراحاتك!",
+  "rateFeedbackBtn": "💬 إرسال ملاحظات",
+  "rateLater": "ربما لاحقاً",
+  "rateThanks": "شكراً لدعمك الرائع! 💖",
+  "rateMenuBtn": "⭐ تقييم اللعبة"
 };
 
 export type Lang = 'tr' | 'en' | 'de' | 'es' | 'fr' | 'it' | 'pt' | 'ru' | 'ja' | 'ko' | 'zh' | 'ar';
