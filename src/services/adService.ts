@@ -23,6 +23,20 @@ let onAdClosedCallback: (() => void) | null = null;
 let onAdFallbackCallback: (() => void) | null = null;
 let showWatchdogTimer: ReturnType<typeof setTimeout> | null = null;
 let isInitialized = false;
+let isAdFreeActive = false;
+
+export function setAdFreeStatus(val: boolean) {
+  isAdFreeActive = val;
+  if (val) {
+    interstitialAd = null;
+    isAdLoaded = false;
+    isAdLoading = false;
+  }
+}
+
+export function isAdFree(): boolean {
+  return isAdFreeActive;
+}
 
 function clearWatchdog() {
   if (showWatchdogTimer) {
@@ -67,7 +81,7 @@ export async function initAdMob(): Promise<void> {
  * so players ALWAYS see a real Google AdMob ad.
  */
 export function preloadInterstitial(): void {
-  if (Platform.OS === 'web' || isAdLoading || isAdLoaded) return;
+  if (isAdFreeActive || Platform.OS === 'web' || isAdLoading || isAdLoaded) return;
 
   try {
     const { InterstitialAd, AdEventType } = require('react-native-google-mobile-ads');
@@ -164,6 +178,10 @@ export function showAdMobInterstitial(
   onDismiss: () => void,
   onFallback?: () => void,
 ): boolean {
+  if (isAdFreeActive) {
+    onDismiss();
+    return true;
+  }
   if (Platform.OS === 'web') return false;
 
   if (interstitialAd && isAdLoaded) {

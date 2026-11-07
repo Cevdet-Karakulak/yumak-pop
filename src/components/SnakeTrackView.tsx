@@ -21,7 +21,8 @@ import Svg, {
 import { GameState } from '../game/engine';
 import { TrackShape } from '../game/levels';
 
-import { UI, YARN } from '../theme';
+import { useSave } from '../save';
+import { COLOR_SYMBOL, UI, YARN } from '../theme';
 
 
 
@@ -611,6 +612,8 @@ export function SnakeTrackView({
 
 }: Props) {
 
+  const colorBlind = !!useSave().data.colorBlind;
+
   // 1. Arc-Length Parameterized Track Engine:
 
   const lut = useMemo(
@@ -799,6 +802,8 @@ export function SnakeTrackView({
 
       scale: number;
 
+      mark: boolean;
+
     }> = [];
 
 
@@ -872,6 +877,8 @@ export function SnakeTrackView({
           color: seg.color,
 
           scale: baseScale * breath * enterScale,
+
+          mark: unit === Math.floor(seg.units / 2),
 
         });
 
@@ -1174,6 +1181,32 @@ export function SnakeTrackView({
       })}
 
 
+
+      {/* 3b. Colour-blind shape symbols (one per yarn section, upright) */}
+
+      {colorBlind && rings.filter((r) => r.mark && COLOR_SYMBOL[r.color]).map((ring) => {
+
+        const s = Math.max(14, jointSize * 0.46);
+
+        return (
+
+          <View
+
+            key={`cb_${ring.id}`}
+
+            pointerEvents="none"
+
+            style={[styles.cbMark, { left: ring.x - s / 2, top: ring.y - s / 2, width: s, height: s, borderRadius: s / 2 }]}
+
+          >
+
+            <Text style={[styles.cbMarkText, { fontSize: s * 0.62 }]}>{COLOR_SYMBOL[ring.color]}</Text>
+
+          </View>
+
+        );
+
+      })}
 
       {/* 4. Alive 3D Cable-Knit Dragon Head (Snout always faces path forward direction!) */}
 
@@ -1569,7 +1602,11 @@ const styles = StyleSheet.create({
 
     justifyContent: 'center',
 
-  },
+  },
+
+  cbMark: { position: 'absolute', backgroundColor: 'rgba(20, 10, 4, 0.82)', borderWidth: 1.5, borderColor: '#FFF', alignItems: 'center', justifyContent: 'center' },
+
+  cbMarkText: { color: '#FFF', fontWeight: '900', textAlign: 'center', includeFontPadding: false },
 
   jointWrap: {
 

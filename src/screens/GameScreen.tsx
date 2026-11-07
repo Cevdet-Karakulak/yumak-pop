@@ -31,14 +31,16 @@ import {
   tapColumn,
   unravelTick,
 } from '../game/engine';
-import { createLevel, getLevelInfo, MechanicKind, TOTAL_LEVELS } from '../game/levels';
+import { applyAssist, assistTier, createLevel, getLevelInfo, MechanicKind, TOTAL_LEVELS } from '../game/levels';
 import {
   BOOSTER_PRICE,
   BoosterKind,
   COLOR_SWAP_PRICE,
   CONTINUE_PRICE,
   SLOT_UNLOCK_PRICES,
+  todayKey,
   useSave,
+  yesterdayKey,
 } from '../save';
 import { UI, YARN } from '../theme';
 
@@ -52,23 +54,38 @@ interface PopItem {
   color: string;
 }
 
+export interface DailyConfig {
+  base: number;
+  salt: number;
+}
+
 export function GameScreen({
   level,
   forceTutorial,
   onHome,
   onNext,
+  daily,
 }: {
   level: number;
   forceTutorial?: boolean;
   onHome: () => void;
   onNext: (n: number) => void;
+  /** When set, this run is the Daily Puzzle (date-seeded board, streak rewards). */
+  daily?: DailyConfig;
 }) {
   const { data, update, t, lang } = useSave();
+  const isDaily = !!daily;
+  const dataRef = useRef(data);
+  dataRef.current = data;
+  const failsFor = () => (isDaily ? 0 : dataRef.current.levelFails?.[level] ?? 0);
+  // Dynamic difficulty: repeated failures make the board a little more forgiving
+  const buildLevel = (fails: number) => applyAssist(createLevel(level, 3, daily?.salt ?? 0), fails);
+  const [dailyResult, setDailyResult] = useState<null | { streak: number; bonus: boolean; firstToday: boolean }>(null);
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const info = useMemo(() => getLevelInfo(level), [level]);
 
-  const [game, setGame] = useState<GameState>(() => createLevel(level, 3));
+  const [game, setGame] = useState<GameState>(() => buildLevel(failsFor()));
   const gameRef = useRef(game);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const boostersUsed = useRef(0);
@@ -148,7 +165,7 @@ export function GameScreen({
     setIsFever(false);
     setComboCount(0);
     setFeverSecondsLeft(0);
-    setBoth(createLevel(level, 3));
+    setBoth(buildLevel(failsFor()));
     return () => {
       if (feverTimer.current) clearInterval(feverTimer.current);
     };
@@ -194,6 +211,12 @@ export function GameScreen({
   };
 
   const showToast = (msg: string) => setToastMsg(msg);
+  useEffect(() => {
+    if (!isDaily && assistTier(failsFor()) > 0) {
+      const id = setTimeout(() => showToast(t.assistActive), 900);
+      return () => clearTimeout(id);
+    }
+  }, [level]);
   useEffect(() => {
     if (!toastMsg) return;
     const id = setTimeout(() => setToastMsg(null), 2500);
@@ -300,14 +323,49 @@ export function GameScreen({
         const feverMultiplier = feverTriggeredCount.current > 0 ? 1.5 : 1.0;
         const baseCoins = 15 + stars * 5 + (info.hard ? 20 : 0);
         const coins = Math.round(baseCoins * feverMultiplier);
-        update((d) => ({
-          ...d,
-          coins: d.coins + coins,
-          unlocked: Math.max(d.unlocked, Math.min(TOTAL_LEVELS, level + 1)),
-          stars: { ...d.stars, [level]: Math.max(d.stars[level] ?? 0, stars) },
-          tutorialDone: true,
-          completedLevels: (d.completedLevels || 0) + 1,
-        }));
+        if (isDaily) {
+          // Daily Puzzle: streak + rewards, never touches campaign progress
+          const today = todayKey();
+          const snap = dataRef.current;
+          const firstToday = snap.dailyLastDone !== today;
+          const streak = !firstToday
+            ? snap.dailyStreak || 1
+            : snap.dailyLastDone === yesterdayKey()
+            ? (snap.dailyStreak || 0) + 1
+            : 1;
+          const bonus = firstToday && streak % 7 === 0;
+          const dailyCoins = firstToday ? 40 + Math.min(streak, 7) * 10 : 10;
+          setDailyResult({ streak, bonus, firstToday });
+          update((d) => ({
+            ...d,
+            coins: d.coins + dailyCoins,
+            dailyLastDone: today,
+            dailyStreak: streak,
+            dailyBestStreak: Math.max(d.dailyBestStreak || 0, streak),
+            boosters: bonus
+              ? { undo: d.boosters.undo + 1, slot: d.boosters.slot + 1, magnet: d.boosters.magnet + 1 }
+              : d.boosters,
+          }));
+          setTimeout(() => {
+            play('win');
+            buzz('success');
+            setResult({ won: true, stars, coins: dailyCoins });
+          }, 500);
+          return;
+        }
+        update((d) => {
+          const fails = { ...(d.levelFails || {}) };
+          delete fails[level];
+          return {
+            ...d,
+            coins: d.coins + coins,
+            unlocked: Math.max(d.unlocked, Math.min(TOTAL_LEVELS, level + 1)),
+            stars: { ...d.stars, [level]: Math.max(d.stars[level] ?? 0, stars) },
+            tutorialDone: true,
+            completedLevels: (d.completedLevels || 0) + 1,
+            levelFails: fails,
+          };
+        });
         setTimeout(() => {
           play('win');
           buzz('success');
@@ -321,7 +379,7 @@ export function GameScreen({
         }, 400);
       }
     },
-    [info.hard, level, update],
+    [info.hard, level, update, isDaily],
   );
 
   const lastUnravelTime = useRef(0);
@@ -721,8 +779,16 @@ export function GameScreen({
     setNormalReviveUsed(false);
     setAdReviveUsed(false);
     setPops([]);
+    let fails = failsFor();
+    if (!isDaily && result && !result.won) {
+      const before = assistTier(fails);
+      fails += 1;
+      update((d) => ({ ...d, levelFails: { ...(d.levelFails || {}), [level]: fails } }));
+      if (assistTier(fails) > before) setTimeout(() => showToast(t.assistActive), 400);
+    }
     setResult(null);
-    setBoth(createLevel(level, 3));
+    setDailyResult(null);
+    setBoth(buildLevel(fails));
   };
 
   const buy = (kind: BoosterKind) => {
@@ -752,7 +818,7 @@ export function GameScreen({
           <View style={styles.levelPill}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <T style={{ fontFamily: FONT.black, fontSize: 17 }}>
-                {t.level} {level}
+                {isDaily ? `📅 ${t.dailyTitle}` : `${t.level} ${level}`}
               </T>
               {info.mechanics.includes('knots') && <T style={{ fontSize: 13 }}>🔒</T>}
               {info.mechanics.includes('twin') && <T style={{ fontSize: 13 }}>🔗</T>}
@@ -1158,15 +1224,28 @@ export function GameScreen({
       )}
 
       {/* Result sheets */}
-      <Sheet visible={!!result?.won} title={t.win}>
+      <Sheet visible={!!result?.won} title={isDaily ? t.dailyWinTitle : t.win}>
         <T style={{ marginVertical: 6, color: UI.plumLight, textAlign: 'center' }}>
-          {t.winSub}
+          {isDaily && dailyResult ? t.dailyStreak.replace('{n}', String(dailyResult.streak)) : t.winSub}
         </T>
+        {isDaily && dailyResult?.bonus && (
+          <T style={{ marginBottom: 8, color: UI.coralDark, textAlign: 'center', fontFamily: FONT.black }}>
+            {t.dailyBonus7}
+          </T>
+        )}
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
           <T style={{ marginRight: 8 }}>{t.coinsEarned}</T>
           <CoinBadge coins={result?.coins ?? 0} />
         </View>
-        {level < TOTAL_LEVELS ? (
+        {isDaily ? (
+          <YarnButton
+            label={t.home}
+            icon="home"
+            color="mint"
+            onPress={onHome}
+            style={{ alignSelf: 'stretch', width: '100%' }}
+          />
+        ) : level < TOTAL_LEVELS ? (
           <YarnButton
             label={t.next}
             icon="play"
@@ -1238,7 +1317,13 @@ export function GameScreen({
               label={t.mainMenu}
               icon="home"
               color="plum"
-              onPress={onHome}
+              onPress={() => {
+                if (!isDaily) {
+                  const fails = failsFor() + 1;
+                  update((d) => ({ ...d, levelFails: { ...(d.levelFails || {}), [level]: fails } }));
+                }
+                onHome();
+              }}
               style={{ alignSelf: 'stretch', width: '100%' }}
             />
           </View>

@@ -34,3 +34,18 @@ export const UI = {
   shadow: 'rgba(91,58,94,0.18)',
   white: '#FFFFFF',
 };
+
+/**
+ * Colour-blind mode: a distinct shape per yarn colour, drawn on spools and
+ * snake rings so the game is playable without relying on hue alone.
+ */
+export const COLOR_SYMBOL: Record<string, string> = {
+  R: '♥',
+  Y: '★',
+  B: '■',
+  T: '▲',
+  O: '●',
+  P: '◆',
+  G: '✚',
+  K: '✿',
+};

@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
-import { YARN } from '../theme';
+import { useSave } from '../save';
+import { COLOR_SYMBOL, YARN } from '../theme';
 
 interface Props {
   color: string;
@@ -60,6 +61,8 @@ function SpoolImpl({
 }: Props) {
   const w = size;
   const h = size * 1.12;
+  const { data } = useSave();
+  const colorBlind = !!data.colorBlind;
 
   const isConcealed = isMystery || hidden;
   const spriteSource = isConcealed ? SPOOL_MYSTERY : (SPOOL_SPRITES[color] ?? SPOOL_SPRITES.R);
@@ -177,6 +180,23 @@ function SpoolImpl({
       {/* 8. Twin Link Indicator */}
       {twinColor && (
         <View style={[styles.twinDot, { backgroundColor: twinColor }]} />
+      )}
+
+      {/* 8b. Colour-blind shape symbol */}
+      {colorBlind && !isConcealed && !isWild && COLOR_SYMBOL[color] && (
+        <View
+          style={[
+            styles.cbBadge,
+            {
+              width: Math.max(16, w * 0.34),
+              height: Math.max(16, w * 0.34),
+              borderRadius: Math.max(8, w * 0.17),
+              borderColor: YARN[color]?.light ?? '#FFF',
+            },
+          ]}
+        >
+          <Text style={[styles.cbText, { fontSize: Math.max(10, w * 0.22) }]}>{COLOR_SYMBOL[color]}</Text>
+        </View>
       )}
 
       {/* 9. Frozen Ice Shield Overlay */}
@@ -360,5 +380,20 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '900',
     color: '#0077B6',
+  },
+  cbBadge: {
+    position: 'absolute',
+    bottom: 1,
+    left: 1,
+    backgroundColor: 'rgba(20, 10, 4, 0.88)',
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cbText: {
+    color: '#FFFFFF',
+    fontWeight: '900',
+    textAlign: 'center',
+    includeFontPadding: false,
   },
 });

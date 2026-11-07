@@ -1,8 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import * as Haptics from 'expo-haptics';
-import React, { useState } from 'react';
-import { Linking, ScrollView, Switch, View } from 'react-native';
+
+import React, { useEffect, useState } from 'react';
+import { Alert, Linking, ScrollView, Switch, View } from 'react-native';
+import { fetchRemoveAdsPrice, purchaseRemoveAds, restorePurchases } from '../services/iapService';
 import { Bouncy, FONT, Sheet, T, YarnButton } from '../components/ui';
 import { LANGUAGES } from '../i18n';
 import { useSave } from '../save';
@@ -25,6 +27,56 @@ export function SettingsSheet({
   const [confirm, setConfirm] = useState(false);
   const [labUnlocked, setLabUnlocked] = useState(false);
   const [tapCount, setTapCount] = useState(0);
+  const [removeAdsPrice, setRemoveAdsPrice] = useState('₺69,99');
+  const [isPurchasing, setIsPurchasing] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
+
+  useEffect(() => {
+    if (visible && !data.isAdFree) {
+      fetchRemoveAdsPrice()
+        .then((p) => {
+          if (p) setRemoveAdsPrice(p);
+        })
+        .catch(() => {});
+    }
+  }, [visible, data.isAdFree]);
+
+  const handlePurchase = async () => {
+    setIsPurchasing(true);
+    try {
+      await purchaseRemoveAds(
+        () => {
+          update((d) => ({ ...d, isAdFree: true }));
+          Alert.alert('🎉 Yumak Pop', t.purchaseSuccess);
+        },
+        (msg) => {
+          Alert.alert('Yumak Pop', msg || t.purchaseFailed);
+        }
+      );
+    } finally {
+      setIsPurchasing(false);
+    }
+  };
+
+  const handleRestore = async () => {
+    setIsRestoring(true);
+    try {
+      await restorePurchases(
+        () => {
+          update((d) => ({ ...d, isAdFree: true }));
+          Alert.alert('🎉 Yumak Pop', t.restoreSuccess);
+        },
+        () => {
+          Alert.alert('Yumak Pop', t.restoreNone);
+        },
+        (msg) => {
+          Alert.alert('Yumak Pop', msg || t.purchaseFailed);
+        }
+      );
+    } finally {
+      setIsRestoring(false);
+    }
+  };
 
   const Row = ({ icon, label, value, onChange }: { icon: keyof typeof Ionicons.glyphMap; label: string; value: boolean; onChange: (v: boolean) => void }) => (
     <View style={{ flexDirection: 'row', alignItems: 'center', alignSelf: 'stretch', paddingVertical: 6 }}>
@@ -95,6 +147,91 @@ export function SettingsSheet({
           })}
         </ScrollView>
       </View>
+
+      {data.isAdFree ? (
+        <View
+          style={{
+            alignSelf: 'stretch',
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: '#ECFDF5',
+            borderColor: '#10B981',
+            borderWidth: 1.5,
+            borderRadius: 16,
+            paddingHorizontal: 14,
+            paddingVertical: 10,
+            marginTop: 10,
+          }}
+        >
+          <Ionicons name="checkmark-circle" size={24} color="#059669" style={{ marginRight: 10 }} />
+          <View style={{ flex: 1 }}>
+            <T style={{ color: '#065F46', fontFamily: FONT.black, fontSize: 15 }}>
+              {t.removeAdsActive}
+            </T>
+            <T style={{ color: '#047857', fontSize: 12 }}>
+              {t.removeAdsDesc}
+            </T>
+          </View>
+        </View>
+      ) : (
+        <View
+          style={{
+            alignSelf: 'stretch',
+            backgroundColor: '#FFFBEB',
+            borderColor: '#F59E0B',
+            borderWidth: 1.5,
+            borderRadius: 16,
+            padding: 12,
+            marginTop: 10,
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+            <Ionicons name="sparkles" size={20} color="#D97706" style={{ marginRight: 8 }} />
+            <T style={{ flex: 1, fontFamily: FONT.black, fontSize: 16, color: '#92400E' }}>
+              {t.removeAds}
+            </T>
+            <View
+              style={{
+                backgroundColor: '#FEF3C7',
+                paddingHorizontal: 8,
+                paddingVertical: 3,
+                borderRadius: 8,
+              }}
+            >
+              <T style={{ fontFamily: FONT.black, fontSize: 13, color: '#B45309' }}>
+                {removeAdsPrice}
+              </T>
+            </View>
+          </View>
+          <T style={{ color: '#78350F', fontSize: 12, marginBottom: 10 }}>
+            {t.removeAdsDesc}
+          </T>
+          <YarnButton
+            small
+            label={isPurchasing ? '...' : `${t.removeAds} (${removeAdsPrice})`}
+            icon="cart"
+            color="gold"
+            disabled={isPurchasing}
+            onPress={handlePurchase}
+          />
+        </View>
+      )}
+
+      <Bouncy
+        disabled={isRestoring}
+        onPress={handleRestore}
+        style={{
+          alignSelf: 'center',
+          paddingVertical: 4,
+          paddingHorizontal: 12,
+          marginTop: 6,
+          marginBottom: 4,
+        }}
+      >
+        <T style={{ color: UI.plumLight, fontSize: 13, textDecorationLine: 'underline' }}>
+          {isRestoring ? '...' : t.restorePurchases}
+        </T>
+      </Bouncy>
 
       <YarnButton
         small

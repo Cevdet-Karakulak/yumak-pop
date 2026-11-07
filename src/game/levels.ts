@@ -286,11 +286,11 @@ export function getLevelInfo(n: number): LevelInfo {
  * Creates a Zuma-Yarn level with a snake of yarn segments on a track,
  * and sets up matching spools with guaranteed solvability!
  */
-export function createLevel(n: number, rackSlots = BASE_RACK): GameState {
+export function createLevel(n: number, rackSlots = BASE_RACK, seedSalt = 0): GameState {
   const p = levelParams(n);
 
   for (let attempt = 0; attempt < 24; attempt++) {
-    const rng = createRng(n * 1337 + attempt * 7919 + 42);
+    const rng = createRng(n * 1337 + attempt * 7919 + 42 + seedSalt * 104729);
 
     const colors = COLOR_PALETTE.slice(0, p.numColors);
     const segments: YarnSegment[] = [];
@@ -497,6 +497,46 @@ export function createLevel(n: number, rackSlots = BASE_RACK): GameState {
     iceZone: p.iceZone,
     conveyor: p.conveyor,
   };
+}
+
+/**
+ * Dynamic difficulty assist: after repeated failures on the same level the
+ * snake starts further from the hole and creeps slower. Only ever makes a
+ * level easier, so solvability guarantees from createLevel still hold.
+ */
+export const ASSIST_THRESHOLD = 3;
+export function assistTier(fails: number): 0 | 1 | 2 {
+  if (fails >= ASSIST_THRESHOLD * 2) return 2;
+  if (fails >= ASSIST_THRESHOLD) return 1;
+  return 0;
+}
+export function applyAssist(s: GameState, fails: number): GameState {
+  const tier = assistTier(fails);
+  if (tier === 0) return s;
+  return {
+    ...s,
+    headPos: Math.max(8, s.headPos - 8 * tier),
+    stepPenalty: Math.max(1.2, s.stepPenalty * (tier === 2 ? 0.75 : 0.87)),
+  };
+}
+
+/** Day number since epoch (local), used to seed the daily puzzle. */
+export function dayIndex(d: Date = new Date()): number {
+  const local = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+  return Math.floor(local / 86400000);
+}
+
+/**
+ * Daily puzzle: re-uses a level's ruleset near the player's progress but with a
+ * fresh, date-based layout seed so it is a brand-new board every day.
+ */
+export function getDailyLevel(unlocked: number, d: Date = new Date()): { base: number; salt: number } {
+  const di = dayIndex(d);
+  const lo = Math.max(6, Math.min(unlocked, TOTAL_LEVELS) - 6);
+  const hi = Math.max(lo, Math.min(TOTAL_LEVELS, unlocked + 4));
+  const span = hi - lo + 1;
+  const base = lo + (((di * 37) % span) + span) % span;
+  return { base, salt: (di % 9973) + 1 };
 }
 
 /**

@@ -17,6 +17,7 @@ import { GameScreen } from './src/screens/GameScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { MapScreen } from './src/screens/MapScreen';
 import { initAdMob } from './src/services/adService';
+import { endIAP, initIAP } from './src/services/iapService';
 import { WorkshopScreen } from './src/screens/WorkshopScreen';
 import { RatingModal } from './src/components/RatingModal';
 import { shouldPromptReview } from './src/services/reviewService';
@@ -74,6 +75,7 @@ function Root() {
   useEffect(() => {
     initAudio().catch((err) => console.warn('initAudio error:', err));
     initAdMob().catch((err) => console.warn('initAdMob error:', err));
+    initIAP().catch((err) => console.warn('initIAP error:', err));
     const sub = AppState.addEventListener('change', (s) => {
       try {
         s === 'active' ? syncMusic() : pauseMusic();
@@ -81,7 +83,10 @@ function Root() {
         console.warn('AppState audio error:', e);
       }
     });
-    return () => sub.remove();
+    return () => {
+      sub.remove();
+      endIAP().catch(() => {});
+    };
   }, []);
 
   const isReady = loaded && Boolean(fontsLoaded);

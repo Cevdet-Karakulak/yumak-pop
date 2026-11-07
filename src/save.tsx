@@ -3,6 +3,8 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { audioSettings, syncMusic } from './audio';
 import { MechanicKind } from './game/levels';
 import { deviceLang, Lang, STRINGS, Strings } from './i18n';
+import { setAdFreeStatus } from './services/adService';
+import { STORAGE_KEY_AD_FREE } from './services/iapService';
 
 export type BoosterKind = 'undo' | 'slot' | 'magnet';
 
@@ -33,6 +35,19 @@ export interface SaveData {
   reviewPromptDismissCount?: number;
   userGivenRating?: number;
   bonusStars?: number;
+  // Accessibility: draw shape symbols on spools & snake rings
+  colorBlind?: boolean;
+  // Dynamic difficulty: failed attempts per level (cleared on win)
+  levelFails?: Record<number, number>;
+  // Daily puzzle & streak
+  dailyLastDone?: string; // YYYY-MM-DD
+  dailyStreak?: number;
+  dailyBestStreak?: number;
+  // Daily reward wheel
+  wheelLastFree?: string; // YYYY-MM-DD
+  wheelAdSpinDate?: string; // YYYY-MM-DD of last ad spin
+  // Ad-Free in-app purchase (Non-consumable)
+  isAdFree?: boolean;
 }
 
 const KEY = 'yumakpop:save:v1';
@@ -64,7 +79,28 @@ const DEFAULT: SaveData = {
   reviewPromptDismissCount: 0,
   userGivenRating: 0,
   bonusStars: 0,
+  colorBlind: false,
+  levelFails: {},
+  dailyLastDone: '',
+  dailyStreak: 0,
+  dailyBestStreak: 0,
+  wheelLastFree: '',
+  wheelAdSpinDate: '',
+  isAdFree: false,
 };
+
+/** Local calendar date key, e.g. "2026-11-07". */
+export function todayKey(d: Date = new Date()): string {
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+
+export function yesterdayKey(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return todayKey(d);
+}
 
 export function getAvailableStars(data: SaveData): number {
   const totalEarned =
@@ -97,8 +133,12 @@ export function SaveProvider({ children }: { children: React.ReactNode }) {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    AsyncStorage.getItem(KEY)
-      .then((raw) => {
+    Promise.all([
+      AsyncStorage.getItem(KEY),
+      AsyncStorage.getItem(STORAGE_KEY_AD_FREE),
+    ])
+      .then(([raw, adFreeRaw]) => {
+        const isStoredAdFree = adFreeRaw === 'true';
         if (raw) {
           const parsed = JSON.parse(raw);
           const isLegacyWorkshop = parsed.workshopVersion !== 2;
@@ -142,9 +182,13 @@ export function SaveProvider({ children }: { children: React.ReactNode }) {
             spent = calc;
           }
 
+          const effectiveAdFree = Boolean(parsed.isAdFree || isStoredAdFree);
+          setAdFreeStatus(effectiveAdFree);
+
           setData({
             ...DEFAULT,
             ...parsed,
+            isAdFree: effectiveAdFree,
             workshopItems: initialItems,
             bobbinOutfit: initialOutfit,
             workshopVersion: 2,
@@ -155,11 +199,18 @@ export function SaveProvider({ children }: { children: React.ReactNode }) {
             boosters: { ...DEFAULT.boosters, ...parsed.boosters },
             seenMechanics: { ...DEFAULT.seenMechanics, ...parsed.seenMechanics },
           });
+        } else if (isStoredAdFree) {
+          setAdFreeStatus(true);
+          setData((prev) => ({ ...prev, isAdFree: true }));
         }
       })
       .catch(() => {})
       .finally(() => setLoaded(true));
   }, []);
+
+  useEffect(() => {
+    setAdFreeStatus(Boolean(data.isAdFree));
+  }, [data.isAdFree]);
 
   useEffect(() => {
     audioSettings.sound = data.sound;
