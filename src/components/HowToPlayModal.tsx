@@ -80,6 +80,24 @@ export function HowToPlaySheet({
       visual: <SpoolView color="R" cap={3} need={3} secondColor="B" size={46} />,
     },
     {
+      key: 'conveyor',
+      title: t.mech_conveyor_title,
+      desc: t.mech_conveyor_desc,
+      visual: <T style={{ fontSize: 32 }}>⚙️</T>,
+    },
+    {
+      key: 'bridge',
+      title: t.mech_bridge_title,
+      desc: t.mech_bridge_desc,
+      visual: <T style={{ fontSize: 32 }}>🌉</T>,
+    },
+    {
+      key: 'ice_zone',
+      title: t.mech_ice_zone_title,
+      desc: t.mech_ice_zone_desc,
+      visual: <T style={{ fontSize: 32 }}>❄️</T>,
+    },
+    {
       key: 'vortex',
       title: t.mech_vortex_title,
       desc: t.mech_vortex_desc,

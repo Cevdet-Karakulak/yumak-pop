@@ -199,6 +199,11 @@ export function GameScreen({
   useEffect(() => {
     if (info.newMechanic && info.newMechanic !== 'basic' && !data.seenMechanics[info.newMechanic]) {
       setIntroMech(info.newMechanic);
+      return;
+    }
+    const unseen = info.mechanics.find((m) => m !== 'basic' && m !== 'vortex' && !data.seenMechanics[m]);
+    if (unseen) {
+      setIntroMech(unseen);
     }
   }, [info, data.seenMechanics]);
 
@@ -226,8 +231,8 @@ export function GameScreen({
   // Sizing: Expands track to fill the craft table while keeping all bottom controls comfortably visible!
   const usableH = height - insets.top - insets.bottom;
   const viewTrackW = Math.min(width - 8, 480);
-  const bottomControlsBudget = 265 + Math.max(insets.bottom, 12);
-  const viewTrackH = Math.max(260, Math.min(560, usableH - bottomControlsBudget));
+  const bottomControlsBudget = 308 + Math.max(insets.bottom, 18);
+  const viewTrackH = Math.max(245, Math.min(540, usableH - bottomControlsBudget));
   const totalSlots = 6;
   const slotGap = 4;
   const slotW = Math.min(46, Math.floor((width - 24) / totalSlots) - slotGap);
@@ -823,6 +828,9 @@ export function GameScreen({
               {info.mechanics.includes('knots') && <T style={{ fontSize: 13 }}>🔒</T>}
               {info.mechanics.includes('twin') && <T style={{ fontSize: 13 }}>🔗</T>}
               {info.mechanics.includes('basket') && <T style={{ fontSize: 13 }}>🧺</T>}
+              {info.mechanics.includes('conveyor') && <T style={{ fontSize: 13 }}>⚙️</T>}
+              {info.mechanics.includes('bridge') && <T style={{ fontSize: 13 }}>🌉</T>}
+              {info.mechanics.includes('ice_zone') && <T style={{ fontSize: 13 }}>❄️</T>}
             </View>
             {/* Danger Steps Indicator */}
             <View
@@ -931,7 +939,7 @@ export function GameScreen({
         </View>
 
         {/* Stable Fixed Bottom Section */}
-        <View style={[styles.bottomArea, { paddingBottom: Math.max(insets.bottom, 14) }]}>
+        <View style={[styles.bottomArea, { paddingBottom: Math.max(insets.bottom + 8, 20) }]}>
           {/* ASMR Combo & Yarn Fever Floating Status Pill */}
           {(comboCount >= 2 || isFever) && (
             <Animated.View
@@ -1073,18 +1081,22 @@ export function GameScreen({
 
           {/* Spool queues + Baskets sitting in an Artisan Wooden Tray */}
           <View style={styles.spoolTrayWrapper}>
-            {game.conveyor?.active && (
-              <View style={styles.conveyorHeader}>
-                <Ionicons name="cog" size={14} color={UI.gold} />
-                <T style={{ fontSize: 11, fontFamily: FONT.black, color: UI.plum, marginLeft: 4 }}>
-                  {t.conveyorBadge}: {game.conveyor.movesUntilShift}
-                </T>
-                <T style={{ fontSize: 11, color: UI.coralDark, marginLeft: 6 }}>
-                  {game.conveyor.direction > 0 ? '➔' : '⬅'}
-                </T>
-              </View>
-            )}
             <View style={[styles.spoolTray, game.conveyor?.active && styles.conveyorTray]}>
+              {game.conveyor?.active && (
+                <Pressable
+                  onPress={() => setIntroMech('conveyor')}
+                  style={styles.conveyorHeader}
+                >
+                  <Ionicons name="cog" size={13} color={UI.gold} />
+                  <T style={{ fontSize: 10.5, fontFamily: FONT.black, color: UI.plum, marginLeft: 4 }}>
+                    {t.conveyorBadge}: {game.conveyor.movesUntilShift}
+                  </T>
+                  <T style={{ fontSize: 11, color: UI.coralDark, marginLeft: 5 }}>
+                    {game.conveyor.direction > 0 ? '➔' : '⬅'}
+                  </T>
+                  <Ionicons name="information-circle-outline" size={13} color={UI.plumLight} style={{ marginLeft: 4 }} />
+                </Pressable>
+              )}
               <View style={styles.queues}>
                 {game.columns.map((col, c) => {
                   const basketCount = game.baskets[c]?.length ?? 0;
@@ -1092,7 +1104,7 @@ export function GameScreen({
                     <Pressable
                       key={c}
                       onPress={() => onTapColumn(c)}
-                      style={{ width: colW, height: 96, alignItems: 'center', justifyContent: 'flex-start' }}
+                      style={{ width: colW, height: 112, alignItems: 'center', justifyContent: 'flex-start' }}
                     >
                       {col.slice(0, 3).map((sp, k) => {
                         const s = k === 0 ? frontSize : frontSize * 0.78;
@@ -1123,15 +1135,15 @@ export function GameScreen({
                         );
                       })}
                       {basketCount > 0 ? (
-                        <View style={{ marginTop: col.length === 0 ? 12 : -frontSize * 0.28 }}>
+                        <View style={{ marginTop: col.length === 0 ? 12 : -frontSize * 0.34, zIndex: 12 }}>
                           <BasketView
                             count={basketCount + Math.max(0, col.length - 3)}
-                            size={frontSize * 0.9}
+                            size={frontSize * 0.86}
                           />
                         </View>
                       ) : col.length > 3 ? (
-                        <View style={styles.moreBadge}>
-                          <T style={{ fontSize: 12, color: '#fff' }}>+{col.length - 3}</T>
+                        <View style={[styles.moreBadge, { zIndex: 12 }]}>
+                          <T style={{ fontSize: 11, fontFamily: FONT.black, color: '#fff' }}>+{col.length - 3}</T>
                         </View>
                       ) : null}
                       {col.length === 0 && (
@@ -1225,6 +1237,33 @@ export function GameScreen({
 
       {/* Result sheets */}
       <Sheet visible={!!result?.won} title={isDaily ? t.dailyWinTitle : t.win}>
+        {/* Earned Stars Row (1..3 Stars) */}
+        <View style={styles.winStarsRow}>
+          {[1, 2, 3].map((starIdx) => {
+            const earned = (result?.stars ?? 3) >= starIdx;
+            return (
+              <View
+                key={starIdx}
+                style={[
+                  styles.winStarBadge,
+                  starIdx === 2 && { transform: [{ scale: 1.16 }], marginTop: -6 },
+                  !earned && { opacity: 0.28 },
+                ]}
+              >
+                <Ionicons
+                  name={earned ? 'star' : 'star-outline'}
+                  size={34}
+                  color={earned ? '#FFB800' : '#9C8270'}
+                />
+              </View>
+            );
+          })}
+        </View>
+        <View style={styles.winStarCountPill}>
+          <T style={{ fontFamily: FONT.black, fontSize: 13.5, color: '#92400E' }}>
+            ⭐ +{result?.stars ?? 3} {t.wheelStars}
+          </T>
+        </View>
         <T style={{ marginVertical: 6, color: UI.plumLight, textAlign: 'center' }}>
           {isDaily && dailyResult ? t.dailyStreak.replace('{n}', String(dailyResult.streak)) : t.winSub}
         </T>
@@ -1595,17 +1634,24 @@ const styles = StyleSheet.create({
     borderColor: UI.gold,
   },
   conveyorHeader: {
+    position: 'absolute',
+    top: -12,
+    zIndex: 30,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'center',
-    marginBottom: 4,
     backgroundColor: '#FFFBEB',
     paddingHorizontal: 10,
     paddingVertical: 2,
     borderRadius: 10,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: UI.gold,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 4,
   },
   conveyorTray: {
     borderColor: UI.gold,
@@ -1616,34 +1662,70 @@ const styles = StyleSheet.create({
     maxWidth: 430,
     alignSelf: 'center',
     width: '100%',
-    marginTop: 3,
-    marginBottom: 2,
+    marginTop: 10,
+    marginBottom: 8,
     justifyContent: 'center',
   },
   spoolTray: {
     backgroundColor: 'rgba(64, 30, 12, 0.60)',
     borderRadius: 18,
-    paddingVertical: 7,
+    paddingTop: 8,
+    paddingBottom: 8,
     paddingHorizontal: 6,
     borderWidth: 1.5,
     borderColor: 'rgba(235, 195, 150, 0.45)',
     borderBottomWidth: 3,
     borderBottomColor: 'rgba(25, 10, 4, 0.75)',
-    minHeight: 104,
-    height: 104,
-    justifyContent: 'center',
+    minHeight: 124,
+    height: 124,
+    justifyContent: 'flex-start',
   },
   queues: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'flex-start',
-    height: 92,
+    height: 112,
   },
   moreBadge: {
-    marginTop: 2,
-    backgroundColor: UI.plumLight,
+    marginTop: -6,
+    backgroundColor: UI.plum,
     borderRadius: 10,
     paddingHorizontal: 8,
+    paddingVertical: 1,
+    borderWidth: 1.5,
+    borderColor: UI.gold,
+  },
+  winStarsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    marginTop: 4,
+    marginBottom: 6,
+  },
+  winStarBadge: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFFBEB',
+    borderWidth: 2,
+    borderColor: '#FDE68A',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  winStarCountPill: {
+    backgroundColor: '#FEF3C7',
+    borderColor: '#F59E0B',
+    borderWidth: 1.5,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 3,
+    marginBottom: 4,
   },
   emptyCol: {
     borderRadius: 14,

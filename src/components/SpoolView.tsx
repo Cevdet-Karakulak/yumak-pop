@@ -239,16 +239,21 @@ export function BasketView({ count, size }: { count: number; size: number }) {
       <View
         style={{
           position: 'absolute',
-          bottom: -2,
+          bottom: 3,
           backgroundColor: '#5B3A5E',
           borderColor: '#FFC93C',
           borderWidth: 1.5,
           borderRadius: 10,
-          paddingHorizontal: 6,
+          paddingHorizontal: 7,
           paddingVertical: 1,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.35,
+          shadowRadius: 2,
+          elevation: 3,
         }}
       >
-        <Text style={{ color: '#FFF', fontSize: 10, fontWeight: '900' }}>+{count}</Text>
+        <Text style={{ color: '#FFF', fontSize: 10.5, fontWeight: '900' }}>+{count}</Text>
       </View>
     </View>
   );
