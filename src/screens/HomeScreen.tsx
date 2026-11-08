@@ -424,8 +424,13 @@ export function HomeScreen({
           {/* Level Progress Pill */}
           <View style={styles.levelProgressPill}>
             <Ionicons name="ribbon" size={15} color={UI.coral} />
-            <T style={styles.levelProgressText}>
-              {t.level} {current}  •  ⭐ {availableStars} Yıldız
+            <T
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.75}
+              style={styles.levelProgressText}
+            >
+              {t.level} {current}  •  ⭐ {availableStars} {t.wheelStars}
             </T>
           </View>
 
@@ -466,7 +471,7 @@ export function HomeScreen({
           {Boolean(onWorkshop) && (
             <YarnButton
               small
-              label={`BOBBİN'İN ATÖLYESİ  ⭐ ${availableStars}`}
+              label={`${(t.workshopBtn || "Bobbin'in Atölyesi").toUpperCase()}  ⭐ ${availableStars}`}
               icon="home"
               color="gold"
               onPress={() => onWorkshop?.()}
@@ -591,10 +596,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.94)',
     borderRadius: 16,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     paddingVertical: 5,
     gap: 6,
     alignSelf: 'center',
+    maxWidth: '92%',
     borderWidth: 1.5,
     borderColor: '#F3D5C1',
     shadowColor: '#7B5A82',
@@ -606,6 +612,7 @@ const styles = StyleSheet.create({
     fontFamily: FONT.black,
     fontSize: 13,
     color: UI.plum,
+    flexShrink: 1,
   },
   mainPlayBtn: {
     width: '100%',

@@ -11,9 +11,26 @@ export const FONT = {
   black: 'Baloo2_800ExtraBold',
 };
 
-export function T({ style, children, numberOfLines }: { style?: StyleProp<TextStyle>; children: React.ReactNode; numberOfLines?: number }) {
+export function T({
+  style,
+  children,
+  numberOfLines,
+  adjustsFontSizeToFit,
+  minimumFontScale,
+}: {
+  style?: StyleProp<TextStyle>;
+  children: React.ReactNode;
+  numberOfLines?: number;
+  adjustsFontSizeToFit?: boolean;
+  minimumFontScale?: number;
+}) {
   return (
-    <Text numberOfLines={numberOfLines} style={[{ fontFamily: FONT.bold, color: UI.plum, fontSize: 16 }, style]}>
+    <Text
+      numberOfLines={numberOfLines}
+      adjustsFontSizeToFit={adjustsFontSizeToFit}
+      minimumFontScale={minimumFontScale}
+      style={[{ fontFamily: FONT.bold, color: UI.plum, fontSize: 16 }, style]}
+    >
       {children}
     </Text>
   );
@@ -92,10 +109,13 @@ export function YarnButton({
           {icon && <Ionicons name={icon} size={small ? 19 : 26} color="#fff" style={{ marginRight: 6 }} />}
           <T
             numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.75}
             style={{
               color: '#fff',
               fontFamily: FONT.black,
               fontSize: small ? 16 : 24,
+              flexShrink: 1,
               textShadowColor: 'rgba(0,0,0,0.18)',
               textShadowOffset: { width: 0, height: 2 },
               textShadowRadius: 1,

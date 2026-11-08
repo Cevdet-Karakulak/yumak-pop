@@ -78,27 +78,29 @@ export async function initAudio() {
 }
 
 export function playAsmrComboTone(comboIndex: number) {
-  if (!audioSettings.sound) return;
   try {
-    const idx = Math.max(0, Math.min(comboIndex, asmrPlayers.length - 1));
-    const p = asmrPlayers[idx];
-    if (p) {
-      p.seekTo(0);
-      p.play();
+    if (audioSettings.sound) {
+      const idx = Math.max(0, Math.min(comboIndex, asmrPlayers.length - 1));
+      const p = asmrPlayers[idx];
+      if (p) {
+        p.seekTo(0);
+        p.play();
+      }
     }
-    buzz('light');
   } catch {}
+  buzz('light');
 }
 
 export function playAsmrFeverChord() {
-  if (!audioSettings.sound) return;
   try {
-    if (feverChordPlayer) {
-      feverChordPlayer.seekTo(0);
-      feverChordPlayer.play();
+    if (audioSettings.sound) {
+      if (feverChordPlayer) {
+        feverChordPlayer.seekTo(0);
+        feverChordPlayer.play();
+      }
     }
-    buzz('success');
   } catch {}
+  buzz('success');
 }
 
 export function play(sfx: Sfx) {
