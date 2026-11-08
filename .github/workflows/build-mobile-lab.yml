@@ -120,6 +120,9 @@ jobs:
           distribution: "temurin"
           java-version: "17"
 
+      - name: "Setup Gradle"
+        uses: gradle/actions/setup-gradle@v4
+
       - name: "Setup Node.js 20"
         uses: actions/setup-node@v4
         with:
@@ -198,7 +201,20 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleRelease bundleRelease --no-daemon
+          export GRADLE_OPTS="-Dorg.gradle.internal.http.connectionTimeout=120000 -Dorg.gradle.internal.http.socketTimeout=120000"
+          for attempt in 1 2 3; do
+            echo "==> Android build attempt $attempt of 3..."
+            if ./gradlew assembleRelease bundleRelease --no-daemon; then
+              echo "==> Build succeeded on attempt $attempt!"
+              break
+            fi
+            if [ $attempt -eq 3 ]; then
+              echo "==> Build failed after 3 attempts."
+              exit 1
+            fi
+            echo "==> Attempt $attempt failed, retrying in 10s..."
+            sleep 10
+          done
           cd ..
 
       - name: "Verify Single Certificate Chain & Prepare Outputs"
