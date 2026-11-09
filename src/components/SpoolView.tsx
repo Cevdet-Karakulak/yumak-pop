@@ -225,7 +225,7 @@ function SpoolImpl({
 
 export const SpoolView = memo(SpoolImpl);
 
-export function BasketView({ count, size }: { count: number; size: number }) {
+export const BasketView = memo(function BasketImpl({ count, size }: { count: number; size: number }) {
   const w = size;
   const h = size * 0.88;
 
@@ -257,7 +257,7 @@ export function BasketView({ count, size }: { count: number; size: number }) {
       </View>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   root: {

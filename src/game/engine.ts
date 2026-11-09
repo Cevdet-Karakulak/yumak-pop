@@ -384,12 +384,15 @@ export function unravelTick(s: GameState): {
  */
 export function crawlTick(s: GameState, speed: number = 0.15): GameState {
   if (s.status !== 'playing' || s.remainingUnits <= 0) return s;
-  const next = cloneState(s);
-  next.headPos = Math.min(next.dangerHolePos, next.headPos + speed);
-  if (next.headPos >= next.dangerHolePos && next.remainingUnits > 0) {
-    next.status = 'lost';
-  }
-  return next;
+  const nextHeadPos = Math.min(s.dangerHolePos, s.headPos + speed);
+  const nextStatus =
+    nextHeadPos >= s.dangerHolePos && s.remainingUnits > 0 ? 'lost' : s.status;
+  if (nextHeadPos === s.headPos && nextStatus === s.status) return s;
+  return {
+    ...s,
+    headPos: nextHeadPos,
+    status: nextStatus,
+  };
 }
 
 /** Booster: instantly unties all knots, thaws ice & pushes the snake backwards safely */

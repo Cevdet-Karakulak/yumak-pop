@@ -114,6 +114,34 @@ export function GameScreen({
   const [normalReviveUsed, setNormalReviveUsed] = useState(false);
   const [adReviveUsed, setAdReviveUsed] = useState(false);
   const rackShake = useShake();
+  const conveyorSlideX = useRef(new Animated.Value(0)).current;
+  const conveyorGearSpin = useRef(new Animated.Value(0)).current;
+  const conveyorSpinVal = useRef(0);
+  const [blockedZone, setBlockedZone] = useState<'bridge' | 'ice' | null>(null);
+
+  const isPaused =
+    !!result ||
+    !!introMech ||
+    howToOpen ||
+    unlockSlotIdx !== null ||
+    swapSlotIdx !== null ||
+    !!buyKind ||
+    tutStep >= 0 ||
+    showLevelAd ||
+    showRewardedReviveAd ||
+    showRewardedSlotAd ||
+    showRewardedSwapAd;
+  const pausedRef = useRef(isPaused);
+  pausedRef.current = isPaused;
+
+  const gearRotate = useMemo(
+    () =>
+      conveyorGearSpin.interpolate({
+        inputRange: [-10, 10],
+        outputRange: ['-3600deg', '3600deg'],
+      }),
+    [conveyorGearSpin],
+  );
 
   // ASMR Combo & Yarn Fever State
   const [comboCount, setComboCount] = useState(0);
@@ -389,13 +417,15 @@ export function GameScreen({
 
   const lastUnravelTime = useRef(0);
 
-  // Master Game Ticker: handles rhythmic step-by-step unraveling and steady idle crawling!
+  // Master Game Ticker: thermal-friendly 90ms cadence (~11 Hz) with modal pause protection
   useEffect(() => {
+    const TICK_MS = 90;
+    const SPEED_SCALE = TICK_MS / 33;
+
     const interval = setInterval(() => {
       const cur = gameRef.current;
-      if (finished.current) return;
+      if (finished.current || pausedRef.current) return;
 
-      // Immediate status check: trigger game-over or victory dialog if state reached lost or won
       if (cur.status === 'lost') {
         finish(false);
         return;
@@ -411,11 +441,30 @@ export function GameScreen({
       const hasMatch =
         headSeg &&
         cur.rack.some(
-          (sp) => sp !== null && sp.color === headSeg.color && sp.need > 0,
+          (sp) =>
+            sp !== null &&
+            (sp.color === headSeg.color || sp.isWild) &&
+            sp.need > 0,
         );
 
+      // Check if snake head is currently inside Wooden Bridge or Frozen Ice Zone
+      const inBridge =
+        !!cur.bridge && cur.headPos >= cur.bridge.start && cur.headPos <= cur.bridge.end;
+      const inFrozenIce =
+        !!cur.iceZone &&
+        cur.headPos >= cur.iceZone.start &&
+        cur.headPos <= cur.iceZone.end &&
+        (!cur.iceZone.thawDuration || cur.iceZone.thawDuration <= 0);
+
+      if (inBridge) {
+        setBlockedZone((prev) => (prev === 'bridge' ? prev : 'bridge'));
+      } else if (inFrozenIce) {
+        setBlockedZone((prev) => (prev === 'ice' ? prev : 'ice'));
+      } else {
+        setBlockedZone((prev) => (prev === null ? prev : null));
+      }
+
       if (hasMatch) {
-        // Relaxed, rhythmic 270ms pace per stitch so player can clearly savour the unravelling!
         if (now - lastUnravelTime.current >= UNRAVEL_INTERVAL_MS) {
           lastUnravelTime.current = now;
           const res = unravelTick(cur);
@@ -425,9 +474,9 @@ export function GameScreen({
             return;
           }
           if (res.blockedReason === 'bridge' || res.blockedReason === 'ice') {
-            setActiveUnravel(null);
+            setActiveUnravel((prev) => (prev === null ? prev : null));
             const feverFactor = feverActiveRef.current ? 0.75 : 1.0;
-            const crawlSpeed = (info.hard ? 0.22 : 0.17) * 0.55 * feverFactor;
+            const crawlSpeed = (info.hard ? 0.22 : 0.17) * 0.55 * feverFactor * SPEED_SCALE;
             const crawled = crawlTick(cur, crawlSpeed);
             setBoth(crawled);
             if (crawled.status === 'lost') {
@@ -448,23 +497,19 @@ export function GameScreen({
               play('pop');
               buzz('medium');
 
-              // ASMR Combo & Yarn Fever
               const nowMs = Date.now();
               const nextStreak = nowMs - lastPopTimestamp.current < 5000 ? comboStreak.current + 1 : 1;
               lastPopTimestamp.current = nowMs;
               comboStreak.current = nextStreak;
               setComboCount(nextStreak);
 
-              // Play acoustic kalimba chord tone
               playAsmrComboTone(nextStreak - 1);
 
-              // 5 combos triggers Yarn Fever!
               if (nextStreak === 5) {
                 playAsmrFeverChord();
                 activateFever();
               }
 
-              // Add burst effect over slot
               const c = slotCoords[res.tickInfo.spoolSlot];
               if (c) {
                 setPops((ps) => [
@@ -475,16 +520,14 @@ export function GameScreen({
             }
 
             if (res.state.status === 'won') {
-              // 600ms celebration delay so player sees final ring pop before win dialog
               setTimeout(() => finish(true), 600);
             }
           }
         }
       } else {
-        setActiveUnravel(null);
-        // Snappy, continuous steady crawl forward (slowed by 25% in Yarn Fever!)
+        setActiveUnravel((prev) => (prev === null ? prev : null));
         const feverFactor = feverActiveRef.current ? 0.75 : 1.0;
-        const crawlSpeed = (info.hard ? 0.22 : 0.17) * 0.55 * feverFactor;
+        const crawlSpeed = (info.hard ? 0.22 : 0.17) * 0.55 * feverFactor * SPEED_SCALE;
         const crawled = crawlTick(cur, crawlSpeed);
         setBoth(crawled);
         if (crawled.status === 'lost') {
@@ -492,10 +535,10 @@ export function GameScreen({
           return;
         }
       }
-    }, 33);
+    }, TICK_MS);
 
     return () => clearInterval(interval);
-  }, [slotCoords, viewTrackH, finish, info.hard]);
+  }, [slotCoords, viewTrackH, finish, info.hard, activateFever]);
 
   const startUnravelLoop = () => {
     // Unravel is automatically evaluated on the continuous master game ticker
@@ -540,11 +583,26 @@ export function GameScreen({
     play('tap');
     buzz('light');
     if (r.conveyorShifted) {
+      const shiftDir = g.conveyor?.direction ?? -1;
+      conveyorSlideX.setValue(-shiftDir * colW);
+      Animated.spring(conveyorSlideX, {
+        toValue: 0,
+        speed: 12,
+        bounciness: 6,
+        useNativeDriver: true,
+      }).start();
+      conveyorSpinVal.current += shiftDir;
+      Animated.timing(conveyorGearSpin, {
+        toValue: conveyorSpinVal.current,
+        duration: 420,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }).start();
       setTimeout(() => {
         play('pop');
         buzz('medium');
         showToast(t.conveyorShift);
-      }, 100);
+      }, 90);
     }
     if (hadBasket) {
       setTimeout(() => play('pull'), 150);
@@ -934,12 +992,44 @@ export function GameScreen({
               viewHeight={viewTrackH}
               activeUnravel={activeUnravel}
               slotCoords={slotCoords}
+              paused={isPaused}
             />
           </View>
         </View>
 
         {/* Stable Fixed Bottom Section */}
         <View style={[styles.bottomArea, { paddingBottom: Math.max(insets.bottom + 8, 20) }]}>
+          {/* Bridge / Ice Zone Blocked Floating Alert Pill */}
+          {blockedZone && !(comboCount >= 2 || isFever) && (
+            <View
+              pointerEvents="none"
+              style={{
+                position: 'absolute',
+                top: -32,
+                zIndex: 98,
+                alignSelf: 'center',
+                backgroundColor: blockedZone === 'ice' ? '#E0F2FE' : '#FEF3C7',
+                paddingHorizontal: 14,
+                paddingVertical: 4,
+                borderRadius: 14,
+                borderWidth: 1.5,
+                borderColor: blockedZone === 'ice' ? '#0284C7' : '#D97706',
+                flexDirection: 'row',
+                alignItems: 'center',
+              }}
+            >
+              <T
+                style={{
+                  fontFamily: FONT.black,
+                  fontSize: 12,
+                  color: blockedZone === 'ice' ? '#0369A1' : '#92400E',
+                }}
+              >
+                {blockedZone === 'ice' ? t.iceFrozenZone : t.bridgeUnder}
+              </T>
+            </View>
+          )}
+
           {/* ASMR Combo & Yarn Fever Floating Status Pill */}
           {(comboCount >= 2 || isFever) && (
             <Animated.View
@@ -1083,21 +1173,59 @@ export function GameScreen({
           <View style={styles.spoolTrayWrapper}>
             <View style={[styles.spoolTray, game.conveyor?.active && styles.conveyorTray]}>
               {game.conveyor?.active && (
-                <Pressable
-                  onPress={() => setIntroMech('conveyor')}
-                  style={styles.conveyorHeader}
-                >
-                  <Ionicons name="cog" size={13} color={UI.gold} />
-                  <T style={{ fontSize: 10.5, fontFamily: FONT.black, color: UI.plum, marginLeft: 4 }}>
-                    {t.conveyorBadge}: {game.conveyor.movesUntilShift}
-                  </T>
-                  <T style={{ fontSize: 11, color: UI.coralDark, marginLeft: 5 }}>
-                    {game.conveyor.direction > 0 ? '➔' : '⬅'}
-                  </T>
-                  <Ionicons name="information-circle-outline" size={13} color={UI.plumLight} style={{ marginLeft: 4 }} />
-                </Pressable>
+                <>
+                  <Pressable
+                    onPress={() => setIntroMech('conveyor')}
+                    style={styles.conveyorHeader}
+                  >
+                    <Animated.View style={{ transform: [{ rotate: gearRotate }] }}>
+                      <Ionicons name="cog" size={14} color="#D97706" />
+                    </Animated.View>
+                    <T style={{ fontSize: 10.5, fontFamily: FONT.black, color: UI.plum, marginLeft: 4 }}>
+                      {t.conveyorBadge}: {game.conveyor.movesUntilShift}
+                    </T>
+                    <View style={styles.conveyorStepDots}>
+                      {Array.from({ length: game.conveyor.interval }).map((_, dotIdx) => (
+                        <View
+                          key={dotIdx}
+                          style={[
+                            styles.conveyorDot,
+                            dotIdx < game.conveyor!.movesUntilShift
+                              ? styles.conveyorDotActive
+                              : styles.conveyorDotUsed,
+                          ]}
+                        />
+                      ))}
+                    </View>
+                    <View style={styles.conveyorDirPill}>
+                      <T style={{ fontSize: 10.5, fontFamily: FONT.black, color: '#FFF' }}>
+                        {game.conveyor.direction > 0 ? '➔ SAĞA' : '⬅ SOLA'}
+                      </T>
+                    </View>
+                    <Ionicons name="information-circle-outline" size={13} color={UI.plumLight} style={{ marginLeft: 3 }} />
+                  </Pressable>
+
+                  {/* Visual Mechanical Conveyor Belt Track & Rollers Underneath Spools */}
+                  <View style={styles.conveyorBeltRail} pointerEvents="none">
+                    <Animated.View style={[styles.conveyorRollerEnd, { transform: [{ rotate: gearRotate }] }]}>
+                      <Ionicons name="cog" size={18} color="#FBBF24" />
+                    </Animated.View>
+                    <View style={styles.conveyorBeltSlats}>
+                      {Array.from({ length: 9 }).map((_, sIdx) => (
+                        <View key={sIdx} style={styles.conveyorSlatItem}>
+                          <T style={styles.conveyorChevronText}>
+                            {game.conveyor!.direction > 0 ? '❯' : '❮'}
+                          </T>
+                        </View>
+                      ))}
+                    </View>
+                    <Animated.View style={[styles.conveyorRollerEnd, { transform: [{ rotate: gearRotate }] }]}>
+                      <Ionicons name="cog" size={18} color="#FBBF24" />
+                    </Animated.View>
+                  </View>
+                </>
               )}
-              <View style={styles.queues}>
+              <Animated.View style={[styles.queues, { transform: [{ translateX: conveyorSlideX }] }]}>
                 {game.columns.map((col, c) => {
                   const basketCount = game.baskets[c]?.length ?? 0;
                   return (
@@ -1157,7 +1285,7 @@ export function GameScreen({
                     </Pressable>
                   );
                 })}
-              </View>
+              </Animated.View>
             </View>
           </View>
 
@@ -1654,8 +1782,78 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   conveyorTray: {
-    borderColor: UI.gold,
+    borderColor: '#F59E0B',
+    borderWidth: 2,
+    backgroundColor: 'rgba(48, 22, 9, 0.78)',
+  },
+  conveyorStepDots: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginLeft: 5,
+  },
+  conveyorDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  conveyorDotActive: {
+    backgroundColor: '#F59E0B',
+  },
+  conveyorDotUsed: {
+    backgroundColor: '#D6D3D1',
+  },
+  conveyorDirPill: {
+    backgroundColor: '#D97706',
+    borderRadius: 6,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    marginLeft: 5,
+  },
+  conveyorBeltRail: {
+    position: 'absolute',
+    top: 14,
+    left: 6,
+    right: 6,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: 'rgba(28, 14, 6, 0.86)',
     borderWidth: 1.5,
+    borderColor: 'rgba(245, 158, 11, 0.65)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 6,
+    zIndex: 0,
+  },
+  conveyorRollerEnd: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#451A03',
+    borderWidth: 1,
+    borderColor: '#F59E0B',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  conveyorBeltSlats: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-evenly',
+    marginHorizontal: 4,
+  },
+  conveyorSlatItem: {
+    paddingHorizontal: 3,
+    paddingVertical: 2,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: 'rgba(251, 191, 36, 0.22)',
+  },
+  conveyorChevronText: {
+    fontSize: 13,
+    fontFamily: FONT.black,
+    color: 'rgba(251, 191, 36, 0.78)',
   },
   spoolTrayWrapper: {
     paddingHorizontal: 10,
