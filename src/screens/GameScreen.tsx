@@ -28,6 +28,7 @@ import {
   GameState,
   magnetFront,
   pushBackSnake,
+  swapRackSpoolColor,
   tapColumn,
   unravelTick,
 } from '../game/engine';
@@ -752,39 +753,7 @@ export function GameScreen({
     const oldColor = cur.rack[slotIdx]!.color;
     if (oldColor === targetColor) return;
 
-    const next = cloneState(cur);
-    next.rack[slotIdx]!.color = targetColor;
-
-    // Strict color conservation:
-    // 1. Try finding a reserve spool of targetColor in columns or baskets, and swap its color with oldColor:
-    let balanced = false;
-    for (const col of next.columns) {
-      const sp = col.find((s) => s.color === targetColor);
-      if (sp) {
-        sp.color = oldColor;
-        balanced = true;
-        break;
-      }
-    }
-    if (!balanced) {
-      for (const b of next.baskets) {
-        const sp = b.find((s) => s.color === targetColor);
-        if (sp) {
-          sp.color = oldColor;
-          balanced = true;
-          break;
-        }
-      }
-    }
-    // 2. If no reserve targetColor spool exists, convert a later snake segment of oldColor to targetColor
-    if (!balanced) {
-      const laterSeg = next.segments.slice(1).find((s) => s.color === oldColor);
-      if (laterSeg) {
-        laterSeg.color = targetColor;
-        balanced = true;
-      }
-    }
-
+    const next = swapRackSpoolColor(cur, slotIdx);
     setBoth(next);
     setSwapSlotIdx(null);
     play('pop');

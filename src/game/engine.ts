@@ -316,6 +316,43 @@ export function unravelTick(s: GameState): {
   }
 
   if (matchingSlot < 0) {
+    const allColumnsEmpty =
+      s.columns.every((col) => col.length === 0) &&
+      s.baskets.every((b) => b.length === 0);
+
+    if (allColumnsEmpty && s.rack.some((sp) => sp !== null)) {
+      const next = cloneState(s);
+      // 1. If a dual spool on the rack has headSeg.color as its inner layer, flip inner & outer layers:
+      const dualIdx = next.rack.findIndex(
+        (sp) => sp !== null && sp.secondColor === headSeg.color && (sp.secondCap ?? 0) > 0,
+      );
+      if (dualIdx >= 0) {
+        const dsp = next.rack[dualIdx]!;
+        const prevCol = dsp.color;
+        const prevNeed = dsp.need;
+        dsp.color = dsp.secondColor!;
+        dsp.need = dsp.secondCap!;
+        dsp.cap = dsp.secondCap!;
+        dsp.secondColor = prevCol;
+        dsp.secondCap = prevNeed;
+        return unravelTick(next);
+      }
+      // 2. Reconcile rack spools with remaining snake segments:
+      reconcileSpoolsWithSnake(next);
+      const retrySlot = next.rack.findIndex(
+        (sp) => sp !== null && (sp.color === headSeg.color || sp.isWild) && sp.need > 0,
+      );
+      if (retrySlot >= 0) {
+        return unravelTick(next);
+      }
+      const firstRackIdx = next.rack.findIndex((sp) => sp !== null && sp.need > 0);
+      if (firstRackIdx >= 0) {
+        next.rack[firstRackIdx]!.color = headSeg.color;
+        reconcileSpoolsWithSnake(next, firstRackIdx);
+        return unravelTick(next);
+      }
+    }
+
     // Check if rack is full with no matching spools & no moves possible
     const anyCanMove = s.columns.some((_, c) => canTap(s, c));
     if (!anyCanMove) {
@@ -329,6 +366,7 @@ export function unravelTick(s: GameState): {
   const next = cloneState(s);
   const curHead = next.segments[0];
   const spool = next.rack[matchingSlot]!;
+  const wasWild = !!spool.isWild;
 
   // Pull 1 stitch unit
   const pullAmt = 1;
@@ -362,6 +400,11 @@ export function unravelTick(s: GameState): {
     next.segments.shift(); // Finished this color segment!
   }
 
+  // If a Rainbow Wild spool absorbed yarn, keep reserve spools 100% synced with remaining snake segments!
+  if (wasWild && next.segments.length > 0) {
+    reconcileSpoolsWithSnake(next, matchingSlot);
+  }
+
   if (next.remainingUnits <= 0 || next.segments.length === 0) {
     next.status = 'won';
   }
@@ -370,12 +413,379 @@ export function unravelTick(s: GameState): {
     state: next,
     tickInfo: {
       spoolSlot: matchingSlot,
-      color: spool.isWild ? headSeg.color : spool.color,
+      color: wasWild ? headSeg.color : spool.color,
       amount: pullAmt,
       snakeHeadPos: next.headPos,
       popped,
     },
   };
+}
+
+/**
+ * Guarantees 100% strict stitch-for-stitch conservation between remaining snake segments
+ * and remaining spools (rack + columns + baskets + dual layers).
+ * Whenever Color Swap, Magnet, or a Rainbow Wild spool alters color distribution,
+ * this reconciles reserve/rack spools so every remaining snake stitch has a matching spool.
+ */
+export function reconcileSpoolsWithSnake(
+  s: GameState,
+  protectedRackSlot: number = -1,
+): void {
+  // 1. Calculate exact stitch demand per color on the snake:
+  const snakeNeed: Record<string, number> = {};
+  let totalSnake = 0;
+  for (const seg of s.segments) {
+    if (seg.units > 0) {
+      snakeNeed[seg.color] = (snakeNeed[seg.color] || 0) + seg.units;
+      totalSnake += seg.units;
+    }
+  }
+  s.remainingUnits = totalSnake;
+
+  if (totalSnake <= 0) {
+    s.rack = s.rack.map(() => null);
+    s.columns = s.columns.map(() => []);
+    s.baskets = s.baskets.map(() => []);
+    return;
+  }
+
+  interface LayerRef {
+    getColor: () => string;
+    setColor: (c: string) => void;
+    getNeed: () => number;
+    setNeed: (n: number) => void;
+    canSplitDual: () => boolean;
+    splitDual: (outerCol: string, outerNeed: number, innerCol: string, innerNeed: number) => void;
+    isWild: boolean;
+    priority: number;
+  }
+
+  const layers: LayerRef[] = [];
+
+  const pushSpoolLayers = (sp: Spool, basePriority: number, isProtected = false) => {
+    if (sp.secondColor && sp.secondCap && sp.secondCap > 0) {
+      layers.push({
+        getColor: () => sp.secondColor!,
+        setColor: (col) => {
+          sp.secondColor = col;
+        },
+        getNeed: () => sp.secondCap!,
+        setNeed: (n) => {
+          sp.secondCap = n;
+        },
+        canSplitDual: () => false,
+        splitDual: () => {},
+        isWild: false,
+        priority: basePriority,
+      });
+    }
+    if (sp.need > 0) {
+      layers.push({
+        getColor: () => sp.color,
+        setColor: (col) => {
+          sp.color = col;
+        },
+        getNeed: () => sp.need,
+        setNeed: (n) => {
+          sp.need = n;
+          sp.cap = Math.max(sp.cap, n);
+        },
+        canSplitDual: () => !sp.secondColor && !sp.isWild,
+        splitDual: (outerCol, outerNeed, innerCol, innerNeed) => {
+          sp.color = outerCol;
+          sp.need = outerNeed;
+          sp.cap = outerNeed;
+          sp.secondColor = innerCol;
+          sp.secondCap = innerNeed;
+        },
+        isWild: !!sp.isWild,
+        priority: sp.isWild ? 99 : isProtected ? 6 : basePriority,
+      });
+    }
+  };
+
+  // Priority 1: Baskets (back to front)
+  for (let c = 0; c < s.baskets.length; c++) {
+    const b = s.baskets[c];
+    for (let i = b.length - 1; i >= 0; i--) {
+      pushSpoolLayers(b[i], 1);
+    }
+  }
+
+  // Priority 2 & 3: Columns (bottom to top)
+  for (let c = 0; c < s.columns.length; c++) {
+    const col = s.columns[c];
+    for (let i = col.length - 1; i >= 0; i--) {
+      pushSpoolLayers(col[i], i > 0 ? 2 : 3);
+    }
+  }
+
+  // Priority 4..6: Rack spools
+  const headColor = s.segments[0]?.color;
+  for (let i = 0; i < s.rack.length; i++) {
+    const sp = s.rack[i];
+    if (!sp) continue;
+    const isProtected = i === protectedRackSlot || sp.color === headColor;
+    pushSpoolLayers(sp, 4, isProtected);
+  }
+
+  layers.sort((a, b) => a.priority - b.priority);
+
+  // 2. Calculate current spool supply per color:
+  const spoolHave: Record<string, number> = {};
+  for (const l of layers) {
+    const c = l.getColor();
+    spoolHave[c] = (spoolHave[c] || 0) + l.getNeed();
+  }
+
+  const allColors = Array.from(
+    new Set([...Object.keys(snakeNeed), ...Object.keys(spoolHave)]),
+  );
+
+  // 3. Pass 1: Exact-need whole-layer recoloring from surplusColor to deficitColor
+  for (const l of layers) {
+    if (l.isWild) continue;
+    const curCol = l.getColor();
+    const need = l.getNeed();
+    const surp = (spoolHave[curCol] || 0) - (snakeNeed[curCol] || 0);
+    if (surp >= need && need > 0) {
+      const defCol = allColors.find(
+        (c) => c !== curCol && (snakeNeed[c] || 0) - (spoolHave[c] || 0) >= need,
+      );
+      if (defCol) {
+        l.setColor(defCol);
+        spoolHave[curCol] -= need;
+        spoolHave[defCol] = (spoolHave[defCol] || 0) + need;
+      }
+    }
+  }
+
+  // 4. Pass 2: Transfer any remaining surplus units to deficit colors
+  let guard = 0;
+  while (guard++ < 120) {
+    const surpCol = allColors.find((c) => (spoolHave[c] || 0) > (snakeNeed[c] || 0));
+    const defCol = allColors.find((c) => (snakeNeed[c] || 0) > (spoolHave[c] || 0));
+    if (!surpCol || !defCol) break;
+
+    const surpAmt = (spoolHave[surpCol] || 0) - (snakeNeed[surpCol] || 0);
+    const defAmt = (snakeNeed[defCol] || 0) - (spoolHave[defCol] || 0);
+
+    const surpLayer =
+      layers.find((l) => !l.isWild && l.getColor() === surpCol && l.getNeed() > 0) ||
+      layers.find((l) => l.getColor() === surpCol && l.getNeed() > 0);
+    if (!surpLayer) break;
+
+    const layerNeed = surpLayer.getNeed();
+    if (layerNeed <= surpAmt && layerNeed <= defAmt) {
+      surpLayer.setColor(defCol);
+      spoolHave[surpCol] -= layerNeed;
+      spoolHave[defCol] = (spoolHave[defCol] || 0) + layerNeed;
+    } else {
+      const transfer = Math.min(layerNeed, surpAmt, defAmt);
+      const defLayer = layers.find((l) => !l.isWild && l.getColor() === defCol && l.getNeed() > 0);
+      if (defLayer && layerNeed > transfer) {
+        surpLayer.setNeed(layerNeed - transfer);
+        defLayer.setNeed(defLayer.getNeed() + transfer);
+        spoolHave[surpCol] -= transfer;
+        spoolHave[defCol] = (spoolHave[defCol] || 0) + transfer;
+      } else if (layerNeed > transfer && surpLayer.canSplitDual()) {
+        // Split single spool into 2 layers: outer (defCol, transfer) + inner (surpCol, layerNeed - transfer)
+        const remainSurp = layerNeed - transfer;
+        const headC = s.segments[0]?.color;
+        if (surpCol === headC) {
+          surpLayer.splitDual(surpCol, remainSurp, defCol, transfer);
+        } else {
+          surpLayer.splitDual(defCol, transfer, surpCol, remainSurp);
+        }
+        spoolHave[surpCol] -= transfer;
+        spoolHave[defCol] = (spoolHave[defCol] || 0) + transfer;
+        // Rebuild layers to include newly created inner layer if further passes are needed
+        return reconcileSpoolsWithSnake(s, protectedRackSlot);
+      } else if (layerNeed <= surpAmt) {
+        surpLayer.setColor(defCol);
+        surpLayer.setNeed(transfer);
+        spoolHave[surpCol] -= layerNeed;
+        spoolHave[defCol] = (spoolHave[defCol] || 0) + transfer;
+      } else {
+        surpLayer.setColor(defCol);
+        spoolHave[surpCol] -= layerNeed;
+        spoolHave[defCol] = (spoolHave[defCol] || 0) + layerNeed;
+      }
+    }
+  }
+
+  // 5. Pass 3a: Trim any net excess spool units (e.g. after Magnet removes a segment)
+  for (const colName of allColors) {
+    while ((spoolHave[colName] || 0) > (snakeNeed[colName] || 0)) {
+      const excess = (spoolHave[colName] || 0) - (snakeNeed[colName] || 0);
+      const layer =
+        layers.find((l) => !l.isWild && l.getColor() === colName && l.getNeed() > 0) ||
+        layers.find((l) => l.getColor() === colName && l.getNeed() > 0);
+      if (!layer) break;
+      const cut = Math.min(layer.getNeed(), excess);
+      layer.setNeed(layer.getNeed() - cut);
+      spoolHave[colName] -= cut;
+    }
+  }
+
+  // 6. Pass 3b: Add any net missing spool units if total spool units < snakeNeed
+  for (const colName of allColors) {
+    const missing = (snakeNeed[colName] || 0) - (spoolHave[colName] || 0);
+    if (missing > 0) {
+      const layer =
+        layers.find((l) => !l.isWild && l.getColor() === colName && l.getNeed() > 0) ||
+        layers.find((l) => !l.isWild && l.getNeed() > 0);
+      if (layer) {
+        if (layer.getColor() === colName) {
+          layer.setNeed(layer.getNeed() + missing);
+        } else if (layer.canSplitDual()) {
+          layer.splitDual(colName, missing, layer.getColor(), layer.getNeed());
+        } else {
+          layer.setNeed(layer.getNeed() + missing);
+        }
+        spoolHave[colName] = (spoolHave[colName] || 0) + missing;
+      }
+    }
+  }
+
+  // 7. Cleanup any spools whose need or secondCap dropped to <= 0:
+  const normalizeSpool = (sp: Spool): Spool | null => {
+    if (sp.secondCap !== undefined && sp.secondCap <= 0) {
+      sp.secondColor = undefined;
+      sp.secondCap = undefined;
+    }
+    if (sp.need <= 0) {
+      if (sp.secondColor && sp.secondCap && sp.secondCap > 0) {
+        sp.color = sp.secondColor;
+        sp.need = sp.secondCap;
+        sp.cap = sp.secondCap;
+        sp.secondColor = undefined;
+        sp.secondCap = undefined;
+        return sp;
+      }
+      return null;
+    }
+    return sp;
+  };
+
+  for (let i = 0; i < s.rack.length; i++) {
+    if (s.rack[i]) {
+      s.rack[i] = normalizeSpool(s.rack[i]!);
+    }
+  }
+  for (let c = 0; c < s.baskets.length; c++) {
+    s.baskets[c] = s.baskets[c]
+      .map((sp) => normalizeSpool(sp))
+      .filter((sp): sp is Spool => sp !== null);
+  }
+  for (let c = 0; c < s.columns.length; c++) {
+    s.columns[c] = s.columns[c]
+      .map((sp) => normalizeSpool(sp))
+      .filter((sp): sp is Spool => sp !== null);
+    while (s.columns[c].length < 3 && s.baskets[c] && s.baskets[c].length > 0) {
+      const nextFromBasket = s.baskets[c].shift()!;
+      nextFromBasket.hidden = false;
+      s.columns[c].push(nextFromBasket);
+    }
+  }
+}
+
+/**
+ * Swaps a stuck rack spool at `slotIdx` to match the front snake segment's color
+ * while strictly conserving exact stitch counts (`need` & `cap`) across all spools!
+ */
+export function swapRackSpoolColor(s: GameState, slotIdx: number): GameState {
+  if (slotIdx < 0 || slotIdx >= s.rack.length) return s;
+  const rackSp = s.rack[slotIdx];
+  const headSeg = s.segments[0];
+  if (!rackSp || !headSeg || rackSp.color === headSeg.color) return s;
+
+  const next = cloneState(s);
+  const targetSlotSp = next.rack[slotIdx]!;
+  const targetColor = next.segments[0].color;
+  const headUnits = next.segments[0].units;
+  const oldColor = targetSlotSp.color;
+  const oldNeed = targetSlotSp.need;
+  const oldCap = targetSlotSp.cap;
+
+  // Gather all candidate spools in columns & baskets with color === targetColor (excluding wilds)
+  const candidates: Spool[] = [];
+  for (const col of next.columns) {
+    for (const sp of col) {
+      if (sp.color === targetColor && !sp.isWild) candidates.push(sp);
+    }
+  }
+  for (const b of next.baskets) {
+    for (const sp of b) {
+      if (sp.color === targetColor && !sp.isWild) candidates.push(sp);
+    }
+  }
+
+  if (candidates.length > 0) {
+    // Best candidate order:
+    // 1. Exact match with headUnits (pops right when front segment finishes!)
+    // 2. Exact match with oldNeed (identical size)
+    // 3. Smaller or equal to headUnits (pops cleanly during front segment!)
+    // 4. Closest need to headUnits
+    candidates.sort((a, b) => {
+      const aExactHead = a.need === headUnits ? 0 : 1;
+      const bExactHead = b.need === headUnits ? 0 : 1;
+      if (aExactHead !== bExactHead) return aExactHead - bExactHead;
+
+      const aExactOld = a.need === oldNeed ? 0 : 1;
+      const bExactOld = b.need === oldNeed ? 0 : 1;
+      if (aExactOld !== bExactOld) return aExactOld - bExactOld;
+
+      const aFitsHead = a.need <= headUnits ? 0 : 1;
+      const bFitsHead = b.need <= headUnits ? 0 : 1;
+      if (aFitsHead !== bFitsHead) return aFitsHead - bFitsHead;
+
+      return Math.abs(a.need - headUnits) - Math.abs(b.need - headUnits);
+    });
+
+    const chosen = candidates[0];
+    // Trade (color, need, cap) between rack[slotIdx] and chosen reserve spool!
+    // This keeps the multiset of (color, need) across the entire board 100% invariant!
+    targetSlotSp.color = targetColor;
+    targetSlotSp.need = chosen.need;
+    targetSlotSp.cap = chosen.cap;
+
+    chosen.color = oldColor;
+    chosen.need = oldNeed;
+    chosen.cap = Math.max(oldNeed, oldCap);
+  } else {
+    // Check if a dual-layer spool in columns/baskets has secondColor === targetColor:
+    let dualFound: Spool | null = null;
+    for (const col of next.columns) {
+      const sp = col.find((x) => x.secondColor === targetColor && x.secondCap && x.secondCap > 0);
+      if (sp) {
+        dualFound = sp;
+        break;
+      }
+    }
+    if (!dualFound) {
+      for (const b of next.baskets) {
+        const sp = b.find((x) => x.secondColor === targetColor && x.secondCap && x.secondCap > 0);
+        if (sp) {
+          dualFound = sp;
+          break;
+        }
+      }
+    }
+    if (dualFound && dualFound.secondCap) {
+      const innerNeed = dualFound.secondCap;
+      targetSlotSp.color = targetColor;
+      targetSlotSp.need = innerNeed;
+      targetSlotSp.cap = innerNeed;
+      dualFound.secondColor = oldColor;
+      dualFound.secondCap = oldNeed;
+    } else {
+      targetSlotSp.color = targetColor;
+    }
+  }
+
+  reconcileSpoolsWithSnake(next, slotIdx);
+  return next;
 }
 
 /**
@@ -437,12 +847,31 @@ export function magnetFront(
   next.remainingUnits -= seg.units;
   next.headPos = Math.max(10, next.headPos - seg.units * 1.5);
 
-  // Clear any spool on rack waiting for this color
-  next.rack.forEach((sp, idx) => {
-    if (sp && sp.color === seg.color) {
-      next.rack[idx] = null;
+  // Deduct up to seg.units from matching spools on the rack first:
+  let toDeduct = seg.units;
+  for (let idx = 0; idx < next.rack.length && toDeduct > 0; idx++) {
+    const sp = next.rack[idx];
+    if (sp && sp.color === seg.color && !sp.isWild) {
+      const take = Math.min(toDeduct, sp.need);
+      sp.need -= take;
+      toDeduct -= take;
+      if (sp.need <= 0) {
+        if (sp.secondColor && sp.secondCap) {
+          sp.color = sp.secondColor;
+          sp.cap = sp.secondCap;
+          sp.need = sp.secondCap;
+          sp.secondColor = undefined;
+          sp.secondCap = undefined;
+        } else {
+          next.rack[idx] = null;
+          thawFrozenSpools(next);
+        }
+      }
     }
-  });
+  }
+
+  // Reconcile any remaining deducted units across columns & baskets so spool counts strictly match the snake!
+  reconcileSpoolsWithSnake(next);
 
   if (next.remainingUnits <= 0 || next.segments.length === 0) {
     next.status = 'won';
