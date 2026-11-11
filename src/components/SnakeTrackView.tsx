@@ -8,7 +8,7 @@ import Svg, {
   Path,
   Stop,
 } from 'react-native-svg';
-import { GameState } from '../game/engine';
+import { GameState, ZONE_EXIT_CLEARANCE } from '../game/engine';
 import { TrackShape } from '../game/levels';
 import { useSave } from '../save';
 import { COLOR_SYMBOL, UI, YARN } from '../theme';
@@ -81,6 +81,7 @@ function buildZoneGeometry(
   const d0 = Math.max(0, Math.min(1, startPct / 100)) * lut.total;
   const d1 = Math.max(0, Math.min(1, endPct / 100)) * lut.total;
   const span = Math.max(10, d1 - d0);
+  const midPt = lut.sample((d0 + d1) * 0.5);
   const steps = 28;
   let d = '';
   let leftRailD = '';
@@ -89,10 +90,17 @@ function buildZoneGeometry(
   for (let i = 0; i <= steps; i++) {
     const dist = d0 + (span * i) / steps;
     const pt = lut.sample(dist);
-    const lx = pt.x + pt.nx * halfWidth;
-    const ly = pt.y + pt.ny * halfWidth;
-    const rx = pt.x - pt.nx * halfWidth;
-    const ry = pt.y - pt.ny * halfWidth;
+    // Blend point normal with midpoint normal (35% local, 65% mid) to prevent any crossing lines
+    const snx = pt.nx * 0.35 + midPt.nx * 0.65;
+    const sny = pt.ny * 0.35 + midPt.ny * 0.65;
+    const sl = Math.hypot(snx, sny) || 1;
+    const fnx = snx / sl;
+    const fny = sny / sl;
+
+    const lx = pt.x + fnx * halfWidth;
+    const ly = pt.y + fny * halfWidth;
+    const rx = pt.x - fnx * halfWidth;
+    const ry = pt.y - fny * halfWidth;
 
     const cmd = i === 0 ? 'M' : 'L';
     d += `${i === 0 ? '' : ' '}${cmd} ${pt.x.toFixed(1)} ${pt.y.toFixed(1)}`;
@@ -100,20 +108,25 @@ function buildZoneGeometry(
     rightRailD += `${i === 0 ? '' : ' '}${cmd} ${rx.toFixed(1)} ${ry.toFixed(1)}`;
   }
 
-  const plankCount = Math.max(6, Math.min(16, Math.round(span / 11)));
+  const plankCount = Math.max(5, Math.min(12, Math.round(span / 15)));
   const planks: Array<{ x1: number; y1: number; x2: number; y2: number }> = [];
   for (let i = 0; i <= plankCount; i++) {
     const dist = d0 + (span * i) / plankCount;
     const pt = lut.sample(dist);
+    const snx = pt.nx * 0.35 + midPt.nx * 0.65;
+    const sny = pt.ny * 0.35 + midPt.ny * 0.65;
+    const sl = Math.hypot(snx, sny) || 1;
+    const fnx = snx / sl;
+    const fny = sny / sl;
+
     planks.push({
-      x1: pt.x + pt.nx * (halfWidth * 0.96),
-      y1: pt.y + pt.ny * (halfWidth * 0.96),
-      x2: pt.x - pt.nx * (halfWidth * 0.96),
-      y2: pt.y - pt.ny * (halfWidth * 0.96),
+      x1: pt.x + fnx * (halfWidth * 0.96),
+      y1: pt.y + fny * (halfWidth * 0.96),
+      x2: pt.x - fnx * (halfWidth * 0.96),
+      y2: pt.y - fnx * (halfWidth * 0.96),
     });
   }
 
-  const midPt = lut.sample((d0 + d1) * 0.5);
   return { d, leftRailD, rightRailD, planks, midPt };
 }
 
@@ -546,12 +559,14 @@ export function SnakeTrackView({
 
   const isIceThawed = (game.iceZone?.thawDuration ?? 0) > 0;
   const isHeadUnderBridge =
-    !!game.bridge && renderHeadPos >= game.bridge.start && renderHeadPos <= game.bridge.end;
+    !!game.bridge &&
+    renderHeadPos >= game.bridge.start &&
+    renderHeadPos <= game.bridge.end + ZONE_EXIT_CLEARANCE;
   const isHeadFrozenInIce =
     !!game.iceZone &&
     !isIceThawed &&
     renderHeadPos >= game.iceZone.start &&
-    renderHeadPos <= game.iceZone.end;
+    renderHeadPos <= game.iceZone.end + ZONE_EXIT_CLEARANCE;
 
   const { rings, headPos, neckPos, headAngle } = useMemo(() => {
     const list: Array<{
@@ -871,98 +886,136 @@ export function SnakeTrackView({
           {/* 3D Artisan Wooden Bridge Spanning OVER the Track & Snake */}
           {bridgeGeom && (
             <G>
-              {/* Deep drop shadow cast by the wooden bridge onto the snake & table */}
+              {/* Soft under-bridge ambient shadow onto the track below */}
               <Path
                 d={bridgeGeom.d}
-                stroke="rgba(15, 6, 2, 0.58)"
-                strokeWidth={jointSize * 1.42}
-                strokeLinecap="butt"
+                stroke="rgba(15, 6, 2, 0.40)"
+                strokeWidth={jointSize * 1.35}
+                strokeLinecap="round"
                 strokeLinejoin="round"
                 fill="none"
-                transform="translate(0, 6)"
+                transform="translate(0, 4)"
               />
-              {/* Dark walnut support deck under-beams */}
+
+              {/* Sturdy dark walnut support stringers along left & right bridge edges */}
               <Path
-                d={bridgeGeom.d}
+                d={bridgeGeom.leftRailD}
                 stroke="#3E1D08"
-                strokeWidth={jointSize * 1.28}
-                strokeLinecap="butt"
-                strokeLinejoin="round"
+                strokeWidth={7.5}
+                strokeLinecap="round"
                 fill="none"
               />
-              {/* Warm cedar bridge deck floor */}
               <Path
-                d={bridgeGeom.d}
-                stroke="#7C3F14"
-                strokeWidth={jointSize * 1.12}
-                strokeLinecap="butt"
-                strokeLinejoin="round"
+                d={bridgeGeom.rightRailD}
+                stroke="#3E1D08"
+                strokeWidth={7.5}
+                strokeLinecap="round"
                 fill="none"
               />
-              {/* Transverse Wooden Bridge Planks */}
+
+              {/* Transverse Wooden Bridge Planks with clear gaps so the colorful snake is visible underneath! */}
               {bridgeGeom.planks.map((pl, idx) => (
                 <G key={`plank_${idx}`}>
+                  {/* Plank shadow on deck */}
                   <Line
                     x1={pl.x1}
                     y1={pl.y1 + 1.5}
                     x2={pl.x2}
                     y2={pl.y2 + 1.5}
-                    stroke="#2B1204"
-                    strokeWidth={6.5}
+                    stroke="rgba(15, 6, 2, 0.55)"
+                    strokeWidth={5.8}
                     strokeLinecap="round"
                   />
+                  {/* Plank wood body */}
                   <Line
                     x1={pl.x1}
                     y1={pl.y1}
                     x2={pl.x2}
                     y2={pl.y2}
                     stroke={idx % 2 === 0 ? '#C87D3B' : '#B56928'}
-                    strokeWidth={5.2}
+                    strokeWidth={5.0}
                     strokeLinecap="round"
                   />
+                  {/* Top wood bevel highlight */}
                   <Line
                     x1={pl.x1}
-                    y1={pl.y1}
+                    y1={pl.y1 - 0.8}
                     x2={pl.x2}
-                    y2={pl.y2}
+                    y2={pl.y2 - 0.8}
                     stroke="#F3C68F"
-                    strokeWidth={1.6}
+                    strokeWidth={1.4}
                     strokeLinecap="round"
-                    opacity={0.75}
+                    opacity={0.80}
                   />
                 </G>
               ))}
-              {/* Left & Right Carved Wooden Handrails */}
+
+              {/* Polished Teak Handrails (SOLID lines, no messy dashed lines!) */}
               <Path
                 d={bridgeGeom.leftRailD}
-                stroke="#4A2108"
-                strokeWidth={7}
+                stroke="#DDA15E"
+                strokeWidth={3.5}
                 strokeLinecap="round"
                 fill="none"
               />
               <Path
                 d={bridgeGeom.rightRailD}
-                stroke="#4A2108"
-                strokeWidth={7}
-                strokeLinecap="round"
-                fill="none"
-              />
-              <Path
-                d={bridgeGeom.leftRailD}
                 stroke="#DDA15E"
-                strokeWidth={3.2}
+                strokeWidth={3.5}
                 strokeLinecap="round"
-                strokeDasharray="6 8"
                 fill="none"
               />
-              <Path
-                d={bridgeGeom.rightRailD}
-                stroke="#DDA15E"
-                strokeWidth={3.2}
-                strokeLinecap="round"
-                strokeDasharray="6 8"
-                fill="none"
-              />
+
+              {/* 4 Carved Wooden Corner Bollards with Brass Caps at Bridge Entry & Exit */}
+              {bridgeGeom.planks.length > 0 && (
+                <G>
+                  {[
+                    bridgeGeom.planks[0],
+                    bridgeGeom.planks[bridgeGeom.planks.length - 1],
+                  ].map((postPlank, pIdx) => (
+                    <React.Fragment key={`posts_${pIdx}`}>
+                      {/* Left Post */}
+                      <Line
+                        x1={postPlank.x1}
+                        y1={postPlank.y1 - 3}
+                        x2={postPlank.x1}
+                        y2={postPlank.y1 + 3}
+                        stroke="#2B1204"
+                        strokeWidth={7}
+                        strokeLinecap="round"
+                      />
+                      <Line
+                        x1={postPlank.x1}
+                        y1={postPlank.y1 - 3}
+                        x2={postPlank.x1}
+                        y2={postPlank.y1 - 1}
+                        stroke="#F59E0B"
+                        strokeWidth={5}
+                        strokeLinecap="round"
+                      />
+                      {/* Right Post */}
+                      <Line
+                        x1={postPlank.x2}
+                        y1={postPlank.y2 - 3}
+                        x2={postPlank.x2}
+                        y2={postPlank.y2 + 3}
+                        stroke="#2B1204"
+                        strokeWidth={7}
+                        strokeLinecap="round"
+                      />
+                      <Line
+                        x1={postPlank.x2}
+                        y1={postPlank.y2 - 3}
+                        x2={postPlank.x2}
+                        y2={postPlank.y2 - 1}
+                        stroke="#F59E0B"
+                        strokeWidth={5}
+                        strokeLinecap="round"
+                      />
+                    </React.Fragment>
+                  ))}
+                </G>
+              )}
             </G>
           )}
         </Svg>

@@ -31,6 +31,7 @@ import {
   swapRackSpoolColor,
   tapColumn,
   unravelTick,
+  ZONE_EXIT_CLEARANCE,
 } from '../game/engine';
 import { applyAssist, assistTier, createLevel, getLevelInfo, MechanicKind, TOTAL_LEVELS } from '../game/levels';
 import {
@@ -448,13 +449,15 @@ export function GameScreen({
             sp.need > 0,
         );
 
-      // Check if snake head is currently inside Wooden Bridge or Frozen Ice Zone
+      // Check if snake head or front yarn ring is currently inside Wooden Bridge or Frozen Ice Zone
       const inBridge =
-        !!cur.bridge && cur.headPos >= cur.bridge.start && cur.headPos <= cur.bridge.end;
+        !!cur.bridge &&
+        cur.headPos >= cur.bridge.start &&
+        cur.headPos <= cur.bridge.end + ZONE_EXIT_CLEARANCE;
       const inFrozenIce =
         !!cur.iceZone &&
         cur.headPos >= cur.iceZone.start &&
-        cur.headPos <= cur.iceZone.end &&
+        cur.headPos <= cur.iceZone.end + ZONE_EXIT_CLEARANCE &&
         (!cur.iceZone.thawDuration || cur.iceZone.thawDuration <= 0);
 
       if (inBridge) {

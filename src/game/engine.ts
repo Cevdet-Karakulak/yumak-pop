@@ -276,6 +276,14 @@ export function tapColumn(
 }
 
 /**
+ * Extra clearance (% of track length) needed after dragon's snout passes obstacle exit.
+ * The snake's first yarn ring sits ~5.0% behind the tip of the snout.
+ * Unraveling and obstacle status are kept active until the colored yarn ring itself
+ * has fully emerged from the bridge or ice canal into plain view!
+ */
+export const ZONE_EXIT_CLEARANCE = 5.2;
+
+/**
  * Live unraveling tick: pulls yarn from the front of the snake into any matching rack spool.
  * When yarn is unraveled, the snake's head recedes backwards (relieving danger!),
  * and the spool winds up.
@@ -289,16 +297,16 @@ export function unravelTick(s: GameState): {
     return { state: s, tickInfo: null };
   }
 
-  // 1. Bridge/Tunnel check: If snake head is under bridge, yarn cannot be unraveled!
-  if (s.bridge && s.headPos >= s.bridge.start && s.headPos <= s.bridge.end) {
+  // 1. Bridge/Tunnel check: If snake head or front yarn ring is under bridge, yarn cannot be unraveled!
+  if (s.bridge && s.headPos >= s.bridge.start && s.headPos <= s.bridge.end + ZONE_EXIT_CLEARANCE) {
     return { state: s, tickInfo: null, blockedReason: 'bridge' };
   }
 
-  // 2. Ice Zone check: If snake head is in frozen canal, yarn cannot be unraveled until thawed!
+  // 2. Ice Zone check: If snake head or front yarn ring is in frozen canal, yarn cannot be unraveled until thawed!
   if (
     s.iceZone &&
     s.headPos >= s.iceZone.start &&
-    s.headPos <= s.iceZone.end &&
+    s.headPos <= s.iceZone.end + ZONE_EXIT_CLEARANCE &&
     (!s.iceZone.thawDuration || s.iceZone.thawDuration <= 0)
   ) {
     return { state: s, tickInfo: null, blockedReason: 'ice' };
