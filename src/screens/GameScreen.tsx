@@ -258,17 +258,20 @@ export function GameScreen({
     return () => clearTimeout(id);
   }, [toastMsg]);
 
-  // Sizing: Expands track to fill the craft table while keeping all bottom controls comfortably visible!
+  // Sizing: Expands track to fill the craft table while keeping all bottom controls comfortably visible on iPhone & iPad!
+  const isTablet = width >= 600;
   const usableH = height - insets.top - insets.bottom;
-  const viewTrackW = Math.min(width - 8, 480);
-  const bottomControlsBudget = 308 + Math.max(insets.bottom, 18);
-  const viewTrackH = Math.max(245, Math.min(540, usableH - bottomControlsBudget));
+  const viewTrackW = isTablet ? Math.min(width - 32, 560) : Math.min(width - 8, 480);
+  const trayOuterW = isTablet ? Math.min(width - 24, 520) : Math.min(width, 430);
+  const trayInnerW = trayOuterW - 32;
+  const bottomControlsBudget = 320 + Math.max(insets.bottom, 18);
+  const viewTrackH = Math.max(245, Math.min(isTablet ? 560 : 540, usableH - bottomControlsBudget));
   const totalSlots = 6;
-  const slotGap = 4;
-  const slotW = Math.min(46, Math.floor((width - 24) / totalSlots) - slotGap);
+  const slotGap = isTablet ? 6 : 4;
+  const slotW = Math.min(isTablet ? 52 : 46, Math.floor((trayOuterW - 24) / totalSlots) - slotGap);
   const colCount = game.columns.length;
-  const colW = (width - 16) / colCount;
-  const frontSize = Math.min(46, colW * 0.65, 48);
+  const colW = trayInnerW / colCount;
+  const frontSize = Math.min(48, colW * 0.65);
 
   // Physical coordinates of spools on the rack relative to track view
   const defaultSlotCoords = useMemo(() => {
@@ -848,7 +851,7 @@ export function GameScreen({
       />
       <View style={[styles.root, { paddingTop: insets.top + 2, paddingBottom: Math.max(insets.bottom, 6), justifyContent: 'flex-start' }]}>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, isTablet && { maxWidth: 640, alignSelf: 'center', width: '100%' }]}>
           <RoundIcon icon="home" onPress={onHome} size={40} />
           <View style={styles.levelPill}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -894,7 +897,7 @@ export function GameScreen({
         {/* Interactive Guided Tutorial Card */}
         {tutStep >= 0 && (
           <View style={styles.tutorialOverlay} pointerEvents="box-none">
-            <View style={[styles.tutorialCard, { top: insets.top + 56 }]}>
+            <View style={[styles.tutorialCard, { top: insets.top + 56 }, isTablet && { maxWidth: 520, alignSelf: 'center', width: '92%' }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                 <T style={{ fontFamily: FONT.black, fontSize: 15, color: UI.coral }}>
                   {tutStep === 0
@@ -1044,7 +1047,7 @@ export function GameScreen({
 
           {/* Spool Rack (Holding Area) */}
           <Animated.View
-            style={[styles.shelf, rackShake.style]}
+            style={[styles.shelf, { maxWidth: trayOuterW }, rackShake.style]}
             onLayout={measureSlots}
           >
             <View
@@ -1142,7 +1145,7 @@ export function GameScreen({
           </Animated.View>
 
           {/* Spool queues + Baskets sitting in an Artisan Wooden Tray */}
-          <View style={styles.spoolTrayWrapper}>
+          <View style={[styles.spoolTrayWrapper, { maxWidth: trayOuterW }]}>
             <View style={[styles.spoolTray, game.conveyor?.active && styles.conveyorTray]}>
               {game.conveyor?.active && (
                 <>

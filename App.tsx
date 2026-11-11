@@ -6,8 +6,9 @@ import {
 } from '@expo-google-fonts/baloo-2';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useState } from 'react';
-import { AppState, View } from 'react-native';
+import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
+import React, { useEffect, useRef, useState } from 'react';
+import { AppState, Platform, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { initAudio, pauseMusic, syncMusic } from './src/audio';
 import { AnimatedSplashScreen } from './src/components/AnimatedSplashScreen';
@@ -16,7 +17,7 @@ import { SaveProvider, useSave } from './src/save';
 import { GameScreen } from './src/screens/GameScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { MapScreen } from './src/screens/MapScreen';
-import { initAdMob } from './src/services/adService';
+import { initAdMob, setTrackingAuthorized } from './src/services/adService';
 import { endIAP, initIAP } from './src/services/iapService';
 import { WorkshopScreen } from './src/screens/WorkshopScreen';
 import { RatingModal } from './src/components/RatingModal';
@@ -24,6 +25,18 @@ import { shouldPromptReview } from './src/services/reviewService';
 import { UI } from './src/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
+
+function waitForAppActive(): Promise<void> {
+  if (AppState.currentState === 'active') return Promise.resolve();
+  return new Promise((resolve) => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        sub.remove();
+        resolve();
+      }
+    });
+  });
+}
 
 type Route =
   | { name: 'home' }
@@ -39,6 +52,7 @@ function Root() {
   const [splashFinished, setSplashFinished] = useState(false);
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [isManualRating, setIsManualRating] = useState(false);
+  const attStartedRef = useRef(false);
 
   // Active in-game play time accumulator (records active seconds every 15s)
   useEffect(() => {
@@ -74,7 +88,9 @@ function Root() {
 
   useEffect(() => {
     initAudio().catch((err) => console.warn('initAudio error:', err));
-    initAdMob().catch((err) => console.warn('initAdMob error:', err));
+    if (Platform.OS !== 'ios') {
+      initAdMob().catch((err) => console.warn('initAdMob error:', err));
+    }
     initIAP().catch((err) => console.warn('initIAP error:', err));
     const sub = AppState.addEventListener('change', (s) => {
       try {
@@ -88,6 +104,31 @@ function Root() {
       endIAP().catch(() => {});
     };
   }, []);
+
+  // Request iOS/iPadOS App Tracking Transparency (ATT) strictly when active and BEFORE AdMob initialization
+  useEffect(() => {
+    if (!splashFinished || Platform.OS !== 'ios' || attStartedRef.current) return;
+    attStartedRef.current = true;
+
+    const requestATTAndInitAds = async () => {
+      let granted = false;
+      try {
+        await waitForAppActive();
+        await new Promise((resolve) => setTimeout(resolve, 400));
+        await waitForAppActive();
+        const res = await requestTrackingPermissionsAsync();
+        granted = res.status === 'granted';
+        console.log('[ATT] Tracking authorization status:', res.status);
+      } catch (err) {
+        console.warn('[ATT] requestTrackingPermissionsAsync warning:', err);
+      } finally {
+        setTrackingAuthorized(granted);
+        initAdMob().catch((err) => console.warn('initAdMob error:', err));
+      }
+    };
+
+    requestATTAndInitAds();
+  }, [splashFinished]);
 
   const isReady = loaded && Boolean(fontsLoaded);
 

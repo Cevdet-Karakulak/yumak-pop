@@ -743,6 +743,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
+    maxWidth: 520,
     position: 'relative',
   },
   ambientParticle: {
@@ -859,6 +860,7 @@ const styles = StyleSheet.create({
   },
   bottomContainer: {
     width: '100%',
+    maxWidth: 480,
     paddingHorizontal: 36,
     alignItems: 'center',
     zIndex: 30,

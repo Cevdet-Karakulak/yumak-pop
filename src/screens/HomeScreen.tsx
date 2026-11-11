@@ -6,6 +6,7 @@ import {
   Image,
   Pressable,
   StyleSheet,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -43,6 +44,9 @@ export function HomeScreen({
 }) {
   const { data, t } = useSave();
   const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
+  const isTablet = width >= 600;
+  const mascotSize = Math.min(isTablet ? 330 : 310, Math.max(165, height - 440));
   const [settings, setSettings] = useState(false);
   const [howTo, setHowTo] = useState(false);
 
@@ -276,7 +280,7 @@ export function HomeScreen({
         ]}
       >
         {/* Top Header Bar */}
-        <View style={styles.top}>
+        <View style={[styles.top, isTablet && { maxWidth: 680, width: '100%', alignSelf: 'center' }]}>
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <RoundIcon icon="settings" onPress={() => setSettings(true)} />
             <RoundIcon icon="help-circle" onPress={() => setHowTo(true)} bg={UI.peach} />
@@ -320,7 +324,7 @@ export function HomeScreen({
         </View>
 
         {/* Hero Interactive Mascot Area */}
-        <View style={styles.mascotArea}>
+        <View style={[styles.mascotArea, { maxWidth: 460, width: '100%', alignSelf: 'center' }]}>
           {/* Warm workshop ambient glow */}
           <View style={styles.mascotGlow} pointerEvents="none" />
 
@@ -385,7 +389,7 @@ export function HomeScreen({
             >
               <Image
                 source={require('../../assets/images/mascot.png')}
-                style={styles.mascotImg}
+                style={[styles.mascotImg, { width: mascotSize, height: mascotSize }]}
                 resizeMode="contain"
               />
             </Animated.View>

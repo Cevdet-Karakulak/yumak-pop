@@ -459,6 +459,7 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
         showsVerticalScrollIndicator={false}
       >
+        <View style={styles.tabletCenterWrap}>
         {/* Live Progressive 3D Diorama Room + Real 3D Outfitted Bobbin */}
         <Animated.View style={[styles.dioramaCard, { opacity: roomFade }]}>
           {/* Layer 1: Progressive 3D Room Background (Stage 0..5) */}
@@ -777,6 +778,7 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
             })}
           </View>
         )}
+        </View>
       </ScrollView>
     </View>
   );
@@ -833,6 +835,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     gap: 8,
+    flexGrow: 1,
+    justifyContent: 'center',
   },
   roomPill: {
     flexDirection: 'row',
@@ -878,6 +882,11 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
+  },
+  tabletCenterWrap: {
+    width: '100%',
+    maxWidth: 560,
+    alignSelf: 'center',
   },
   dioramaCard: {
     position: 'relative',

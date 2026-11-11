@@ -8,7 +8,7 @@
     "userInterfaceStyle": "light",
     "backgroundColor": "#FFF6EA",
     "ios": {
-      "supportsTablet": false,
+      "supportsTablet": true,
       "bundleIdentifier": "com.floppatech.yumakpop",
       "appStoreUrl": "https://apps.apple.com/app/id6829707682",
       "buildNumber": "3",
@@ -123,6 +123,12 @@
             "enableMinifyInReleaseBuilds": false,
             "extraProguardRules": "-keep class androidx.work.impl.WorkDatabase* { *; }\n-keep class * extends androidx.room.RoomDatabase { *; }\n-keep class androidx.work.** { *; }\n-keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod\n-dontwarn androidx.work.impl.**"
           }
+        }
+      ],
+      [
+        "expo-tracking-transparency",
+        {
+          "userTrackingPermission": "Bu izin, size ilgi alanlarınıza uygun kaliteli içerik ve reklamlar sunmak için kullanılır."
         }
       ]
     ],

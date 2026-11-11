@@ -24,6 +24,21 @@ let onAdFallbackCallback: (() => void) | null = null;
 let showWatchdogTimer: ReturnType<typeof setTimeout> | null = null;
 let isInitialized = false;
 let isAdFreeActive = false;
+let isTrackingAuthorized = Platform.OS !== 'ios';
+
+/**
+ * Updates iOS App Tracking Transparency (ATT) authorization state before loading ads.
+ * When false on iOS, AdMob requests strictly non-personalized ads.
+ */
+export function setTrackingAuthorized(granted: boolean) {
+  const nextVal = Platform.OS !== 'ios' ? true : Boolean(granted);
+  if (isTrackingAuthorized !== nextVal) {
+    isTrackingAuthorized = nextVal;
+    interstitialAd = null;
+    isAdLoaded = false;
+    isAdLoading = false;
+  }
+}
 
 export function setAdFreeStatus(val: boolean) {
   isAdFreeActive = val;
@@ -94,7 +109,7 @@ export function preloadInterstitial(): void {
       console.log(`[AdMob] Creating InterstitialAd with unit: ${targetUnitId} (fallback: ${usingFallbackTestUnit})`);
 
       interstitialAd = InterstitialAd.createForAdRequest(targetUnitId, {
-        requestNonPersonalizedAdsOnly: true, // Crucial for iOS 14.5+ ATT compliance without blocking
+        requestNonPersonalizedAdsOnly: Platform.OS === 'ios' ? !isTrackingAuthorized : false,
       });
 
       interstitialAd.addAdEventListener(AdEventType.LOADED, () => {

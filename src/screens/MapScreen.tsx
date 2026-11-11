@@ -86,7 +86,7 @@ export function MapScreen({ onBack, onPlay }: { onBack: () => void; onPlay: (n: 
 
       {/* Chapter Navigation Tabs (For easy monthly 50-100 level expansion) */}
       {chapters.length > 1 && (
-        <View style={styles.chapterBar}>
+        <View style={[styles.chapterBar, width >= 600 && { maxWidth: 560, width: '100%', alignSelf: 'center' }]}>
           {chapters.map((ch) => {
             const isSelected = ch.id === selectedChapterId;
             const isLocked = data.unlocked < ch.startLevel;

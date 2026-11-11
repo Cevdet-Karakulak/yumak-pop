@@ -29,3 +29,8 @@
 - Bobbin'in yüzü ve maskot kimliği (`assets/images/mascot.png`) sabittir. Kostüm veya eşya eklemelerinde karakterin yüzü asla değiştirilmez.
 - Yeni özellikler kullanıcı istemedikçe ayrı bir test laboratuvarına gömülmez, doğrudan oyun akışına ve ana menüye entegre edilir.
 - Arka plan üzerine 2D PNG etiketler yapıştırılmaz; mekanlar tek parça 3D stop-motion diorama olarak sunulur.
+
+## 📱 iOS & Android Yayın Öncesi Kontroller
+- **ATT (App Tracking Transparency)**: `expo-tracking-transparency` kuruludur; `App.tsx` içinde splash tamamlandıktan ve `AppState === 'active'` olduktan sonra **AdMob (`initAdMob`) başlamadan önce** `requestTrackingPermissionsAsync()` çağrılır.
+- **iPad Uyumluluğu**: `app.json` içinde `ios.supportsTablet: true` tanımlıdır; tüm ekranlar tablet genişliği (`width >= 600`) ve landscape yükseklikleri için `maxWidth` ve dinamik `useWindowDimensions()` sınırlarıyla uyumludur.
+- **Mağaza Beyanları**: App Store Connect -> Age Rating "Advertising: Yes", App Privacy reklam/takip beyanları ve Google Play Data Safety / Advertising ID (`AD_ID`) beyanları kodla senkronize tutulur.
