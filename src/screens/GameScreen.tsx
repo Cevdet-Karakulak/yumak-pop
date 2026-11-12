@@ -16,6 +16,7 @@ import { buzz, play, playAsmrComboTone, playAsmrFeverChord } from '../audio';
 import { PopBurst, PopIn, useShake } from '../components/effects';
 import { HowToPlaySheet, MechanicIntroSheet } from '../components/HowToPlayModal';
 import { InterstitialAdModal } from '../components/InterstitialAdModal';
+import { VictoryModal } from '../components/VictoryModal';
 import { showAdMobInterstitial } from '../services/adService';
 import { SnakeTrackView } from '../components/SnakeTrackView';
 import { BasketView, SpoolView } from '../components/SpoolView';
@@ -1338,71 +1339,30 @@ export function GameScreen({
         </View>
       )}
 
-      {/* Result sheets */}
-      <Sheet visible={!!result?.won} title={isDaily ? t.dailyWinTitle : t.win}>
-        {/* Earned Stars Row (1..3 Stars) */}
-        <View style={styles.winStarsRow}>
-          {[1, 2, 3].map((starIdx) => {
-            const earned = (result?.stars ?? 3) >= starIdx;
-            return (
-              <View
-                key={starIdx}
-                style={[
-                  styles.winStarBadge,
-                  starIdx === 2 && { transform: [{ scale: 1.16 }], marginTop: -6 },
-                  !earned && { opacity: 0.28 },
-                ]}
-              >
-                <Ionicons
-                  name={earned ? 'star' : 'star-outline'}
-                  size={34}
-                  color={earned ? '#FFB800' : '#9C8270'}
-                />
-              </View>
-            );
-          })}
-        </View>
-        <View style={styles.winStarCountPill}>
-          <T style={{ fontFamily: FONT.black, fontSize: 13.5, color: '#92400E' }}>
-            ⭐ +{result?.stars ?? 3} {t.wheelStars}
-          </T>
-        </View>
-        <T style={{ marginVertical: 6, color: UI.plumLight, textAlign: 'center' }}>
-          {isDaily && dailyResult ? t.dailyStreak.replace('{n}', String(dailyResult.streak)) : t.winSub}
-        </T>
-        {isDaily && dailyResult?.bonus && (
-          <T style={{ marginBottom: 8, color: UI.coralDark, textAlign: 'center', fontFamily: FONT.black }}>
-            {t.dailyBonus7}
-          </T>
-        )}
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
-          <T style={{ marginRight: 8 }}>{t.coinsEarned}</T>
-          <CoinBadge coins={result?.coins ?? 0} />
-        </View>
-        {isDaily ? (
-          <YarnButton
-            label={t.home}
-            icon="home"
-            color="mint"
-            onPress={onHome}
-            style={{ alignSelf: 'stretch', width: '100%' }}
-          />
-        ) : level < TOTAL_LEVELS ? (
-          <YarnButton
-            label={t.next}
-            icon="play"
-            color="mint"
-            onPress={handleNextLevel}
-            style={{ alignSelf: 'stretch', width: '100%' }}
-          />
-        ) : (
-          <T style={{ textAlign: 'center', marginBottom: 10 }}>{t.allDone}</T>
-        )}
-        <View style={{ flexDirection: 'row', marginTop: 12, gap: 10, width: '100%', alignSelf: 'stretch' }}>
-          <YarnButton small label={t.retry} icon="refresh" color="sky" onPress={restart} style={{ flex: 1 }} />
-          <YarnButton small label={t.home} icon="home" color="plum" onPress={onHome} style={{ flex: 1 }} />
-        </View>
-      </Sheet>
+      {/* Animated Celebratory Victory Sheet */}
+      <VictoryModal
+        visible={!!result?.won}
+        title={isDaily ? t.dailyWinTitle : t.win}
+        subtitle={
+          isDaily && dailyResult
+            ? t.dailyStreak.replace('{n}', String(dailyResult.streak))
+            : t.winSub
+        }
+        stars={result?.stars ?? 3}
+        coins={result?.coins ?? 0}
+        isDaily={isDaily}
+        dailyBonusText={dailyResult?.bonus ? t.dailyBonus7 : null}
+        coinsLabel={t.coinsEarned}
+        starsLabel={t.wheelStars}
+        nextLabel={t.next}
+        homeLabel={t.home}
+        retryLabel={t.retry}
+        allDoneLabel={t.allDone}
+        hasNextLevel={level < TOTAL_LEVELS}
+        onNext={handleNextLevel}
+        onRetry={restart}
+        onHome={onHome}
+      />
 
       {/* Game Over / Revive Sheet with 1-chance & ad options */}
       <Sheet
@@ -1867,38 +1827,6 @@ const styles = StyleSheet.create({
     paddingVertical: 1,
     borderWidth: 1.5,
     borderColor: UI.gold,
-  },
-  winStarsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    marginTop: 4,
-    marginBottom: 6,
-  },
-  winStarBadge: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#FFFBEB',
-    borderWidth: 2,
-    borderColor: '#FDE68A',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#F59E0B',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  winStarCountPill: {
-    backgroundColor: '#FEF3C7',
-    borderColor: '#F59E0B',
-    borderWidth: 1.5,
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 3,
-    marginBottom: 4,
   },
   emptyCol: {
     borderRadius: 14,

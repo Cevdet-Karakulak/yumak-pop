@@ -7,12 +7,13 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { buzz, playAsmrComboTone, playAsmrFeverChord } from '../audio';
 import { Bouncy, FONT, RoundIcon, T } from '../components/ui';
-import { useSave } from '../save';
+import { getAvailableStars, useSave } from '../save';
 import { UI } from '../theme';
 import {
   getBobbinOutfit,
@@ -153,6 +154,8 @@ const ROOM_DEFINITIONS_BASE: RoomDefBase[] = [
 export function WorkshopScreen({ onBack }: { onBack: () => void }) {
   const { data, update, lang } = useSave();
   const insets = useSafeAreaInsets();
+  const { width: winWidth, height: winHeight } = useWindowDimensions();
+  const isTablet = winWidth >= 600;
   const currentLang = lang || 'en';
   const ui = useMemo(() => getWorkshopUI(currentLang), [currentLang]);
 
@@ -194,10 +197,7 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
   const activeRoom = localizedRooms.find((r) => r.id === activeRoomId) || localizedRooms[0];
   const currentCatalog = activeRoom.catalog;
 
-  const availableStars = Math.max(
-    0,
-    Object.values(data.stars || {}).reduce((a, b) => a + (b || 0), 0) + (data.bonusStars || 0) - (data.spentStars || 0)
-  );
+  const availableStars = getAvailableStars(data);
   const unlockedList = data.workshopItems || [];
   const unlockedSet = new Set(unlockedList);
   const purchasedOutfits = data.purchasedOutfits || ['none'];
@@ -459,11 +459,21 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.tabletCenterWrap}>
+        <View style={[styles.tabletCenterWrap, { maxWidth: isTablet ? Math.min(640, winWidth - 40) : 560 }]}>
         {/* Live Progressive 3D Diorama Room + Real 3D Outfitted Bobbin */}
-        <Animated.View style={[styles.dioramaCard, { opacity: roomFade }]}>
+        <Animated.View
+          style={[
+            styles.dioramaCard,
+            { opacity: roomFade, maxHeight: isTablet ? Math.min(410, winHeight * 0.45) : undefined },
+          ]}
+        >
           {/* Layer 1: Progressive 3D Room Background (Stage 0..5) */}
-          <Image source={currentRoomImage} style={styles.dioramaImage} resizeMode="cover" />
+          <Image
+            key={`${activeRoomId}_${displayedStage}`}
+            source={currentRoomImage}
+            style={styles.dioramaImage}
+            resizeMode="cover"
+          />
 
           {/* Layer 2: Real 3D Bobbin with Equipped Knitwear Standing in Room */}
           <Animated.View
@@ -891,7 +901,7 @@ const styles = StyleSheet.create({
   dioramaCard: {
     position: 'relative',
     width: '100%',
-    aspectRatio: 1,
+    aspectRatio: 1.56,
     borderRadius: 24,
     overflow: 'hidden',
     backgroundColor: '#26150C',
@@ -909,9 +919,9 @@ const styles = StyleSheet.create({
   },
   bobbinCharacterContainer: {
     position: 'absolute',
-    right: '8%',
+    right: '6%',
     bottom: '4%',
-    width: '42%',
+    height: '62%',
     aspectRatio: 0.85,
     alignItems: 'center',
     justifyContent: 'flex-end',

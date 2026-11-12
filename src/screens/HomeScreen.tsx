@@ -14,7 +14,7 @@ import { buzz, play } from '../audio';
 import { HowToPlaySheet } from '../components/HowToPlayModal';
 import { Bouncy, CoinBadge, FONT, RoundIcon, T, YarnButton } from '../components/ui';
 import { TOTAL_LEVELS } from '../game/levels';
-import { useSave } from '../save';
+import { getAvailableStars, useSave } from '../save';
 import { UI, YARN } from '../theme';
 import { SettingsSheet } from './SettingsSheet';
 
@@ -189,7 +189,7 @@ export function HomeScreen({
   };
 
   const current = Math.min(data.unlocked, TOTAL_LEVELS);
-  const availableStars = Math.max(0, Object.values(data.stars).reduce((sum, s) => sum + (s || 0), 0) - (data.spentStars || 0));
+  const availableStars = getAvailableStars(data);
 
   return (
     <View style={styles.root}>
