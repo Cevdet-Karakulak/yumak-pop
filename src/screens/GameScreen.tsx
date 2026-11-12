@@ -847,7 +847,7 @@ export function GameScreen({
     <View style={styles.root}>
       <Image
         source={require('../../assets/images/board_bg.jpg')}
-        style={StyleSheet.absoluteFill}
+        style={styles.bgImage}
         resizeMode="cover"
       />
       <View style={[styles.root, { paddingTop: insets.top + 2, paddingBottom: Math.max(insets.bottom, 6), justifyContent: 'flex-start' }]}>
@@ -1601,7 +1601,16 @@ export function GameScreen({
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
+  root: { flex: 1, width: '100%', height: '100%' },
+  bgImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

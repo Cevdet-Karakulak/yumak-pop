@@ -519,7 +519,7 @@ export function AnimatedSplashScreen({ isReady, onFinish }: AnimatedSplashScreen
       {/* Knitted Fabric Texture */}
       <Image
         source={require('../../assets/images/bg.jpg')}
-        style={StyleSheet.absoluteFill}
+        style={styles.bgImage}
         resizeMode="cover"
       />
 
@@ -732,11 +732,26 @@ export function AnimatedSplashScreen({ isReady, onFinish }: AnimatedSplashScreen
 
 const styles = StyleSheet.create({
   root: {
-    ...StyleSheet.absoluteFill,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
     zIndex: 99999,
     backgroundColor: UI.cream,
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  bgImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
   },
   contentContainer: {
     flex: 1,

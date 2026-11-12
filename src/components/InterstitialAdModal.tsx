@@ -133,7 +133,7 @@ export function InterstitialAdModal({
           <View style={styles.bannerWrap}>
             <Image
               source={require('../../assets/images/bg.jpg')}
-              style={StyleSheet.absoluteFill}
+              style={[StyleSheet.absoluteFill, { width: '100%', height: '100%' }]}
               resizeMode="cover"
             />
             <View style={styles.mascotShowcase}>

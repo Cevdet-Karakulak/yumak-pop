@@ -45,4 +45,10 @@ yarn-error.*
 /ios
 /android
 
+# build artifacts
+*.ipa
+*.apk
+*.aab
+release_notes.xml
+
 dist-check/

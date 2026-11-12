@@ -67,15 +67,21 @@ export function MapScreen({ onBack, onPlay }: { onBack: () => void; onPlay: (n: 
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={styles.root}>
       <Image
         source={require('../../assets/images/bg.jpg')}
-        style={StyleSheet.absoluteFill}
+        style={styles.bgImage}
         resizeMode="cover"
       />
 
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 6 }]}>
+      <View
+        style={[
+          styles.header,
+          { paddingTop: insets.top + 6 },
+          width >= 600 && { maxWidth: 680, width: '100%', alignSelf: 'center' },
+        ]}
+      >
         <RoundIcon icon="arrow-back" onPress={onBack} />
         <View style={{ alignItems: 'center' }}>
           <T style={{ fontFamily: FONT.black, fontSize: 24 }}>{t.levels}</T>
@@ -125,10 +131,11 @@ export function MapScreen({ onBack, onPlay }: { onBack: () => void; onPlay: (n: 
       {/* Map Nodes Scroll Area */}
       <ScrollView
         ref={scroll}
-        contentContainerStyle={{ height: contentH }}
+        style={{ flex: 1, width: '100%' }}
+        contentContainerStyle={{ height: contentH, width: '100%' }}
         showsVerticalScrollIndicator={false}
       >
-        <Svg width={width} height={contentH} style={StyleSheet.absoluteFill}>
+        <Svg width={width} height={contentH} style={[StyleSheet.absoluteFill, { width: '100%' }]}>
           <Path d={d} stroke="#fff" strokeWidth={12} fill="none" strokeLinecap="round" opacity={0.8} />
           <Path d={d} stroke={UI.coral} strokeWidth={4} fill="none" strokeDasharray="10 9" strokeLinecap="round" />
         </Svg>
@@ -194,6 +201,16 @@ export function MapScreen({ onBack, onPlay }: { onBack: () => void; onPlay: (n: 
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1, width: '100%', height: '100%' },
+  bgImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

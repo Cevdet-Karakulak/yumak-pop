@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   },
   coinIcon: { width: 28, height: 28, borderRadius: 14, backgroundColor: UI.gold, borderWidth: 3, borderColor: '#F0A81E', alignItems: 'center', justifyContent: 'center' },
   coinStripe: { width: 14, height: 4, borderRadius: 2, backgroundColor: '#F0A81E', transform: [{ rotate: '-35deg' }] },
-  backdrop: { flex: 1, backgroundColor: 'rgba(60,35,62,0.55)', alignItems: 'center', justifyContent: 'center', padding: 22 },
+  backdrop: { flex: 1, width: '100%', height: '100%', backgroundColor: 'rgba(60,35,62,0.55)', alignItems: 'center', justifyContent: 'center', padding: 22 },
   sheet: {
     width: '100%',
     maxWidth: 420,

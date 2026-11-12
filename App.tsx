@@ -138,7 +138,7 @@ function Root() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: UI.cream }}>
+    <View style={{ flex: 1, width: '100%', height: '100%', backgroundColor: UI.cream }}>
       <StatusBar style="dark" />
       {route.name === 'home' && (
         <HomeScreen
@@ -188,7 +188,7 @@ function Root() {
 
 export default function App() {
   return (
-    <SafeAreaProvider>
+    <SafeAreaProvider style={{ flex: 1, width: '100%', height: '100%' }}>
       <SaveProvider>
         <Root />
       </SaveProvider>

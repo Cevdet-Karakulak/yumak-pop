@@ -409,6 +409,8 @@ export function VictoryModal({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
+    width: '100%',
+    height: '100%',
     backgroundColor: 'rgba(42, 22, 46, 0.68)',
     alignItems: 'center',
     justifyContent: 'center',

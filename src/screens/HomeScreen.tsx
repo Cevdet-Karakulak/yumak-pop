@@ -196,7 +196,7 @@ export function HomeScreen({
       {/* Background Knitted Texture */}
       <Image
         source={require('../../assets/images/bg.jpg')}
-        style={StyleSheet.absoluteFill}
+        style={styles.bgImage}
         resizeMode="cover"
       />
 
@@ -496,8 +496,17 @@ export function HomeScreen({
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
-  content: { flex: 1 },
+  root: { flex: 1, width: '100%', height: '100%' },
+  content: { flex: 1, width: '100%' },
+  bgImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+  },
   top: {
     flexDirection: 'row',
     justifyContent: 'space-between',
