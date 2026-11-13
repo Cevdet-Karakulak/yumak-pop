@@ -27,9 +27,10 @@ export function SettingsSheet({
   const [confirm, setConfirm] = useState(false);
   const [labUnlocked, setLabUnlocked] = useState(false);
   const [tapCount, setTapCount] = useState(0);
-  const [removeAdsPrice, setRemoveAdsPrice] = useState('₺69,99');
+  const [removeAdsPrice, setRemoveAdsPrice] = useState<string | null>(null);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
+  const displayedPrice = removeAdsPrice || (lang === 'tr' ? '₺139,99' : '$3.99');
 
   useEffect(() => {
     if (visible && !data.isAdFree) {
@@ -199,7 +200,7 @@ export function SettingsSheet({
               }}
             >
               <T style={{ fontFamily: FONT.black, fontSize: 13, color: '#B45309' }}>
-                {removeAdsPrice}
+                {displayedPrice}
               </T>
             </View>
           </View>
@@ -208,7 +209,7 @@ export function SettingsSheet({
           </T>
           <YarnButton
             small
-            label={isPurchasing ? '...' : `${t.removeAds} (${removeAdsPrice})`}
+            label={isPurchasing ? '...' : `${t.removeAds} (${displayedPrice})`}
             icon="cart"
             color="gold"
             disabled={isPurchasing}

@@ -91,21 +91,21 @@ export async function endIAP(): Promise<void> {
 /**
  * Fetch localized price string (e.g. "₺139,99" or "$3.99")
  */
-export async function fetchRemoveAdsPrice(): Promise<string> {
-  if (Platform.OS === 'web') return '₺139,99';
+export async function fetchRemoveAdsPrice(): Promise<string | null> {
+  if (Platform.OS === 'web') return null;
   try {
     if (!isConnected) {
       await initIAP();
     }
-    const products = await RNIap.fetchProducts({ skus: [IAP_SKUS.REMOVE_ADS] });
+    const products = await RNIap.fetchProducts({ skus: [IAP_SKUS.REMOVE_ADS], type: 'in-app' });
     if (products && products.length > 0) {
       const p = products[0] as any;
-      return p.displayPrice || p.localizedPrice || p.price || '₺139,99';
+      return p.displayPrice || p.localizedPrice || p.price || null;
     }
   } catch (err) {
     console.warn('[IAP] fetchProducts warning:', err);
   }
-  return '₺139,99';
+  return null;
 }
 
 /**
