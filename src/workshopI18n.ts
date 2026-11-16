@@ -172,73 +172,73 @@ const ROOMS_DATA: Record<string, Record<Lang, RoomLocale>> = {
       "name": "Yeni Yıl Şömine Odası",
       "badge": "🎄 Şenlik Odası",
       "subtitle": "Peri Işıkları & Mini Çam Ağacı",
-      "unlockConditionText": "100. Seviyede Açılır"
+      "unlockConditionText": "🎄 Yılbaşı Özel: 15. Seviye veya Atölye %40"
     },
     "en": {
       "name": "Holiday Hearth Room",
       "badge": "🎄 Holiday Room",
       "subtitle": "Fairy Lights & Mini Pine Tree",
-      "unlockConditionText": "Unlocks at Level 100"
+      "unlockConditionText": "🎄 Holiday Event: Level 15 or Workshop 40%"
     },
     "de": {
       "name": "Festliches Kaminzimmer",
       "badge": "🎄 Festraum",
       "subtitle": "Lichterketten & Kleiner Tannenbaum",
-      "unlockConditionText": "Freischaltung ab Level 100"
+      "unlockConditionText": "🎄 Fest-Event: Level 15 oder Werkstatt 40%"
     },
     "es": {
       "name": "Sala Navideña con Chimenea",
       "badge": "🎄 Sala Fiesta",
       "subtitle": "Luces de Hadas y Mini Árbol de Navidad",
-      "unlockConditionText": "Se desbloquea en nivel 100"
+      "unlockConditionText": "🎄 Evento Festivo: Nivel 15 o Taller 40%"
     },
     "fr": {
       "name": "Salon de Fêtes au Coin du Feu",
       "badge": "🎄 Salle Fêtes",
       "subtitle": "Guirlandes Féeriques & Mini Sapin",
-      "unlockConditionText": "Débloqué au niveau 100"
+      "unlockConditionText": "🎄 Spécial Fêtes : Niveau 15 ou Atelier 40%"
     },
     "it": {
       "name": "Stanza Festiva con Camino",
       "badge": "🎄 Stanza Feste",
       "subtitle": "Lucine Fatate & Mini Albero di Natale",
-      "unlockConditionText": "Si sblocca al livello 100"
+      "unlockConditionText": "🎄 Evento Feste: Livello 15 o Bottega 40%"
     },
     "pt": {
       "name": "Sala de Festas com Lareira",
       "badge": "🎄 Sala Festiva",
       "subtitle": "Luzes de Fada e Mini Pinheiro",
-      "unlockConditionText": "Desbloqueia no nível 100"
+      "unlockConditionText": "🎄 Especial Festas: Nível 15 ou Oficina 40%"
     },
     "ru": {
       "name": "Новогодняя комната с камином",
       "badge": "🎄 Праздничная",
       "subtitle": "Гирлянды и миниатюрная ёлочка",
-      "unlockConditionText": "Открывается на уровне 100"
+      "unlockConditionText": "🎄 Праздник: Уровень 15 или Мастерская 40%"
     },
     "ja": {
       "name": "ホリデー暖炉ルーム",
       "badge": "🎄 祝祭ルーム",
       "subtitle": "イルミネーション＆ミニツリー",
-      "unlockConditionText": "レベル100で解放"
+      "unlockConditionText": "🎄 ホリデー特別解放：レベル15"
     },
     "ko": {
       "name": "연말 벽난로 방",
       "badge": "🎄 축제 방",
       "subtitle": "반짝이는 전구 & 미니 전나무",
-      "unlockConditionText": "100 레벨에서 잠금 해제"
+      "unlockConditionText": "🎄 연말 스페셜: 15 레벨에서 잠금 해제"
     },
     "zh": {
       "name": "节日壁炉暖阁",
       "badge": "🎄 节日暖阁",
       "subtitle": "梦幻彩灯与迷你松树",
-      "unlockConditionText": "达到100级解锁"
+      "unlockConditionText": "🎄 节日特惠：第15关或工坊达40%解锁"
     },
     "ar": {
       "name": "غرفة الموقد الاحتفالية",
       "badge": "🎄 غرفة العيد",
       "subtitle": "أضواء خيالية وشجرة صنوبر صغيرة",
-      "unlockConditionText": "يفتح في المستوى 100"
+      "unlockConditionText": "🎄 حدث العيد: يفتح في المستوى 15"
     }
   },
   "coastal_terrace": {
@@ -1247,6 +1247,316 @@ const ITEMS_DATA: Record<string, Record<Lang, { name: string; short: string; des
       "short": "5. طاولة الضيافة",
       "desc": "طاولة من خشب الجوز عليها كعك الزنجبيل وأكواب الكاكاو الساخن وفانوس شمعة."
     }
+  },
+  "terracotta_lemon_trees": {
+    "tr": {
+      "name": "Çini Saksılı Limon Ağaçları",
+      "short": "1. Limon Ağacı",
+      "desc": "El boyaması seramik ve toprak saksılarda mis kokulu meyveli Akdeniz limon ağaçları."
+    },
+    "en": {
+      "name": "Potted Mediterranean Lemon Trees",
+      "short": "1. Lemon Trees",
+      "desc": "Fragrant dwarf lemon trees in hand-painted ceramic and terracotta pots."
+    },
+    "de": {
+      "name": "Mediterrane Zitronenbäumchen",
+      "short": "1. Zitronenbaum",
+      "desc": "Duftende Zitronenbäume in handbemalten Keramik- und Terrakottatöpfen."
+    },
+    "es": {
+      "name": "Limoneros en Macetas de Cerámica",
+      "short": "1. Limoneros",
+      "desc": "Aromáticos limoneros mediterráneos en macetas de barro y cerámica pintada."
+    },
+    "fr": {
+      "name": "Citronniers en Pots de Céramique",
+      "short": "1. Citronniers",
+      "desc": "Des citronniers parfumés dans des pots en terre cuite et céramique peinte."
+    },
+    "it": {
+      "name": "Alberi di Limone in Terracotta",
+      "short": "1. Limoni",
+      "desc": "Profumati limoni mediterranei in vasi di terracotta e ceramica dipinta."
+    },
+    "pt": {
+      "name": "Limoeiros em Vasos de Cerâmica",
+      "short": "1. Limoeiros",
+      "desc": "Limoeiros perfumados em vasos de terracota e cerâmica pintada à mão."
+    },
+    "ru": {
+      "name": "Лимонные деревца в керамике",
+      "short": "1. Лимоны",
+      "desc": "Ароматные средиземноморские лимоны в расписных керамических кашпо."
+    },
+    "ja": {
+      "name": "陶器鉢の地中海レモンの木",
+      "short": "1. レモンの木",
+      "desc": "手描きセラミックとテラコッタ鉢に植えられた香り高いレモンの木。"
+    },
+    "ko": {
+      "name": "도자기 화분 지중해 레몬 나무",
+      "short": "1. 레몬 나무",
+      "desc": "핸드페인팅 테라코타 화분에 담긴 싱그러운 지중해 레몬 나무."
+    },
+    "zh": {
+      "name": "彩绘陶盆地中海柠檬树",
+      "short": "1. 柠檬树",
+      "desc": "栽种在手绘陶罐中的清香柠檬树，挂满金黄饱满的果实。"
+    },
+    "ar": {
+      "name": "أشجار ليمون في أصص خزفية",
+      "short": "1. شجر الليمون",
+      "desc": "أشجار ليمون عطرة في أصص من الفخار والخزف المرسوم يدويًا."
+    }
+  },
+  "bougainvillea_pergola": {
+    "tr": {
+      "name": "Begonvil Sarmaşığı & Fenerler",
+      "short": "2. Begonvil",
+      "desc": "Ahşap pergola kirişlerini ve taş kemeri saran pembe begonviller ve sıcak fenerler."
+    },
+    "en": {
+      "name": "Bougainvillea Vines & Lanterns",
+      "short": "2. Bougainvillea",
+      "desc": "Vibrant magenta bougainvillea vines and warm coastal lanterns along the pergola."
+    },
+    "de": {
+      "name": "Bougainvillea-Ranken & Laternen",
+      "short": "2. Bougainvillea",
+      "desc": "Leuchtende Bougainvillea-Blüten und warme Laternen an der Holzpergola."
+    },
+    "es": {
+      "name": "Enredaderas de Buganvilla y Faroles",
+      "short": "2. Buganvilla",
+      "desc": "Brillantes flores de buganvilla y faroles cálidos en las vigas de la pérgola."
+    },
+    "fr": {
+      "name": "Bougainvilliers & Lanternes",
+      "short": "2. Bougainvillier",
+      "desc": "Des bougainvilliers éclatants et des lanternes douces le long de la pergola."
+    },
+    "it": {
+      "name": "Bouganville in Fiore & Lanterne",
+      "short": "2. Bouganville",
+      "desc": "Rami fioriti di bouganville e calde lanterne lungo il pergolato in legno."
+    },
+    "pt": {
+      "name": "Primaveras em Flor e Lanternas",
+      "short": "2. Flores",
+      "desc": "Ramos vibrantes de buganvília e lanternas aconchegantes pelo pergolado."
+    },
+    "ru": {
+      "name": "Цветущая бугенвиллея и фонари",
+      "short": "2. Бугенвиллея",
+      "desc": "Яркие ветви бугенвиллеи и тёплые фонарики вдоль деревянной перголы."
+    },
+    "ja": {
+      "name": "ブーゲンビリアの花蔓＆ランタン",
+      "short": "2. 花蔓",
+      "desc": "パーゴラの木の梁と石のアーチを彩る鮮やかなブーゲンビリアとランタン。"
+    },
+    "ko": {
+      "name": "부겐빌레아 꽃덩굴 & 테라스 등불",
+      "short": "2. 꽃덩굴",
+      "desc": "나무 퍼걸러와 돌 아치를 수놓은 화사한 부겐빌레아 꽃과 따스한 등불."
+    },
+    "zh": {
+      "name": "三角梅花藤与海风灯笼",
+      "short": "2. 花藤",
+      "desc": "盛放的绯红三角梅花蔓与暖光藤编灯笼装点着木制凉棚与拱门。"
+    },
+    "ar": {
+      "name": "أزهار الجهنمية وفوانيس الشرفة",
+      "short": "2. الجهنمية",
+      "desc": "أغصان الجهنمية الزاهية وفوانيس دافئة تلتف حول عوارض الشرفة."
+    }
+  },
+  "rattan_lounge_chair": {
+    "tr": {
+      "name": "Hasır Koltuk & Ege Kilimi",
+      "short": "3. Hasır Koltuk",
+      "desc": "Turkuaz çizgili dokuma Ege kilimi, keten minderli bambu koltuk ve örgü şal."
+    },
+    "en": {
+      "name": "Rattan Lounge Chair & Aegean Rug",
+      "short": "3. Rattan Chair",
+      "desc": "A striped Aegean woven rug and a curved rattan armchair with linen cushions."
+    },
+    "de": {
+      "name": "Rattansessel & Ägäis-Webteppich",
+      "short": "3. Rattansessel",
+      "desc": "Ein gestreifter Webteppich und ein gemütlicher Rattansessel mit Leinenkissen."
+    },
+    "es": {
+      "name": "Sillón de Ratán y Alfombra Egea",
+      "short": "3. Sillón Ratán",
+      "desc": "Alfombra tejida a rayas turquesas y sillón de mimbre con cojines de lino."
+    },
+    "fr": {
+      "name": "Fauteuil en Rotin & Tapis Égéen",
+      "short": "3. Fauteuil Rotin",
+      "desc": "Un tapis tissé turquoise et un fauteuil en rotin avec coussins en lin."
+    },
+    "it": {
+      "name": "Poltrona in Rattan & Tappeto Egeo",
+      "short": "3. Rattan",
+      "desc": "Tappeto tessuto a righe turchesi e poltrona in vimini con cuscini in lino."
+    },
+    "pt": {
+      "name": "Poltrona de Vime e Tapete Egeu",
+      "short": "3. Poltrona Vime",
+      "desc": "Tapete listrado azul-turquesa e poltrona de vime com almofadas de linho."
+    },
+    "ru": {
+      "name": "Ротанговое кресло и эгейский килим",
+      "short": "3. Кресло",
+      "desc": "Полосатый тканый коврик и плетёное кресло с льняными подушками."
+    },
+    "ja": {
+      "name": "ラタンチェア＆エーゲ海ラグ",
+      "short": "3. ラタン椅子",
+      "desc": "ターコイズ縞の織りラグと、リネンクッション付きの籐編みラウンジチェア。"
+    },
+    "ko": {
+      "name": "라탄 라운지 체어 & 에게해 러그",
+      "short": "3. 라탄 의자",
+      "desc": "터콰이즈 스트라이프 직조 러그와 리넨 쿠션이 놓인 포근한 라탄 안락의자."
+    },
+    "zh": {
+      "name": "藤编休闲椅与爱琴海条纹毯",
+      "short": "3. 藤编椅",
+      "desc": "铺着蓝白条纹手工织毯，配以亚麻软垫与针织披肩的藤编休闲椅。"
+    },
+    "ar": {
+      "name": "كرسي خيزران وسجادة بحرية",
+      "short": "3. كرسي الخيزران",
+      "desc": "سجادة منسوجة بخطوط فيروزية وكرسي من الخيزران بوسائد كتان مريحة."
+    }
+  },
+  "mosaic_lemonade_table": {
+    "tr": {
+      "name": "Mozaik Sehpa & Naneli Limonata",
+      "short": "4. Limonata",
+      "desc": "Mavi-beyaz çini mozaik sehpa üzerinde buzlu taze naneli limonata sürahisi ve çörekler."
+    },
+    "en": {
+      "name": "Mosaic Table & Mint Lemonade",
+      "short": "4. Lemonade",
+      "desc": "A blue-and-white tile mosaic table with chilled mint lemonade and citrus pastries."
+    },
+    "de": {
+      "name": "Mosaiktisch & Minzlimonade",
+      "short": "4. Limonade",
+      "desc": "Ein blau-weißer Mosaiktisch mit gekühlter Minzlimonade und Gebäck."
+    },
+    "es": {
+      "name": "Mesa de Mosaico y Limonada",
+      "short": "4. Limonada",
+      "desc": "Mesa de mosaico azul y blanco con jarra de limonada fresca con menta."
+    },
+    "fr": {
+      "name": "Table en Mosaïque & Citronnade",
+      "short": "4. Citronnade",
+      "desc": "Une table en mosaïque bleue et blanche avec carafe de citronnade à la menthe."
+    },
+    "it": {
+      "name": "Tavolino a Mosaico & Limonata",
+      "short": "4. Limonata",
+      "desc": "Tavolino in mosaico bianco e blu con limonata fresca alla menta e dolci."
+    },
+    "pt": {
+      "name": "Mesa de Mosaico e Limonada",
+      "short": "4. Limonada",
+      "desc": "Mesa de mosaico azul e branco com jarra de limonada gelada com hortelã."
+    },
+    "ru": {
+      "name": "Мозаичный столик и мятный лимонад",
+      "short": "4. Лимонад",
+      "desc": "Бело-голубой мозаичный столик с кувшином прохладного мятного лимонада."
+    },
+    "ja": {
+      "name": "モザイク卓＆ミントレモネード",
+      "short": "4. レモネード",
+      "desc": "青と白のタイルモザイクテーブルに並ぶ冷たいミントレモネードと焼き菓子。"
+    },
+    "ko": {
+      "name": "모자이크 테이블 & 민트 레모네이드",
+      "short": "4. 레모네이드",
+      "desc": "블루 앤 화이트 타일 모자이크 테이블 위의 시원한 민트 레모네이드와 페이스트리."
+    },
+    "zh": {
+      "name": "蓝白马赛克圆桌与薄荷柠檬水",
+      "short": "4. 柠檬水",
+      "desc": "蓝白瓷砖马赛克茶几上摆放着冰镇薄荷柠檬水玻璃壶与柑橘点心。"
+    },
+    "ar": {
+      "name": "طاولة فسيفساء وعصير ليمون بالنعناع",
+      "short": "4. الليموناضة",
+      "desc": "طاولة فسيفساء باللونين الأزرق والأبيض عليها إبريق ليموناضة باردة بالنعناع."
+    }
+  },
+  "macrame_sea_nook": {
+    "tr": {
+      "name": "Makrome Deniz Sediri & Yumak Sepeti",
+      "short": "5. Deniz Sediri",
+      "desc": "Deniz manzaralı kemer önünde makrome kırlentli sedir ve pastel yaz yumakları sepeti."
+    },
+    "en": {
+      "name": "Macramé Sea Bench & Yarn Basket",
+      "short": "5. Sea Bench",
+      "desc": "A cushioned sea-view arch bench with macramé pillows and a basket of pastel yarns."
+    },
+    "de": {
+      "name": "Makramee-Meerblickbank & Wollkorb",
+      "short": "5. Meerbank",
+      "desc": "Eine gepolsterte Fensterbank mit Makramee-Kissen und Pastell-Wollkorb."
+    },
+    "es": {
+      "name": "Banco Vista al Mar y Cesta de Lana",
+      "short": "5. Banco Mar",
+      "desc": "Banco acolchado frente al mar con cojines de macramé y cesta de ovillos."
+    },
+    "fr": {
+      "name": "Banquette Vue Mer & Panier de Laine",
+      "short": "5. Banquette",
+      "desc": "Une banquette face à la mer avec coussins en macramé et panier de pelotes pastel."
+    },
+    "it": {
+      "name": "Panca Vista Mare & Cesto di Gomitoli",
+      "short": "5. Panca Mare",
+      "desc": "Panca imbottita vista mare con cuscini in macramè e cesto di filati pastello."
+    },
+    "pt": {
+      "name": "Banco Vista Mar e Cesto de Novelos",
+      "short": "5. Banco Mar",
+      "desc": "Banco acolchoado com vista para o mar, almofadas de macramê e cesto de lãs."
+    },
+    "ru": {
+      "name": "Скамья с видом на море и корзина пряжи",
+      "short": "5. Скамья",
+      "desc": "Мягкая скамья у арки с подушками макраме и плетёной корзиной летней пряжи."
+    },
+    "ja": {
+      "name": "海見ベンチ＆パステル毛糸かご",
+      "short": "5. 海見ベンチ",
+      "desc": "海を望むアーチ窓のマクラメクッション付きベンチとパステル毛糸のバスケット。"
+    },
+    "ko": {
+      "name": "마크라메 오션뷰 벤치 & 털실 바구니",
+      "short": "5. 오션뷰 벤치",
+      "desc": "바다가 보이는 아치 창가의 마크라메 쿠션 벤치와 파스텔 여름 털실 바구니."
+    },
+    "zh": {
+      "name": "海景绳编软榻与夏日毛线篮",
+      "short": "5. 海景软榻",
+      "desc": "海景拱门前的绳编靠垫软榻，伴着装满柔和夏日色彩毛线球的海草编织篮。"
+    },
+    "ar": {
+      "name": "مقعد إطلالة البحر وسلة خيوط الصيف",
+      "short": "5. مقعد البحر",
+      "desc": "مقعد مريح أمام إطلالة البحر بوسائد مكرمية وسلة خيوط بألوان صيفية هادئة."
+    }
   }
 };
 
@@ -1549,6 +1859,56 @@ const OUTFITS_DATA: Record<string, Record<Lang, OutfitLocale>> = {
     "ar": {
       "name": "عباءة التوت الملكية الذهبية",
       "desc": "عباءة ملكية بلون التوت مع تطريز ذهبي وبروش بكرة ذهبية فاخر."
+    }
+  },
+  "holiday_santa": {
+    "tr": {
+      "name": "Yılbaşı Kar Taneli Örgü Kostüm",
+      "desc": "Kırmızı-krem kar tanesi motifli el örgüsü yılbaşı atkısı, kazağı ve çam dallı ponpon bere."
+    },
+    "en": {
+      "name": "Festive Snowflake Holiday Knit",
+      "desc": "Crimson-and-cream Fair Isle snowflake knitted scarf, sweater sleeves, and holly-trimmed beanie."
+    },
+    "de": {
+      "name": "Festlicher Schneeflocken-Strick",
+      "desc": "Rot-cremefarbener Schneeflockenschal, Strickärmel und Stechpalmen-Mütze."
+    },
+    "es": {
+      "name": "Tejido Navideño Copo de Nieve",
+      "desc": "Bufanda y mangas tejidas en rojo y crema con copos de nieve y acebo en el gorro."
+    },
+    "fr": {
+      "name": "Tricot de Noël Flocon de Neige",
+      "desc": "Écharpe et manches tricotées rouge et crème à flocons avec branche de houx."
+    },
+    "it": {
+      "name": "Maglia Natalizia Fiocco di Neve",
+      "desc": "Sciarpa e maniche lavorate a maglia rossa e crema con agrifoglio sul berretto."
+    },
+    "pt": {
+      "name": "Tricô Natalino Floco de Neve",
+      "desc": "Cachecol e mangas de tricô vermelho e creme com flocos de nieve e azevinho."
+    },
+    "ru": {
+      "name": "Новогодний свитер со снежинками",
+      "desc": "Красно-кремовый вязаный шарф и рукава со снежинками и веточкой остролиста."
+    },
+    "ja": {
+      "name": "ホリデー雪結晶の手編みニット",
+      "desc": "赤とクリーム色の雪結晶柄マフラー＆セーターとヒイラギ飾りのニット帽。"
+    },
+    "ko": {
+      "name": "홀리데이 눈꽃 손뜨개 코스튬",
+      "desc": "빨강-크림 눈꽃 무늬 손뜨개 목도리와 스웨터, 호랑가시나무 장식 방울모자."
+    },
+    "zh": {
+      "name": "圣诞雪花提花手织毛衣与围巾",
+      "desc": "红白雪花提花手织围巾与毛衣袖，配着饰有冬青红果的绒球针织帽。"
+    },
+    "ar": {
+      "name": "وشاح وسترة العيد بنقشة الثلج",
+      "desc": "وشاح وأكمام صوفية باللونين الأحمر والكريمي بنقشة ندف الثلج."
     }
   }
 };
@@ -2129,10 +2489,43 @@ const UI_DATA: Record<Lang, Record<string, string>> = {
   }
 };
 
+/**
+ * Date-based seasonal trigger for the Holiday / New Year Event:
+ * Active automatically between November 15 and January 10 every year.
+ * After January 10, Holiday Hearth reverts to its standard Level 100 progression requirement.
+ */
+export function isHolidaySeasonActive(now: Date = new Date()): boolean {
+  const m = now.getMonth(); // 0 = Jan, 10 = Nov, 11 = Dec
+  const d = now.getDate();
+  return (m === 10 && d >= 15) || m === 11 || (m === 0 && d <= 10);
+}
+
+const HOLIDAY_NORMAL_UNLOCK_TEXT: Record<Lang, string> = {
+  tr: '100. Seviye veya Kar Dağ Evi %80',
+  en: 'Level 100 or Ski Lodge 80%',
+  de: 'Level 100 oder Skihütte 80%',
+  es: 'Nivel 100 o Refugio 80%',
+  fr: 'Niveau 100 ou Chalet 80%',
+  it: 'Livello 100 o Baita 80%',
+  pt: 'Nível 100 ou Chalé 80%',
+  ru: 'Уровень 100 или Домик 80%',
+  ja: 'レベル100 または 山小屋80%',
+  ko: '100 레벨 또는 별장 80%',
+  zh: '第100关 或 雪屋达80%',
+  ar: 'المستوى 100 أو 80% من الكوخ',
+};
+
 export function getWorkshopRoom(roomId: string, lang: Lang): RoomLocale {
   const r = ROOMS_DATA[roomId];
   if (!r) return { name: roomId, badge: roomId, subtitle: '', unlockConditionText: '' };
-  return r[lang] || r['en'] || r['tr'];
+  const base = r[lang] || r['en'] || r['tr'];
+  if (roomId === 'holiday_hearth' && !isHolidaySeasonActive()) {
+    return {
+      ...base,
+      unlockConditionText: HOLIDAY_NORMAL_UNLOCK_TEXT[lang] || HOLIDAY_NORMAL_UNLOCK_TEXT.en,
+    };
+  }
+  return base;
 }
 
 export function getWorkshopItem(itemId: string, lang: Lang): ItemLocale {

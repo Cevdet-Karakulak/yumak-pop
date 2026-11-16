@@ -20,6 +20,7 @@ import {
   getWorkshopItem,
   getWorkshopRoom,
   getWorkshopUI,
+  isHolidaySeasonActive,
 } from '../workshopI18n';
 
 // 6 Progressive 3D Miniature Diorama Room Stages for Room 1: Usta Atölyesi
@@ -52,6 +53,16 @@ const HOLIDAY_HEARTH_STAGE_IMAGES: Record<number, ImageSourcePropType> = {
   5: require('../../assets/images/holiday_stage_5.jpg'), // + Zencefilli Kurabiye & Salep Sehpası
 };
 
+// 6 Progressive 3D Miniature Diorama Room Stages for Room 4: Akdeniz Sahil Verandası (Sahil Terası)
+const COASTAL_TERRACE_STAGE_IMAGES: Record<number, ImageSourcePropType> = {
+  0: require('../../assets/images/coastal_stage_0.jpg'), // Sade taş kemerli sahil verandası
+  1: require('../../assets/images/coastal_stage_1.jpg'), // + Çini Saksılı Limon Ağaçları
+  2: require('../../assets/images/coastal_stage_2.jpg'), // + Begonvil Sarmaşığı & Fenerler
+  3: require('../../assets/images/coastal_stage_3.jpg'), // + Hasır Koltuk & Ege Kilimi
+  4: require('../../assets/images/coastal_stage_4.jpg'), // + Mozaik Sehpa & Naneli Limonata
+  5: require('../../assets/images/coastal_stage_5.jpg'), // + Makrome Deniz Sediri & Yumak Sepeti
+};
+
 // Real 3D Bobbin Character Sprites with Ground Contact Shadows (Alpha RGBA PNGs)
 const BOBBIN_OUTFIT_IMAGES: Record<string, ImageSourcePropType> = {
   none: require('../../assets/images/bobbin_none.png'),
@@ -60,6 +71,7 @@ const BOBBIN_OUTFIT_IMAGES: Record<string, ImageSourcePropType> = {
   emerald_moss: require('../../assets/images/bobbin_emerald.png'),
   royal_berry: require('../../assets/images/bobbin_royal.png'),
   winter_fur: require('../../assets/images/bobbin_winter_fur.png'),
+  holiday_santa: require('../../assets/images/bobbin_holiday.png'),
 };
 
 interface WorkshopItemBase {
@@ -103,6 +115,15 @@ const HOLIDAY_HEARTH_CATALOG_BASE: WorkshopItemBase[] = [
   { id: 'gingerbread_tea_table', step: 5, starsRequired: 30, icon: 'cafe', colorTag: '#8B5CF6' },
 ];
 
+// Room 4 Items Base: Akdeniz Sahil Verandası (Sahil Terası)
+const COASTAL_TERRACE_CATALOG_BASE: WorkshopItemBase[] = [
+  { id: 'terracotta_lemon_trees', step: 1, starsRequired: 5, icon: 'leaf' as any, colorTag: '#EAB308' },
+  { id: 'bougainvillea_pergola', step: 2, starsRequired: 10, icon: 'flower' as any, colorTag: '#EC4899' },
+  { id: 'rattan_lounge_chair', step: 3, starsRequired: 15, icon: 'sunny', colorTag: '#06B6D4' },
+  { id: 'mosaic_lemonade_table', step: 4, starsRequired: 20, icon: 'cafe', colorTag: '#3B82F6' },
+  { id: 'macrame_sea_nook', step: 5, starsRequired: 30, icon: 'home', colorTag: '#10B981' },
+];
+
 interface KnitwearItemBase {
   id: string;
   starsRequired: number;
@@ -120,6 +141,7 @@ const KNITWEAR_CATALOG_BASE: KnitwearItemBase[] = [
   { id: 'none', starsRequired: 0, color: '#92400E', accentEmoji: '🪵', image: BOBBIN_OUTFIT_IMAGES.none },
   { id: 'classic_honey', starsRequired: 3, color: '#F59E0B', accentEmoji: '🧣', image: BOBBIN_OUTFIT_IMAGES.classic_honey },
   { id: 'arctic_sky', starsRequired: 8, color: '#0EA5E9', accentEmoji: '❄️', image: BOBBIN_OUTFIT_IMAGES.arctic_sky },
+  { id: 'holiday_santa', starsRequired: 10, color: '#DC2626', accentEmoji: '🎅', image: BOBBIN_OUTFIT_IMAGES.holiday_santa },
   { id: 'winter_fur', starsRequired: 12, color: '#38BDF8', accentEmoji: '🎿', image: BOBBIN_OUTFIT_IMAGES.winter_fur },
   { id: 'emerald_moss', starsRequired: 16, color: '#10B981', accentEmoji: '🌲', image: BOBBIN_OUTFIT_IMAGES.emerald_moss },
   { id: 'royal_berry', starsRequired: 25, color: '#8B5CF6', accentEmoji: '👑', image: BOBBIN_OUTFIT_IMAGES.royal_berry },
@@ -162,10 +184,9 @@ const ROOM_DEFINITIONS_BASE: RoomDefBase[] = [
   },
   {
     id: 'coastal_terrace',
-    stages: WORKSHOP_STAGE_IMAGES,
-    catalogBase: [],
+    stages: COASTAL_TERRACE_STAGE_IMAGES,
+    catalogBase: COASTAL_TERRACE_CATALOG_BASE,
     unlockLevel: 150,
-    isComingSoon: true,
   },
 ];
 
@@ -232,11 +253,33 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
       );
     }
     if (roomId === 'holiday_hearth') {
+      const room1Count = WORKSHOP_CATALOG_BASE.filter((i) => unlockedSet.has(i.id)).length;
       const room2Count = SKI_LODGE_CATALOG_BASE.filter((i) => unlockedSet.has(i.id)).length;
+      const hasAnyHolidayItem = HOLIDAY_HEARTH_CATALOG_BASE.some((i) => unlockedSet.has(i.id));
+      // During Holiday Season (Nov 15 – Jan 10), unlock early at Level 15 (or 2 Workshop items);
+      // after Jan 10, revert automatically to Level 100 (or 4 Ski Lodge items).
+      if (isHolidaySeasonActive()) {
+        return (
+          (data.unlocked || 1) >= 15 ||
+          room1Count >= 2 ||
+          room2Count >= 1 ||
+          hasAnyHolidayItem ||
+          (data.unlockedRooms && data.unlockedRooms.includes('holiday_hearth'))
+        );
+      }
       return (
         (data.unlocked || 1) >= 100 ||
         room2Count >= 4 ||
+        hasAnyHolidayItem ||
         (data.unlockedRooms && data.unlockedRooms.includes('holiday_hearth'))
+      );
+    }
+    if (roomId === 'coastal_terrace') {
+      const room3Count = HOLIDAY_HEARTH_CATALOG_BASE.filter((i) => unlockedSet.has(i.id)).length;
+      return (
+        (data.unlocked || 1) >= 150 ||
+        room3Count >= 4 ||
+        (data.unlockedRooms && data.unlockedRooms.includes('coastal_terrace'))
       );
     }
     return false;

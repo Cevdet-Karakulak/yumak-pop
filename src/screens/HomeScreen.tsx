@@ -16,9 +16,31 @@ import { Bouncy, CoinBadge, FONT, RoundIcon, T, YarnButton } from '../components
 import { TOTAL_LEVELS } from '../game/levels';
 import { getAvailableStars, useSave } from '../save';
 import { UI, YARN } from '../theme';
+import { isHolidaySeasonActive } from '../workshopI18n';
 import { SettingsSheet } from './SettingsSheet';
 
 const TITLE_COLORS = ['R', 'O', 'Y', 'G', 'B', 'P', 'K', 'T', 'R'];
+
+const HOME_BOBBIN_OUTFITS: Record<string, any> = {
+  none: require('../../assets/images/mascot.png'),
+  classic_honey: require('../../assets/images/bobbin_honey.png'),
+  arctic_sky: require('../../assets/images/bobbin_arctic.png'),
+  emerald_moss: require('../../assets/images/bobbin_emerald.png'),
+  royal_berry: require('../../assets/images/bobbin_royal.png'),
+  winter_fur: require('../../assets/images/bobbin_winter_fur.png'),
+  holiday_santa: require('../../assets/images/bobbin_holiday.png'),
+};
+
+const SNOWFLAKE_CONFIGS = [
+  { left: '6%', size: 16, dur: 6400, sway: 14, char: '❄️' },
+  { left: '18%', size: 13, dur: 7600, sway: -12, char: '❅' },
+  { left: '31%', size: 18, dur: 6900, sway: 16, char: '❄️' },
+  { left: '46%', size: 14, dur: 8100, sway: -15, char: '✦' },
+  { left: '59%', size: 17, dur: 6700, sway: 13, char: '❄️' },
+  { left: '72%', size: 13, dur: 7900, sway: -14, char: '❅' },
+  { left: '84%', size: 16, dur: 6500, sway: 12, char: '❄️' },
+  { left: '93%', size: 14, dur: 7300, sway: -10, char: '✦' },
+];
 
 interface TapParticle {
   id: number;
@@ -65,6 +87,8 @@ export function HomeScreen({
   const drift1 = useRef(new Animated.Value(0)).current;
   const drift2 = useRef(new Animated.Value(0)).current;
   const drift3 = useRef(new Animated.Value(0)).current;
+  const holidayActive = isHolidaySeasonActive();
+  const snowAnims = useRef(SNOWFLAKE_CONFIGS.map((_, i) => new Animated.Value((i * 0.13) % 1))).current;
 
   useEffect(() => {
     // 1. Idle mascot floating bob
@@ -131,14 +155,31 @@ export function HomeScreen({
     d2.start();
     d3.start();
 
+    const snowLoops = holidayActive
+      ? snowAnims.map((val, idx) => {
+          val.setValue(0);
+          const loop = Animated.loop(
+            Animated.timing(val, {
+              toValue: 1,
+              duration: SNOWFLAKE_CONFIGS[idx].dur,
+              easing: Easing.linear,
+              useNativeDriver: true,
+            }),
+          );
+          loop.start();
+          return loop;
+        })
+      : [];
+
     return () => {
       bobLoop.stop();
       propLoop.stop();
       d1.stop();
       d2.stop();
       d3.stop();
+      snowLoops.forEach((l) => l.stop());
     };
-  }, []);
+  }, [holidayActive]);
 
   const onMascotTap = () => {
     play('pop');
@@ -161,7 +202,9 @@ export function HomeScreen({
     ]).start();
 
     // Spawn cute floating love & craft particles
-    const icons = ['✨', '🧶', '💖', '⭐', '🧵'];
+    const icons = holidayActive
+      ? ['❄️', '🎄', '✨', '🧶', '⭐', '🎅']
+      : ['✨', '🧶', '💖', '⭐', '🧵'];
     const newItems: TapParticle[] = Array.from({ length: 4 }).map((_, idx) => {
       const anim = new Animated.Value(0);
       const id = Date.now() + Math.random() + idx;
@@ -199,6 +242,41 @@ export function HomeScreen({
         style={styles.bgImage}
         resizeMode="cover"
       />
+
+      {/* Seasonal Holiday Falling Snowflakes (Active Nov 15 – Jan 10) */}
+      {holidayActive &&
+        SNOWFLAKE_CONFIGS.map((sf, idx) => {
+          const anim = snowAnims[idx];
+          const translateY = anim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [-30, height + 30],
+          });
+          const translateX = anim.interpolate({
+            inputRange: [0, 0.5, 1],
+            outputRange: [0, sf.sway, 0],
+          });
+          const opacity = anim.interpolate({
+            inputRange: [0, 0.1, 0.9, 1],
+            outputRange: [0, 0.85, 0.85, 0],
+          });
+          return (
+            <Animated.View
+              key={`snow_${idx}`}
+              pointerEvents="none"
+              style={[
+                styles.ambientParticle,
+                {
+                  top: 0,
+                  left: sf.left as any,
+                  opacity,
+                  transform: [{ translateY }, { translateX }],
+                },
+              ]}
+            >
+              <T style={{ fontSize: sf.size, color: '#FFF' }}>{sf.char}</T>
+            </Animated.View>
+          );
+        })}
 
       {/* Floating Ambient Craft Sprinkles */}
       <Animated.View
@@ -388,7 +466,13 @@ export function HomeScreen({
               ]}
             >
               <Image
-                source={require('../../assets/images/mascot.png')}
+                source={
+                  data.bobbinOutfit && data.bobbinOutfit !== 'none' && HOME_BOBBIN_OUTFITS[data.bobbinOutfit]
+                    ? HOME_BOBBIN_OUTFITS[data.bobbinOutfit]
+                    : holidayActive
+                    ? HOME_BOBBIN_OUTFITS.holiday_santa
+                    : HOME_BOBBIN_OUTFITS.none
+                }
                 style={[styles.mascotImg, { width: mascotSize, height: mascotSize }]}
                 resizeMode="contain"
               />
@@ -475,7 +559,7 @@ export function HomeScreen({
           {Boolean(onWorkshop) && (
             <YarnButton
               small
-              label={`${(t.workshopBtn || "Bobbin'in Atölyesi").toUpperCase()}  ⭐ ${availableStars}`}
+              label={`${holidayActive ? '🎄 ' : ''}${(t.workshopBtn || "Bobbin'in Atölyesi").toUpperCase()}  ⭐ ${availableStars}`}
               icon="home"
               color="gold"
               onPress={() => onWorkshop?.()}
