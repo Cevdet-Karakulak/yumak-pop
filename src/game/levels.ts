@@ -217,7 +217,7 @@ function levelParams(n: number) {
   const stepPenalty = n > 100
     ? Math.min(3.2, 2.3 + ((n - 100) / 50) * 0.9)
     : (hard ? 2.0 : n <= 3 ? 1.2 : n <= 9 ? 1.4 : 1.7);
-  const startHeadPos = n > 100
+  const rawStartHeadPos = n > 100
     ? Math.min(38, 30 + Math.floor(((n - 100) / 50) * 8))
     : (n <= 3 ? 20 : hard ? 30 : 24);
 
@@ -242,39 +242,38 @@ function levelParams(n: number) {
 
 /**
  * Curated Obstacle Placement Zones per Track Shape:
- * Mathematically verified on straightaways / low-curvature segments
- * to guarantee zero criss-crossing planks, zero hairpin turns, and maximum readability.
- * Bridge span: 6.5%, Ice Zone span: 7.5%.
+ * Mathematically verified on isolated single-groove straightaways / low-curvature segments
+ * to guarantee zero adjacent-loop overlap, zero criss-crossing planks, and crisp 3D alignment.
  */
 const TRACK_OBSTACLE_ZONES: Record<
   TrackShape,
   { bridge: [number, number]; ice: [number, number] }
 > = {
-  clover: { bridge: [24.8, 31.3], ice: [58.5, 66.0] },
-  horseshoe: { bridge: [24.0, 30.5], ice: [75.8, 83.3] },
-  labyrinth: { bridge: [24.0, 30.5], ice: [62.5, 70.0] },
-  rollercoaster: { bridge: [42.5, 49.0], ice: [60.8, 68.3] },
-  spiral: { bridge: [35.2, 41.7], ice: [60.8, 68.3] },
-  infinity: { bridge: [35.0, 41.5], ice: [73.0, 80.5] },
-  heart: { bridge: [32.5, 39.0], ice: [58.0, 65.5] },
-  butterfly: { bridge: [47.8, 54.3], ice: [60.2, 67.7] },
-  pretzel: { bridge: [31.5, 38.0], ice: [69.2, 76.7] },
-  blossom: { bridge: [29.2, 35.7], ice: [72.0, 79.5] },
-  zigzag_grand: { bridge: [38.2, 44.7], ice: [69.8, 77.3] },
-  yin_yang: { bridge: [34.2, 40.7], ice: [61.8, 69.3] },
-  diamond: { bridge: [29.2, 35.7], ice: [58.0, 65.5] },
-  snail_shell: { bridge: [27.8, 34.3], ice: [72.2, 79.7] },
-  guitar: { bridge: [35.0, 41.5], ice: [66.0, 73.5] },
-  star_spiral: { bridge: [29.2, 35.7], ice: [72.0, 79.5] },
-  serpentine_waves: { bridge: [25.5, 32.0], ice: [63.5, 71.0] },
-  hourglass: { bridge: [46.8, 53.3], ice: [67.5, 75.0] },
-  s_curve: { bridge: [24.0, 30.5], ice: [62.5, 70.0] },
-  bridge_cross: { bridge: [42.2, 48.7], ice: [69.5, 77.0] },
-  frozen_fjord: { bridge: [38.2, 44.7], ice: [58.0, 65.5] },
-  carousel_circus: { bridge: [28.2, 34.7], ice: [59.2, 66.7] },
-  dragon_spiral: { bridge: [24.0, 30.5], ice: [69.2, 76.7] },
-  escalator_zigzag: { bridge: [38.2, 44.7], ice: [58.8, 66.3] },
-  celtic_nexus: { bridge: [33.2, 39.7], ice: [65.2, 72.7] },
+  clover: { bridge: [31.1, 35.5], ice: [59.3, 64.5] },
+  horseshoe: { bridge: [31.1, 35.6], ice: [60.5, 65.8] },
+  labyrinth: { bridge: [36.7, 40.5], ice: [69.0, 73.5] },
+  rollercoaster: { bridge: [52.0, 56.8], ice: [77.2, 82.9] },
+  spiral: { bridge: [31.2, 35.6], ice: [59.3, 64.5] },
+  infinity: { bridge: [38.2, 43.0], ice: [65.6, 71.2] },
+  heart: { bridge: [48.9, 53.7], ice: [62.7, 68.3] },
+  butterfly: { bridge: [32.5, 36.1], ice: [72.8, 77.0] },
+  pretzel: { bridge: [33.2, 38.2], ice: [64.7, 71.4] },
+  blossom: { bridge: [36.5, 40.6], ice: [60.9, 65.8] },
+  zigzag_grand: { bridge: [42.3, 46.1], ice: [64.5, 68.9] },
+  yin_yang: { bridge: [51.1, 56.2], ice: [75.5, 81.5] },
+  diamond: { bridge: [31.0, 35.3], ice: [59.5, 64.5] },
+  snail_shell: { bridge: [44.8, 49.2], ice: [59.4, 64.6] },
+  guitar: { bridge: [50.3, 55.3], ice: [64.8, 70.7] },
+  star_spiral: { bridge: [36.3, 40.8], ice: [63.1, 68.4] },
+  serpentine_waves: { bridge: [32.6, 36.4], ice: [77.9, 82.4] },
+  hourglass: { bridge: [40.6, 46.0], ice: [62.0, 68.4] },
+  s_curve: { bridge: [36.7, 40.5], ice: [69.0, 73.5] },
+  bridge_cross: { bridge: [37.9, 42.7], ice: [72.7, 78.4] },
+  frozen_fjord: { bridge: [34.7, 39.6], ice: [59.0, 64.7] },
+  carousel_circus: { bridge: [33.5, 37.8], ice: [66.5, 71.5] },
+  dragon_spiral: { bridge: [39.4, 44.2], ice: [69.2, 74.9] },
+  escalator_zigzag: { bridge: [43.0, 46.8], ice: [64.9, 69.4] },
+  celtic_nexus: { bridge: [33.0, 37.9], ice: [71.8, 77.6] },
 };
 
   const zoneInfo = TRACK_OBSTACLE_ZONES[trackShape] || TRACK_OBSTACLE_ZONES.spiral;
@@ -282,6 +281,10 @@ const TRACK_OBSTACLE_ZONES: Record<
   const bridge = hasBridge
     ? { start: zoneInfo.bridge[0], end: zoneInfo.bridge[1] }
     : undefined;
+
+  const startHeadPos = bridge
+    ? Math.min(rawStartHeadPos, Math.max(22, Math.floor(bridge.start - 5)))
+    : rawStartHeadPos;
 
   const iceZone = hasIce
     ? { start: zoneInfo.ice[0], end: zoneInfo.ice[1] }

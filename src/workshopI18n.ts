@@ -937,6 +937,316 @@ const ITEMS_DATA: Record<string, Record<Lang, { name: string; short: string; des
       "short": "5. الأريكة",
       "desc": "أريكة مريحة ببطانية صوفية أمام نافذة الثلج مع فانوس نحاسي دافئ."
     }
+  },
+  "festive_hearth": {
+    "tr": {
+      "name": "Taş Şömine & Örgü Çoraplar",
+      "short": "1. Şömine",
+      "desc": "Çıtırdayan taş şömine ateşi, çam çelengi ve el örgüsü renkli yılbaşı çorapları."
+    },
+    "en": {
+      "name": "Stone Hearth & Knit Stockings",
+      "short": "1. Hearth",
+      "desc": "A crackling stone fireplace adorned with evergreen garland and hand-knitted wool stockings."
+    },
+    "de": {
+      "name": "Steinkamin & Strickstrümpfe",
+      "short": "1. Kamin",
+      "desc": "Ein knisternder Steinkamin mit Tannengirlande und handgestrickten Wollstrümpfen."
+    },
+    "es": {
+      "name": "Chimenea de Piedra y Calcetines",
+      "short": "1. Chimenea",
+      "desc": "Fuego crepitante con guirnalda de pino y calcetines tejidos a mano."
+    },
+    "fr": {
+      "name": "Cheminée en Pierre & Chaussettes",
+      "short": "1. Cheminée",
+      "desc": "Un feu crépitant orné d'une guirlande de sapin et de chaussettes en laine."
+    },
+    "it": {
+      "name": "Camino in Pietra & Calze di Lana",
+      "short": "1. Camino",
+      "desc": "Fuoco scoppiettante con ghirlanda di pino e calze lavorate a maglia."
+    },
+    "pt": {
+      "name": "Lareira de Pedra e Meias de Lã",
+      "short": "1. Lareira",
+      "desc": "Fogo crepitante na lareira com guirlanda de pinheiro e meias de tricô."
+    },
+    "ru": {
+      "name": "Каменный камин и вязаные носки",
+      "short": "1. Камин",
+      "desc": "Потрескивающий камин с хвойной гирляндой и уютными шерстяными носками."
+    },
+    "ja": {
+      "name": "石造り暖炉＆手編みソックス",
+      "short": "1. 暖炉",
+      "desc": "パチパチと燃える石の暖炉と、モミのガーランド＆手編みウールソックス。"
+    },
+    "ko": {
+      "name": "돌 벽난로 & 손뜨개 양말",
+      "short": "1. 벽난로",
+      "desc": "타닥타닥 타오르는 벽난로와 솔잎 가랜드, 알록달록한 손뜨개 양말."
+    },
+    "zh": {
+      "name": "石砌壁炉与手织圣诞袜",
+      "short": "1. 壁炉",
+      "desc": "炉火熊熊的石砌壁炉，挂满松枝花环与色彩斑斓的手织毛线袜。"
+    },
+    "ar": {
+      "name": "موقد حجري وجوارب صوفية",
+      "short": "1. الموقد",
+      "desc": "نار متقدة في موقد حجري مزين بإكليل الصنوبر وجوارب الصوف المحبوكة."
+    }
+  },
+  "holiday_pine_tree": {
+    "tr": {
+      "name": "Yumak Süslemeli Çam Ağacı",
+      "short": "2. Çam Ağacı",
+      "desc": "Minyatür yün yumak topları, ahşap yıldız ve hediye paketleriyle süslü çam ağacı."
+    },
+    "en": {
+      "name": "Yarn-Ornamented Pine Tree",
+      "short": "2. Pine Tree",
+      "desc": "A festive pine tree decorated with mini yarn-ball baubles, wooden star, and gift boxes."
+    },
+    "de": {
+      "name": "Geschmückter Tannenbaum",
+      "short": "2. Tannenbaum",
+      "desc": "Ein Festbaum mit kleinen Wollknäuel-Kugeln, Holzstern und Geschenken."
+    },
+    "es": {
+      "name": "Árbol de Pino con Ovillos",
+      "short": "2. Árbol",
+      "desc": "Un pino festivo decorado con esferas de lana, estrella de madera y regalos."
+    },
+    "fr": {
+      "name": "Sapin Décoré de Pelotes",
+      "short": "2. Sapin",
+      "desc": "Un sapin festif orné de mini pelotes de laine, étoile en bois et cadeaux."
+    },
+    "it": {
+      "name": "Albero di Pino con Gomitoli",
+      "short": "2. Albero",
+      "desc": "Un pino festivo decorato con palline di lana, stella in legno e regali."
+    },
+    "pt": {
+      "name": "Pinheiro Decorado com Novelos",
+      "short": "2. Pinheiro",
+      "desc": "Um pinheiro festivo com enfeites de novelos de lã, estrela de madeira e presentes."
+    },
+    "ru": {
+      "name": "Праздничная ёлка с клубками",
+      "short": "2. Ёлка",
+      "desc": "Нарядная ёлочка с игрушками-клубками, деревянной звездой и подарками."
+    },
+    "ja": {
+      "name": "毛糸玉オーナメントのツリー",
+      "short": "2. ツリー",
+      "desc": "ミニ毛糸玉オーナメントと木の星、プレゼント箱で飾られたモミの木。"
+    },
+    "ko": {
+      "name": "실뭉치 장식 전나무 트리",
+      "short": "2. 트리",
+      "desc": "미니 털실 오너먼트와 나무 별, 선물 상자로 꾸며진 전나무 트리."
+    },
+    "zh": {
+      "name": "毛线球装饰圣诞松树",
+      "short": "2. 松树",
+      "desc": "挂满迷你毛线球挂饰、木制星顶与礼盒的节日松树。"
+    },
+    "ar": {
+      "name": "شجرة صنوبر مزينة بكرات الصوف",
+      "short": "2. الشجرة",
+      "desc": "شجرة صنوبر احتفالية مزينة بكرات الصوف الصغيرة ونجمة خشبية وصناديق هدايا."
+    }
+  },
+  "fairy_lights_garland": {
+    "tr": {
+      "name": "Peri Işıkları & Pencere Çelengi",
+      "short": "3. Peri Işıkları",
+      "desc": "Ahşap tavan kirişlerini ve kemerli kar penceresini saran sıcacık altın peri ışıkları."
+    },
+    "en": {
+      "name": "Golden Fairy Lights & Garland",
+      "short": "3. Fairy Lights",
+      "desc": "Warm golden string lights and pine garlands across the rafters and arched window."
+    },
+    "de": {
+      "name": "Goldene Lichterketten & Girlande",
+      "short": "3. Lichter",
+      "desc": "Warme Lichterketten und Tannengirlanden an den Deckenbalken und am Fenster."
+    },
+    "es": {
+      "name": "Luces de Hadas y Guirnalda",
+      "short": "3. Luces",
+      "desc": "Cálidas luces doradas y guirnaldas de pino en las vigas y el gran ventanal."
+    },
+    "fr": {
+      "name": "Guirlandes Lumineuses Dorées",
+      "short": "3. Lumières",
+      "desc": "Des guirlandes féeriques dorées le long des poutres et de la grande fenêtre."
+    },
+    "it": {
+      "name": "Lucine Dorate & Ghirlanda",
+      "short": "3. Lucine",
+      "desc": "Calde lucine dorate e ghirlande di pino lungo le travi e la finestra ad arco."
+    },
+    "pt": {
+      "name": "Luzes de Fada e Festão de Pinho",
+      "short": "3. Luzes",
+      "desc": "Luzes douradas aconchegantes e festões pelas vigas de madeira e janela."
+    },
+    "ru": {
+      "name": "Золотые гирлянды и хвойный декор",
+      "short": "3. Гирлянды",
+      "desc": "Тёплые золотистые огоньки под потолком и светящаяся гирлянда вокруг окна."
+    },
+    "ja": {
+      "name": "妖精のイルミネーション＆花輪",
+      "short": "3. ライト",
+      "desc": "木の梁と大きな雪見窓を彩る温かなゴールドのフェアリーライト。"
+    },
+    "ko": {
+      "name": "황금빛 요정 전구 & 창가 가랜드",
+      "short": "3. 전구",
+      "desc": "나무 서까래와 아치형 창문을 감싸는 따스한 황금빛 꼬마전구와 가랜드."
+    },
+    "zh": {
+      "name": "暖金星光彩灯与窗框松环",
+      "short": "3. 彩灯",
+      "desc": "缠绕在木梁与拱形雪景窗畔的璀璨暖金色串灯与松枝花环。"
+    },
+    "ar": {
+      "name": "أضواء خيالية ذهبية وإكليل النافذة",
+      "short": "3. الأضواء",
+      "desc": "سلاسل أضواء ذهبية دافئة وأكاليل صنوبر تزين العوارض الخشبية والنافذة."
+    }
+  },
+  "velvet_armchair_rug": {
+    "tr": {
+      "name": "Kızılcık Kadife Berjer & Halı",
+      "short": "4. Berjer & Halı",
+      "desc": "Şömine önünde desenli yün kış halısı, kızılcık kadife koltuk ve saçak örgü battaniye."
+    },
+    "en": {
+      "name": "Crimson Velvet Armchair & Rug",
+      "short": "4. Armchair",
+      "desc": "A Nordic wool rug and a cozy crimson velvet armchair draped with a cable-knit throw."
+    },
+    "de": {
+      "name": "Samtsessel & Nordischer Teppich",
+      "short": "4. Sessel",
+      "desc": "Ein gemusterter Wollteppich und ein roter Samtsessel mit Zopfstrickdecke."
+    },
+    "es": {
+      "name": "Sillón de Terciopelo y Alfombra",
+      "short": "4. Sillón",
+      "desc": "Alfombra nórdica de lana y sillón de terciopelo carmesí con manta tejida."
+    },
+    "fr": {
+      "name": "Fauteuil en Velours & Tapis Nordique",
+      "short": "4. Fauteuil",
+      "desc": "Un tapis en laine à motifs et un fauteuil en velours cramoisi avec plaid torsadé."
+    },
+    "it": {
+      "name": "Poltrona in Velluto & Tappeto",
+      "short": "4. Poltrona",
+      "desc": "Tappeto nordico in lana e poltrona in velluto cremisi con coperta a trecce."
+    },
+    "pt": {
+      "name": "Poltrona de Veludo e Tapete",
+      "short": "4. Poltrona",
+      "desc": "Tapete nórdico de lã e poltrona de veludo carmesim com manta de tricô."
+    },
+    "ru": {
+      "name": "Бархатное кресло и зимний ковёр",
+      "short": "4. Кресло",
+      "desc": "Узорчатый шерстяной ковёр и бордовое бархатное кресло с вязаным пледом."
+    },
+    "ja": {
+      "name": "深紅のベルベットチェア＆ラグ",
+      "short": "4. チェア",
+      "desc": "北欧柄のウールラグと、ケーブル編みブランケットを掛けたベルベットチェア。"
+    },
+    "ko": {
+      "name": "크림슨 벨벳 안락의자 & 겨울 러그",
+      "short": "4. 안락의자",
+      "desc": "노르딕 패턴 울 러그와 꽈배기 니트 담요가 걸쳐진 진홍빛 벨벳 안락의자."
+    },
+    "zh": {
+      "name": "绯红天鹅绒扶手椅与北欧地毯",
+      "short": "4. 扶手椅",
+      "desc": "铺在壁炉前的北欧提花羊毛毯，配着披有粗针麻花毛毯的丝绒单人椅。"
+    },
+    "ar": {
+      "name": "كرسي مخملي قرمزي وسجادة شتوية",
+      "short": "4. الكرسي",
+      "desc": "سجادة صوفية بنقوش شتوية وكرسي مخملي قرمزي مع بطانية محبوكة."
+    }
+  },
+  "gingerbread_tea_table": {
+    "tr": {
+      "name": "Zencefilli Kurabiye & Salep Sehpası",
+      "short": "5. İkram Sehpası",
+      "desc": "Ceviz sehpa üzerinde zencefilli tarçınlı kurabiyeler, sıcak salep kupaları ve mum feneri."
+    },
+    "en": {
+      "name": "Gingerbread & Spiced Cocoa Table",
+      "short": "5. Treat Table",
+      "desc": "A carved walnut table with gingerbread cookies, steaming spiced cocoa, and a candle lantern."
+    },
+    "de": {
+      "name": "Lebkuchen- & Gewürzkakao-Tisch",
+      "short": "5. Teetisch",
+      "desc": "Ein Walnusstisch mit Lebkuchen, dampfendem Kakao und einer Kerzenlaterne."
+    },
+    "es": {
+      "name": "Mesa de Jengibre y Cacao Caliente",
+      "short": "5. Mesa Dulce",
+      "desc": "Mesa de nogal con galletas de jengibre, tazas humeantes y farolillo."
+    },
+    "fr": {
+      "name": "Table Pain d'Épices & Cacao",
+      "short": "5. Table Goûter",
+      "desc": "Une table en noyer avec biscuits en pain d'épices, chocolat chaud et lanterne."
+    },
+    "it": {
+      "name": "Tavolino Pan di Zenzero & Cacao",
+      "short": "5. Tavolino",
+      "desc": "Tavolino in noce con biscotti di pan di zenzero, tazze fumanti e lanterna."
+    },
+    "pt": {
+      "name": "Mesa de Biscoitos de Gengibre",
+      "short": "5. Mesa Doce",
+      "desc": "Mesa de nogueira com biscoitos de gengibre, bebidas quentes e lanterna."
+    },
+    "ru": {
+      "name": "Столик с имбирным печеньем и какао",
+      "short": "5. Столик",
+      "desc": "Ореховый столик с имбирными пряниками, горячим какао и свечным фонарём."
+    },
+    "ja": {
+      "name": "ジンジャーブレッド＆ココア卓",
+      "short": "5. テーブル",
+      "desc": "ジンジャークッキーと温かいスパイスココア、キャンドルランタンが並ぶテーブル。"
+    },
+    "ko": {
+      "name": "진저브레드 쿠키 & 코코아 테이블",
+      "short": "5. 티테이블",
+      "desc": "진저브레드 쿠키와 따뜻한 시나몬 코코아, 캔들 랜턴이 놓인 호두나무 테이블."
+    },
+    "zh": {
+      "name": "姜饼茶点与肉桂热饮矮桌",
+      "short": "5. 茶点桌",
+      "desc": "雕花胡桃木茶几上摆满姜饼人曲奇、热气腾腾的肉桂热饮与烛光灯笼。"
+    },
+    "ar": {
+      "name": "طاولة كعك الزنجبيل والمشروبات الدافئة",
+      "short": "5. طاولة الضيافة",
+      "desc": "طاولة من خشب الجوز عليها كعك الزنجبيل وأكواب الكاكاو الساخن وفانوس شمعة."
+    }
   }
 };
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, Image, StyleSheet, Text, View } from 'react-native';
 import Svg, {
+  Circle,
   Defs,
   G,
   Line,
@@ -62,15 +63,23 @@ interface TrackLUT {
 
 interface ZoneGeometry {
   d: string;
+  deckPolygonD: string;
   leftRailD: string;
   rightRailD: string;
-  planks: Array<{ x1: number; y1: number; x2: number; y2: number }>;
+  planks: Array<{
+    quadD: string;
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+  }>;
+  cornerPosts: Array<{ x: number; y: number }>;
   midPt: TrackPoint;
 }
 
 /**
- * Builds SVG paths & cross-plank coordinates for a track zone (Bridge or Ice Zone)
- * spanning from `startPct` (0..100) to `endPct` (0..100).
+ * Builds SVG paths, closed 3D deck polygon, and fitted wedge-plank quads
+ * for a track zone (Bridge or Ice Zone) spanning from startPct to endPct.
  */
 function buildZoneGeometry(
   lut: TrackLUT,
@@ -80,27 +89,37 @@ function buildZoneGeometry(
 ): ZoneGeometry {
   const d0 = Math.max(0, Math.min(1, startPct / 100)) * lut.total;
   const d1 = Math.max(0, Math.min(1, endPct / 100)) * lut.total;
-  const span = Math.max(10, d1 - d0);
+  const span = Math.max(12, d1 - d0);
   const midPt = lut.sample((d0 + d1) * 0.5);
-  const steps = 28;
+
+  function smoothNormalAt(dist: number) {
+    const p = lut.sample(dist);
+    const pa = lut.sample(Math.max(0, dist - 6));
+    const pb = lut.sample(Math.min(lut.total, dist + 6));
+    const snx = pa.nx * 0.25 + p.nx * 0.5 + pb.nx * 0.25;
+    const sny = pa.ny * 0.25 + p.ny * 0.5 + pb.ny * 0.25;
+    const sl = Math.hypot(snx, sny) || 1;
+    return { x: p.x, y: p.y, nx: snx / sl, ny: sny / sl };
+  }
+
+  const steps = 24;
   let d = '';
   let leftRailD = '';
   let rightRailD = '';
+  const leftPts: Array<{ x: number; y: number }> = [];
+  const rightPts: Array<{ x: number; y: number }> = [];
 
   for (let i = 0; i <= steps; i++) {
     const dist = d0 + (span * i) / steps;
-    const pt = lut.sample(dist);
-    // Blend point normal with midpoint normal (35% local, 65% mid) to prevent any crossing lines
-    const snx = pt.nx * 0.35 + midPt.nx * 0.65;
-    const sny = pt.ny * 0.35 + midPt.ny * 0.65;
-    const sl = Math.hypot(snx, sny) || 1;
-    const fnx = snx / sl;
-    const fny = sny / sl;
+    const pt = smoothNormalAt(dist);
 
-    const lx = pt.x + fnx * halfWidth;
-    const ly = pt.y + fny * halfWidth;
-    const rx = pt.x - fnx * halfWidth;
-    const ry = pt.y - fny * halfWidth;
+    const lx = pt.x + pt.nx * halfWidth;
+    const ly = pt.y + pt.ny * halfWidth;
+    const rx = pt.x - pt.nx * halfWidth;
+    const ry = pt.y - pt.ny * halfWidth;
+
+    leftPts.push({ x: lx, y: ly });
+    rightPts.push({ x: rx, y: ry });
 
     const cmd = i === 0 ? 'M' : 'L';
     d += `${i === 0 ? '' : ' '}${cmd} ${pt.x.toFixed(1)} ${pt.y.toFixed(1)}`;
@@ -108,26 +127,63 @@ function buildZoneGeometry(
     rightRailD += `${i === 0 ? '' : ' '}${cmd} ${rx.toFixed(1)} ${ry.toFixed(1)}`;
   }
 
-  const plankCount = Math.max(5, Math.min(12, Math.round(span / 15)));
-  const planks: Array<{ x1: number; y1: number; x2: number; y2: number }> = [];
-  for (let i = 0; i <= plankCount; i++) {
-    const dist = d0 + (span * i) / plankCount;
-    const pt = lut.sample(dist);
-    const snx = pt.nx * 0.35 + midPt.nx * 0.65;
-    const sny = pt.ny * 0.35 + midPt.ny * 0.65;
-    const sl = Math.hypot(snx, sny) || 1;
-    const fnx = snx / sl;
-    const fny = sny / sl;
+  let deckPolygonD = '';
+  for (let i = 0; i < leftPts.length; i++) {
+    const p = leftPts[i];
+    deckPolygonD += `${i === 0 ? 'M' : ' L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`;
+  }
+  for (let i = rightPts.length - 1; i >= 0; i--) {
+    const p = rightPts[i];
+    deckPolygonD += ` L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`;
+  }
+  deckPolygonD += ' Z';
+
+  const plankCount = 6;
+  const plankHalfW = halfWidth * 0.92;
+  const planks: Array<{
+    quadD: string;
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+  }> = [];
+
+  for (let i = 0; i < plankCount; i++) {
+    const da = d0 + (span * (i + 0.08)) / plankCount;
+    const db = d0 + (span * (i + 0.92)) / plankCount;
+    const dm = (da + db) * 0.5;
+    const pa = smoothNormalAt(da);
+    const pb = smoothNormalAt(db);
+    const pm = smoothNormalAt(dm);
+
+    const ax1 = pa.x + pa.nx * plankHalfW;
+    const ay1 = pa.y + pa.ny * plankHalfW;
+    const bx1 = pb.x + pb.nx * plankHalfW;
+    const by1 = pb.y + pb.ny * plankHalfW;
+    const bx2 = pb.x - pb.nx * plankHalfW;
+    const by2 = pb.y - pb.ny * plankHalfW;
+    const ax2 = pa.x - pa.nx * plankHalfW;
+    const ay2 = pa.y - pa.ny * plankHalfW;
+
+    const quadD = `M ${ax1.toFixed(1)} ${ay1.toFixed(1)} L ${bx1.toFixed(1)} ${by1.toFixed(1)} L ${bx2.toFixed(1)} ${by2.toFixed(1)} L ${ax2.toFixed(1)} ${ay2.toFixed(1)} Z`;
 
     planks.push({
-      x1: pt.x + fnx * (halfWidth * 0.96),
-      y1: pt.y + fny * (halfWidth * 0.96),
-      x2: pt.x - fnx * (halfWidth * 0.96),
-      y2: pt.y - fnx * (halfWidth * 0.96),
+      quadD,
+      x1: pm.x + pm.nx * (plankHalfW * 0.88),
+      y1: pm.y + pm.ny * (plankHalfW * 0.88),
+      x2: pm.x - pm.nx * (plankHalfW * 0.88),
+      y2: pm.y - pm.ny * (plankHalfW * 0.88),
     });
   }
 
-  return { d, leftRailD, rightRailD, planks, midPt };
+  const cornerPosts = [
+    leftPts[0],
+    rightPts[0],
+    leftPts[leftPts.length - 1],
+    rightPts[rightPts.length - 1],
+  ];
+
+  return { d, deckPolygonD, leftRailD, rightRailD, planks, cornerPosts, midPt };
 }
 
 /**
@@ -135,7 +191,7 @@ function buildZoneGeometry(
  * Generates mathematically continuous, grand 3D winding tracks with:
  * 1. Constant Physical Speed (px/s) across straight stretches, curves, loops & spirals.
  * 2. Uniform cable-knit ring spacing (zero bunching on turns, zero stretching on straights).
- * 3. Guaranteed inner padding (zero edge clipping on any screen).
+ * 3. Guaranteed inner padding & clean inter-loop separation (zero canal overlap).
  */
 function createTrackLUT(shape: TrackShape, W: number, H: number): TrackLUT {
   const padX = Math.max(26, W * 0.07);
@@ -150,36 +206,36 @@ function createTrackLUT(shape: TrackShape, W: number, H: number): TrackLUT {
     const t = Math.max(0, Math.min(1, p));
     switch (shape) {
       case 'clover': {
-        const theta = -Math.PI * 0.5 + t * Math.PI * 4.4;
-        const rFactor = (1.0 - t * 0.45) * (0.84 + 0.16 * Math.cos(4 * theta));
+        const theta = -Math.PI * 0.5 + t * Math.PI * 3.4;
+        const rFactor = (1.0 - t * 0.58) * (0.86 + 0.14 * Math.cos(4 * theta));
         return { x: cx + rxMax * rFactor * Math.cos(theta), y: cy + ryMax * rFactor * Math.sin(theta) };
       }
       case 'horseshoe': {
-        const theta = -Math.PI * 0.85 + t * Math.PI * 3.4;
-        const rFactor = 0.96 - t * 0.48;
+        const theta = -Math.PI * 0.85 + t * Math.PI * 3.2;
+        const rFactor = 0.98 - t * 0.56;
         return { x: cx + rxMax * rFactor * Math.cos(theta), y: cy + ryMax * rFactor * Math.sin(theta) };
       }
       case 'labyrinth':
       case 's_curve': {
-        const theta = t * Math.PI * 5.0;
+        const theta = t * Math.PI * 4.4;
         return {
           x: cx + rxMax * 0.94 * Math.cos(theta),
-          y: padYTop + (H - padYTop - padYBottom) * (t * 0.90 + 0.05 * Math.sin(theta)),
+          y: padYTop + (H - padYTop - padYBottom) * (t * 0.90 + 0.04 * Math.sin(theta)),
         };
       }
       case 'rollercoaster': {
-        const theta = t * Math.PI * 3.6 - Math.PI * 0.5;
-        const decay = 1.0 - t * 0.42;
-        const modX = Math.cos(theta) + 0.20 * Math.sin(2 * theta);
-        const modY = Math.sin(theta) + 0.22 * Math.cos(2 * theta);
+        const theta = t * Math.PI * 3.2 - Math.PI * 0.5;
+        const decay = 1.0 - t * 0.54;
+        const modX = Math.cos(theta) + 0.18 * Math.sin(2 * theta);
+        const modY = Math.sin(theta) + 0.20 * Math.cos(2 * theta);
         return {
-          x: cx + rxMax * modX * decay * 0.82,
-          y: cy + ryMax * modY * decay * 0.82,
+          x: cx + rxMax * modX * decay * 0.86,
+          y: cy + ryMax * modY * decay * 0.86,
         };
       }
       case 'infinity': {
-        const theta = t * Math.PI * 2.6 - Math.PI * 0.5;
-        const rFactor = 0.98 - t * 0.30;
+        const theta = t * Math.PI * 2.4 - Math.PI * 0.5;
+        const rFactor = 0.98 - t * 0.36;
         const denom = 1 + Math.sin(theta) * Math.sin(theta);
         return {
           x: cx + (rxMax * rFactor * Math.cos(theta)) / denom,
@@ -187,46 +243,46 @@ function createTrackLUT(shape: TrackShape, W: number, H: number): TrackLUT {
         };
       }
       case 'heart': {
-        const theta = -Math.PI * 0.5 + t * Math.PI * 3.4;
-        const decay = 1.0 - t * 0.38;
+        const theta = -Math.PI * 0.5 + t * Math.PI * 3.2;
+        const decay = 1.0 - t * 0.52;
         const sinT = Math.sin(theta);
         const hx = 16 * Math.pow(sinT, 3);
         const hy = -(13 * Math.cos(theta) - 5 * Math.cos(2 * theta) - 2 * Math.cos(3 * theta) - Math.cos(4 * theta));
         return {
-          x: cx + (hx / 16) * rxMax * decay * 0.88,
-          y: cy + (hy / 17) * ryMax * decay * 0.90,
+          x: cx + (hx / 16) * rxMax * decay * 0.90,
+          y: cy + (hy / 17) * ryMax * decay * 0.92,
         };
       }
       case 'butterfly': {
-        const theta = -Math.PI * 0.5 + t * Math.PI * 4.2;
-        const decay = 1.0 - t * 0.42;
-        const wing = Math.sin(theta) * (Math.exp(Math.cos(theta)) - 2 * Math.cos(4 * theta));
-        const wingY = Math.cos(theta) * (Math.exp(Math.cos(theta)) - 2 * Math.cos(4 * theta));
+        const theta = -Math.PI * 0.5 + t * Math.PI * 3.1;
+        const decay = 1.0 - t * 0.48;
+        const wing = Math.sin(theta) * (Math.exp(Math.cos(theta)) - 1.8 * Math.cos(4 * theta));
+        const wingY = Math.cos(theta) * (Math.exp(Math.cos(theta)) - 1.8 * Math.cos(4 * theta));
         return {
-          x: cx + (wing / 3.4) * rxMax * decay * 0.88,
-          y: cy + (wingY / 3.4) * ryMax * decay * 0.88,
+          x: cx + (wing / 3.2) * rxMax * decay * 0.90,
+          y: cy + (wingY / 3.2) * ryMax * decay * 0.90,
         };
       }
       case 'pretzel': {
-        const theta = t * Math.PI * 3.4 - Math.PI * 0.5;
-        const decay = 1.0 - t * 0.38;
-        const px = Math.sin(theta) + 0.55 * Math.sin(2 * theta);
-        const py = Math.cos(theta) - 0.55 * Math.cos(2 * theta);
+        const theta = t * Math.PI * 3.1 - Math.PI * 0.5;
+        const decay = 1.0 - t * 0.48;
+        const px = Math.sin(theta) + 0.52 * Math.sin(2 * theta);
+        const py = Math.cos(theta) - 0.52 * Math.cos(2 * theta);
         return {
-          x: cx + (px / 1.55) * rxMax * decay * 0.90,
-          y: cy + (py / 1.55) * ryMax * decay * 0.90,
+          x: cx + (px / 1.52) * rxMax * decay * 0.92,
+          y: cy + (py / 1.52) * ryMax * decay * 0.92,
         };
       }
       case 'blossom': {
-        const theta = -Math.PI * 0.5 + t * Math.PI * 4.6;
-        const rFactor = (1.0 - t * 0.48) * (0.80 + 0.20 * Math.cos(5 * theta));
+        const theta = -Math.PI * 0.5 + t * Math.PI * 3.4;
+        const rFactor = (1.0 - t * 0.58) * (0.84 + 0.16 * Math.cos(5 * theta));
         return {
           x: cx + rxMax * rFactor * Math.cos(theta),
           y: cy + ryMax * rFactor * Math.sin(theta),
         };
       }
       case 'zigzag_grand': {
-        const theta = t * Math.PI * 5.6;
+        const theta = t * Math.PI * 4.6;
         const progressY = t * 0.88 + 0.06;
         return {
           x: cx + rxMax * 0.92 * Math.sin(theta),
@@ -234,51 +290,51 @@ function createTrackLUT(shape: TrackShape, W: number, H: number): TrackLUT {
         };
       }
       case 'yin_yang': {
-        const theta = t * Math.PI * 3.6 - Math.PI * 0.5;
-        const rFactor = (1.0 - t * 0.48) * (0.84 + 0.16 * Math.sin(2 * theta));
+        const theta = t * Math.PI * 3.2 - Math.PI * 0.5;
+        const rFactor = (1.0 - t * 0.58) * (0.86 + 0.14 * Math.sin(2 * theta));
         return {
           x: cx + rxMax * rFactor * Math.cos(theta),
           y: cy + ryMax * rFactor * Math.sin(theta),
         };
       }
       case 'diamond': {
-        const theta = t * Math.PI * 3.8 - Math.PI * 0.25;
-        const decay = 1.0 - t * 0.42;
-        const cosD = Math.pow(Math.abs(Math.cos(theta)), 0.65) * Math.sign(Math.cos(theta));
-        const sinD = Math.pow(Math.abs(Math.sin(theta)), 0.65) * Math.sign(Math.sin(theta));
+        const theta = t * Math.PI * 3.3 - Math.PI * 0.25;
+        const decay = 1.0 - t * 0.56;
+        const cosD = Math.pow(Math.abs(Math.cos(theta)), 0.68) * Math.sign(Math.cos(theta));
+        const sinD = Math.pow(Math.abs(Math.sin(theta)), 0.68) * Math.sign(Math.sin(theta));
         return {
-          x: cx + rxMax * cosD * decay * 0.90,
-          y: cy + ryMax * sinD * decay * 0.90,
+          x: cx + rxMax * cosD * decay * 0.92,
+          y: cy + ryMax * sinD * decay * 0.92,
         };
       }
       case 'snail_shell': {
-        const theta = -Math.PI * 0.4 + t * Math.PI * 4.4;
-        const rFactor = (1.0 - t * 0.56) * 0.96;
+        const theta = -Math.PI * 0.4 + t * Math.PI * 3.5;
+        const rFactor = (1.0 - t * 0.62) * 0.98;
         return {
           x: cx + rxMax * rFactor * Math.cos(theta) * 0.96,
           y: cy + ryMax * rFactor * Math.sin(theta) * 0.96,
         };
       }
       case 'guitar': {
-        const theta = t * Math.PI * 3.2 - Math.PI * 0.5;
-        const waist = 0.72 + 0.28 * Math.cos(2 * theta);
-        const decay = 1.0 - t * 0.38;
+        const theta = t * Math.PI * 3.1 - Math.PI * 0.5;
+        const waist = 0.74 + 0.26 * Math.cos(2 * theta);
+        const decay = 1.0 - t * 0.54;
         return {
-          x: cx + rxMax * Math.cos(theta) * waist * decay * 0.92,
-          y: cy + ryMax * Math.sin(theta) * decay * 0.92,
+          x: cx + rxMax * Math.cos(theta) * waist * decay * 0.94,
+          y: cy + ryMax * Math.sin(theta) * decay * 0.94,
         };
       }
       case 'star_spiral': {
-        const theta = -Math.PI * 0.5 + t * Math.PI * 4.6;
-        const starMod = 0.82 + 0.18 * Math.cos(5 * theta);
-        const decay = 1.0 - t * 0.44;
+        const theta = -Math.PI * 0.5 + t * Math.PI * 3.4;
+        const starMod = 0.84 + 0.16 * Math.cos(5 * theta);
+        const decay = 1.0 - t * 0.58;
         return {
-          x: cx + rxMax * Math.cos(theta) * starMod * decay * 0.90,
-          y: cy + ryMax * Math.sin(theta) * starMod * decay * 0.90,
+          x: cx + rxMax * Math.cos(theta) * starMod * decay * 0.92,
+          y: cy + ryMax * Math.sin(theta) * starMod * decay * 0.92,
         };
       }
       case 'serpentine_waves': {
-        const theta = t * Math.PI * 5.2;
+        const theta = t * Math.PI * 4.4;
         const waveY = t * 0.86 + 0.07;
         return {
           x: cx + rxMax * 0.90 * Math.cos(theta),
@@ -287,63 +343,57 @@ function createTrackLUT(shape: TrackShape, W: number, H: number): TrackLUT {
       }
       case 'hourglass': {
         const theta = t * Math.PI * 2.8 - Math.PI * 0.5;
-        const pinch = 0.58 + 0.42 * Math.abs(Math.sin(theta));
-        const decay = 1.0 - t * 0.32;
+        const pinch = 0.62 + 0.38 * Math.abs(Math.sin(theta));
+        const decay = 1.0 - t * 0.48;
         return {
-          x: cx + rxMax * Math.cos(theta) * pinch * decay * 0.92,
-          y: cy + ryMax * Math.sin(theta) * decay * 0.92,
+          x: cx + rxMax * Math.cos(theta) * pinch * decay * 0.94,
+          y: cy + ryMax * Math.sin(theta) * decay * 0.94,
         };
       }
       case 'bridge_cross': {
-        // Grand Overpass Arch & Underpass Sweep (L19+ Bridge Track)
-        const theta = -Math.PI * 0.65 + t * Math.PI * 3.6;
-        const decay = 0.96 - t * 0.46;
-        const pinchX = 0.84 + 0.16 * Math.cos(2 * theta);
+        const theta = -Math.PI * 0.65 + t * Math.PI * 3.2;
+        const decay = 0.98 - t * 0.56;
+        const pinchX = 0.86 + 0.14 * Math.cos(2 * theta);
         return {
           x: cx + rxMax * Math.cos(theta) * pinchX * decay,
-          y: cy + ryMax * (Math.sin(theta) + 0.18 * Math.sin(3 * theta)) * decay * 0.88,
+          y: cy + ryMax * (Math.sin(theta) + 0.15 * Math.sin(3 * theta)) * decay * 0.90,
         };
       }
       case 'frozen_fjord': {
-        // Nordic Glacial Fjord Serpentine (L20+ Ice Zone Track)
-        const theta = -Math.PI * 0.5 + t * Math.PI * 4.0;
-        const rFactor = (0.96 - t * 0.48) * (0.85 + 0.15 * Math.sin(3 * theta));
+        const theta = -Math.PI * 0.5 + t * Math.PI * 3.3;
+        const rFactor = (0.98 - t * 0.58) * (0.86 + 0.14 * Math.sin(3 * theta));
         return {
           x: cx + rxMax * rFactor * Math.cos(theta),
           y: cy + ryMax * rFactor * Math.sin(theta),
         };
       }
       case 'carousel_circus': {
-        // 6-Scallop Festive Carousel Coil (L21+ Conveyor Track)
-        const theta = -Math.PI * 0.5 + t * Math.PI * 4.2;
-        const rFactor = (0.96 - t * 0.48) * (0.86 + 0.14 * Math.cos(6 * theta));
+        const theta = -Math.PI * 0.5 + t * Math.PI * 3.4;
+        const rFactor = (0.98 - t * 0.58) * (0.88 + 0.12 * Math.cos(6 * theta));
         return {
           x: cx + rxMax * rFactor * Math.cos(theta),
           y: cy + ryMax * rFactor * Math.sin(theta),
         };
       }
       case 'dragon_spiral': {
-        // Coiling Dragon Tail Vortex
-        const theta = -Math.PI * 0.35 + t * Math.PI * 4.3;
-        const rFactor = (0.97 - t * 0.54) * (0.90 + 0.10 * Math.sin(2 * theta));
+        const theta = -Math.PI * 0.35 + t * Math.PI * 3.4;
+        const rFactor = (0.98 - t * 0.60) * (0.90 + 0.10 * Math.sin(2 * theta));
         return {
           x: cx + rxMax * rFactor * Math.cos(theta),
           y: cy + ryMax * rFactor * Math.sin(theta),
         };
       }
       case 'escalator_zigzag': {
-        // Terraced Escalator Cascade
-        const theta = t * Math.PI * 4.8;
+        const theta = t * Math.PI * 4.4;
         const stepY = t * 0.86 + 0.07;
         return {
-          x: cx + rxMax * 0.90 * Math.sin(theta + 0.25 * Math.sin(2 * theta)),
+          x: cx + rxMax * 0.90 * Math.sin(theta + 0.22 * Math.sin(2 * theta)),
           y: padYTop + (H - padYTop - padYBottom) * stepY,
         };
       }
       case 'celtic_nexus': {
-        // 3-Lobe Triquetra Celtic Nexus
-        const theta = -Math.PI * 0.5 + t * Math.PI * 4.1;
-        const rFactor = (0.96 - t * 0.46) * (0.82 + 0.18 * Math.cos(3 * theta));
+        const theta = -Math.PI * 0.5 + t * Math.PI * 3.3;
+        const rFactor = (0.98 - t * 0.58) * (0.84 + 0.16 * Math.cos(3 * theta));
         return {
           x: cx + rxMax * rFactor * Math.cos(theta),
           y: cy + ryMax * rFactor * Math.sin(theta),
@@ -351,8 +401,8 @@ function createTrackLUT(shape: TrackShape, W: number, H: number): TrackLUT {
       }
       case 'spiral':
       default: {
-        const theta = -Math.PI * 0.5 + t * Math.PI * 3.8;
-        const rFactor = 0.96 - t * 0.52;
+        const theta = -Math.PI * 0.5 + t * Math.PI * 3.3;
+        const rFactor = 0.98 - t * 0.58;
         return { x: cx + rxMax * rFactor * Math.cos(theta), y: cy + ryMax * rFactor * Math.sin(theta) };
       }
     }
@@ -547,14 +597,14 @@ export function SnakeTrackView({
   const bridgeEnd = game.bridge?.end ?? null;
   const bridgeGeom = useMemo(() => {
     if (bridgeStart === null || bridgeEnd === null) return null;
-    return buildZoneGeometry(lut, bridgeStart, bridgeEnd, jointSize * 0.68);
+    return buildZoneGeometry(lut, bridgeStart, bridgeEnd, jointSize * 0.55);
   }, [lut, bridgeStart, bridgeEnd, jointSize]);
 
   const iceStart = game.iceZone?.start ?? null;
   const iceEnd = game.iceZone?.end ?? null;
   const iceGeom = useMemo(() => {
     if (iceStart === null || iceEnd === null) return null;
-    return buildZoneGeometry(lut, iceStart, iceEnd, jointSize * 0.62);
+    return buildZoneGeometry(lut, iceStart, iceEnd, jointSize * 0.52);
   }, [lut, iceStart, iceEnd, jointSize]);
 
   const isIceThawed = (game.iceZone?.thawDuration ?? 0) > 0;
@@ -886,136 +936,111 @@ export function SnakeTrackView({
           {/* 3D Artisan Wooden Bridge Spanning OVER the Track & Snake */}
           {bridgeGeom && (
             <G>
-              {/* Soft under-bridge ambient shadow onto the track below */}
+              {/* 1. Soft under-bridge ambient shadow cast onto the track & snake below */}
               <Path
                 d={bridgeGeom.d}
-                stroke="rgba(15, 6, 2, 0.40)"
-                strokeWidth={jointSize * 1.35}
-                strokeLinecap="round"
+                stroke="rgba(12, 5, 2, 0.52)"
+                strokeWidth={jointSize * 1.26}
+                strokeLinecap="butt"
                 strokeLinejoin="round"
                 fill="none"
                 transform="translate(0, 4)"
               />
 
-              {/* Sturdy dark walnut support stringers along left & right bridge edges */}
+              {/* 2. Solid Mahogany/Walnut Bridge Deck Base so the bridge reads as a real 3D overpass */}
               <Path
-                d={bridgeGeom.leftRailD}
-                stroke="#3E1D08"
-                strokeWidth={7.5}
-                strokeLinecap="round"
-                fill="none"
-              />
-              <Path
-                d={bridgeGeom.rightRailD}
-                stroke="#3E1D08"
-                strokeWidth={7.5}
-                strokeLinecap="round"
-                fill="none"
+                d={bridgeGeom.deckPolygonD}
+                fill="rgba(64, 28, 10, 0.90)"
+                stroke="#260E03"
+                strokeWidth={2.0}
+                strokeLinejoin="round"
               />
 
-              {/* Transverse Wooden Bridge Planks with clear gaps so the colorful snake is visible underneath! */}
+              {/* 3. Fitted Wedge-Shaped Cedar Deck Planks with Wood Grain Highlights */}
               {bridgeGeom.planks.map((pl, idx) => (
                 <G key={`plank_${idx}`}>
-                  {/* Plank shadow on deck */}
-                  <Line
-                    x1={pl.x1}
-                    y1={pl.y1 + 1.5}
-                    x2={pl.x2}
-                    y2={pl.y2 + 1.5}
-                    stroke="rgba(15, 6, 2, 0.55)"
-                    strokeWidth={5.8}
-                    strokeLinecap="round"
+                  <Path
+                    d={pl.quadD}
+                    fill={idx % 2 === 0 ? '#CA7E3B' : '#B66A29'}
+                    stroke="#3E1D08"
+                    strokeWidth={1.1}
+                    strokeLinejoin="round"
                   />
-                  {/* Plank wood body */}
                   <Line
                     x1={pl.x1}
                     y1={pl.y1}
                     x2={pl.x2}
                     y2={pl.y2}
-                    stroke={idx % 2 === 0 ? '#C87D3B' : '#B56928'}
-                    strokeWidth={5.0}
+                    stroke="#F4C992"
+                    strokeWidth={1.3}
                     strokeLinecap="round"
-                  />
-                  {/* Top wood bevel highlight */}
-                  <Line
-                    x1={pl.x1}
-                    y1={pl.y1 - 0.8}
-                    x2={pl.x2}
-                    y2={pl.y2 - 0.8}
-                    stroke="#F3C68F"
-                    strokeWidth={1.4}
-                    strokeLinecap="round"
-                    opacity={0.80}
+                    opacity={0.75}
                   />
                 </G>
               ))}
 
-              {/* Polished Teak Handrails (SOLID lines, no messy dashed lines!) */}
+              {/* 4. Sturdy Dark Walnut Outer Parapets along Left & Right Bridge Edges */}
               <Path
                 d={bridgeGeom.leftRailD}
-                stroke="#DDA15E"
-                strokeWidth={3.5}
+                stroke="#2B1204"
+                strokeWidth={8.0}
                 strokeLinecap="round"
+                strokeLinejoin="round"
                 fill="none"
               />
               <Path
                 d={bridgeGeom.rightRailD}
-                stroke="#DDA15E"
-                strokeWidth={3.5}
+                stroke="#2B1204"
+                strokeWidth={8.0}
                 strokeLinecap="round"
+                strokeLinejoin="round"
                 fill="none"
               />
 
-              {/* 4 Carved Wooden Corner Bollards with Brass Caps at Bridge Entry & Exit */}
-              {bridgeGeom.planks.length > 0 && (
-                <G>
-                  {[
-                    bridgeGeom.planks[0],
-                    bridgeGeom.planks[bridgeGeom.planks.length - 1],
-                  ].map((postPlank, pIdx) => (
-                    <React.Fragment key={`posts_${pIdx}`}>
-                      {/* Left Post */}
-                      <Line
-                        x1={postPlank.x1}
-                        y1={postPlank.y1 - 3}
-                        x2={postPlank.x1}
-                        y2={postPlank.y1 + 3}
-                        stroke="#2B1204"
-                        strokeWidth={7}
-                        strokeLinecap="round"
-                      />
-                      <Line
-                        x1={postPlank.x1}
-                        y1={postPlank.y1 - 3}
-                        x2={postPlank.x1}
-                        y2={postPlank.y1 - 1}
-                        stroke="#F59E0B"
-                        strokeWidth={5}
-                        strokeLinecap="round"
-                      />
-                      {/* Right Post */}
-                      <Line
-                        x1={postPlank.x2}
-                        y1={postPlank.y2 - 3}
-                        x2={postPlank.x2}
-                        y2={postPlank.y2 + 3}
-                        stroke="#2B1204"
-                        strokeWidth={7}
-                        strokeLinecap="round"
-                      />
-                      <Line
-                        x1={postPlank.x2}
-                        y1={postPlank.y2 - 3}
-                        x2={postPlank.x2}
-                        y2={postPlank.y2 - 1}
-                        stroke="#F59E0B"
-                        strokeWidth={5}
-                        strokeLinecap="round"
-                      />
-                    </React.Fragment>
-                  ))}
+              {/* 5. Polished Honey-Teak Top Handrails */}
+              <Path
+                d={bridgeGeom.leftRailD}
+                stroke="#E0A458"
+                strokeWidth={4.2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+              />
+              <Path
+                d={bridgeGeom.rightRailD}
+                stroke="#E0A458"
+                strokeWidth={4.2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+              />
+              <Path
+                d={bridgeGeom.leftRailD}
+                stroke="#FDE68A"
+                strokeWidth={1.4}
+                strokeLinecap="round"
+                fill="none"
+                opacity={0.85}
+              />
+              <Path
+                d={bridgeGeom.rightRailD}
+                stroke="#FDE68A"
+                strokeWidth={1.4}
+                strokeLinecap="round"
+                fill="none"
+                opacity={0.85}
+              />
+
+              {/* 6. 4 Rotation-Invariant Round 3D Corner Bollard Posts with Brass Caps */}
+              {bridgeGeom.cornerPosts.map((post, pIdx) => (
+                <G key={`post_${pIdx}`}>
+                  <Circle cx={post.x} cy={post.y + 1.5} r={6.4} fill="rgba(10, 4, 1, 0.45)" />
+                  <Circle cx={post.x} cy={post.y} r={5.8} fill="#2B1204" stroke="#140701" strokeWidth={1.0} />
+                  <Circle cx={post.x} cy={post.y} r={4.2} fill="#8C4A1C" />
+                  <Circle cx={post.x} cy={post.y} r={2.8} fill="#F59E0B" />
+                  <Circle cx={post.x - 0.7} cy={post.y - 0.7} r={1.1} fill="#FEF3C7" />
                 </G>
-              )}
+              ))}
             </G>
           )}
         </Svg>
@@ -1028,8 +1053,20 @@ export function SnakeTrackView({
           style={[
             styles.zoneBadge,
             {
-              left: Math.max(8, Math.min(viewWidth - 88, bridgeGeom.midPt.x - 38)),
-              top: Math.max(6, Math.min(viewHeight - 32, bridgeGeom.midPt.y - 14)),
+              left: Math.max(
+                8,
+                Math.min(
+                  viewWidth - 88,
+                  bridgeGeom.midPt.x + bridgeGeom.midPt.nx * (jointSize * 0.62) - 38,
+                ),
+              ),
+              top: Math.max(
+                6,
+                Math.min(
+                  viewHeight - 32,
+                  bridgeGeom.midPt.y + bridgeGeom.midPt.ny * (jointSize * 0.62) - 12,
+                ),
+              ),
               backgroundColor: isHeadUnderBridge ? '#FEF3C7' : 'rgba(62, 29, 8, 0.92)',
               borderColor: isHeadUnderBridge ? '#F59E0B' : '#DDA15E',
             },

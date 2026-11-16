@@ -42,6 +42,16 @@ const SKI_LODGE_STAGE_IMAGES: Record<number, ImageSourcePropType> = {
   5: require('../../assets/images/ski_lodge_stage_5.jpg'), // + Karlı Pencere Sediri & Kar Feneri
 };
 
+// 6 Progressive 3D Miniature Diorama Room Stages for Room 3: Yeni Yıl Şömine Odası (Şenlik Odası)
+const HOLIDAY_HEARTH_STAGE_IMAGES: Record<number, ImageSourcePropType> = {
+  0: require('../../assets/images/holiday_stage_0.jpg'), // Sade taş şömineli kış odası
+  1: require('../../assets/images/holiday_stage_1.jpg'), // + Taş Şömine Ateşi & Örgü Çoraplar
+  2: require('../../assets/images/holiday_stage_2.jpg'), // + Yumak Süslemeli Çam Ağacı & Hediyeler
+  3: require('../../assets/images/holiday_stage_3.jpg'), // + Sıcak Altın Peri Işıkları & Pencere Çelengi
+  4: require('../../assets/images/holiday_stage_4.jpg'), // + Kızılcık Kadife Berjer & Yün Kış Halısı
+  5: require('../../assets/images/holiday_stage_5.jpg'), // + Zencefilli Kurabiye & Salep Sehpası
+};
+
 // Real 3D Bobbin Character Sprites with Ground Contact Shadows (Alpha RGBA PNGs)
 const BOBBIN_OUTFIT_IMAGES: Record<string, ImageSourcePropType> = {
   none: require('../../assets/images/bobbin_none.png'),
@@ -82,6 +92,15 @@ const SKI_LODGE_CATALOG_BASE: WorkshopItemBase[] = [
   { id: 'vintage_skis', step: 3, starsRequired: 15, icon: 'snow' as any, colorTag: '#0EA5E9' },
   { id: 'hot_cocoa', step: 4, starsRequired: 20, icon: 'cafe', colorTag: '#8B5CF6' },
   { id: 'tartan_daybed', step: 5, starsRequired: 30, icon: 'home', colorTag: '#10B981' },
+];
+
+// Room 3 Items Base: Yeni Yıl Şömine Odası (Şenlik Odası)
+const HOLIDAY_HEARTH_CATALOG_BASE: WorkshopItemBase[] = [
+  { id: 'festive_hearth', step: 1, starsRequired: 5, icon: 'flame', colorTag: '#EF4444' },
+  { id: 'holiday_pine_tree', step: 2, starsRequired: 10, icon: 'sparkles', colorTag: '#10B981' },
+  { id: 'fairy_lights_garland', step: 3, starsRequired: 15, icon: 'sunny', colorTag: '#F59E0B' },
+  { id: 'velvet_armchair_rug', step: 4, starsRequired: 20, icon: 'color-palette', colorTag: '#EC4899' },
+  { id: 'gingerbread_tea_table', step: 5, starsRequired: 30, icon: 'cafe', colorTag: '#8B5CF6' },
 ];
 
 interface KnitwearItemBase {
@@ -137,10 +156,9 @@ const ROOM_DEFINITIONS_BASE: RoomDefBase[] = [
   },
   {
     id: 'holiday_hearth',
-    stages: WORKSHOP_STAGE_IMAGES,
-    catalogBase: [],
+    stages: HOLIDAY_HEARTH_STAGE_IMAGES,
+    catalogBase: HOLIDAY_HEARTH_CATALOG_BASE,
     unlockLevel: 100,
-    isComingSoon: true,
   },
   {
     id: 'coastal_terrace',
@@ -211,6 +229,14 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
         (data.unlocked || 1) >= 50 ||
         room1Count >= 4 ||
         (data.unlockedRooms && data.unlockedRooms.includes('ski_lodge'))
+      );
+    }
+    if (roomId === 'holiday_hearth') {
+      const room2Count = SKI_LODGE_CATALOG_BASE.filter((i) => unlockedSet.has(i.id)).length;
+      return (
+        (data.unlocked || 1) >= 100 ||
+        room2Count >= 4 ||
+        (data.unlockedRooms && data.unlockedRooms.includes('holiday_hearth'))
       );
     }
     return false;
