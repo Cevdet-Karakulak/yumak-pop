@@ -190,7 +190,13 @@ const ROOM_DEFINITIONS_BASE: RoomDefBase[] = [
   },
 ];
 
-export function WorkshopScreen({ onBack }: { onBack: () => void }) {
+export function WorkshopScreen({
+  onBack,
+  initialRoomId,
+}: {
+  onBack: () => void;
+  initialRoomId?: string;
+}) {
   const { data, update, lang } = useSave();
   const insets = useSafeAreaInsets();
   const { width: winWidth, height: winHeight } = useWindowDimensions();
@@ -313,6 +319,20 @@ export function WorkshopScreen({ onBack }: { onBack: () => void }) {
       setSpeech(ui.welcomeReturn(activeRoom.name));
     }
   }, [activeRoom.name, currentLang]);
+
+  // Apply deep-linked target room (e.g. yumakpop://holiday -> holiday_hearth)
+  useEffect(() => {
+    if (!initialRoomId) return;
+    const targetRoom = localizedRooms.find((r) => r.id === initialRoomId);
+    if (!targetRoom) return;
+    if (isRoomUnlocked(targetRoom.id)) {
+      setActiveRoomId(targetRoom.id);
+      update((d) => ({ ...d, activeRoomId: targetRoom.id }));
+      setSpeech(ui.roomSelected(targetRoom.name));
+    } else {
+      setSpeech(ui.roomLockedProgress(targetRoom.name));
+    }
+  }, [initialRoomId]);
 
   // Pop animation when room stage or Bobbin outfit changes
   const characterPop = useRef(new Animated.Value(1)).current;

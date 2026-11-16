@@ -2,6 +2,7 @@
   "expo": {
     "name": "Yumak Pop",
     "slug": "yumak-pop",
+    "scheme": "yumakpop",
     "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

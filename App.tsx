@@ -7,8 +7,8 @@ import {
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
-import React, { useEffect, useRef, useState } from 'react';
-import { AppState, Platform, View } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState, Linking, Platform, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { initAudio, pauseMusic, syncMusic } from './src/audio';
 import { AnimatedSplashScreen } from './src/components/AnimatedSplashScreen';
@@ -42,7 +42,7 @@ type Route =
   | { name: 'home' }
   | { name: 'map' }
   | { name: 'game'; level: number; forceTutorial?: boolean }
-  | { name: 'workshop' };
+  | { name: 'workshop'; initialRoomId?: string };
 
 function Root() {
   const { loaded, data, update } = useSave();
@@ -80,6 +80,29 @@ function Root() {
       }
     }
   }, [loaded, splashFinished, route.name, data]);
+
+  // Handle custom deep links (e.g. yumakpop://holiday from App Store In-App Events)
+  const handleDeepLinkUrl = useCallback((url: string | null | undefined) => {
+    if (!url) return;
+    const lower = url.toLowerCase();
+    if (lower.includes('holiday')) {
+      setRoute({ name: 'workshop', initialRoomId: 'holiday_hearth' });
+    } else if (lower.includes('coastal')) {
+      setRoute({ name: 'workshop', initialRoomId: 'coastal_terrace' });
+    } else if (lower.includes('workshop')) {
+      setRoute({ name: 'workshop' });
+    } else if (lower.includes('map') || lower.includes('levels')) {
+      setRoute({ name: 'map' });
+    }
+  }, []);
+
+  useEffect(() => {
+    Linking.getInitialURL()
+      .then((url) => handleDeepLinkUrl(url))
+      .catch(() => {});
+    const sub = Linking.addEventListener('url', ({ url }) => handleDeepLinkUrl(url));
+    return () => sub.remove();
+  }, [handleDeepLinkUrl]);
 
   useEffect(() => {
     // Hide static native splash immediately so our interactive animated splash screen takes over
@@ -153,7 +176,10 @@ function Root() {
         />
       )}
       {route.name === 'workshop' && (
-        <WorkshopScreen onBack={() => setRoute({ name: 'home' })} />
+        <WorkshopScreen
+          initialRoomId={route.initialRoomId}
+          onBack={() => setRoute({ name: 'home' })}
+        />
       )}
       {route.name === 'map' && (
         <MapScreen onBack={() => setRoute({ name: 'home' })} onPlay={(n) => openLevel(n)} />
