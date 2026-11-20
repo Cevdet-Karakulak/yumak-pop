@@ -2515,8 +2515,701 @@ const HOLIDAY_NORMAL_UNLOCK_TEXT: Record<Lang, string> = {
   ar: 'المستوى 100 أو 80% من الكوخ',
 };
 
+const STARLIGHT_ROOM_I18N: Record<string, Record<Lang, RoomLocale>> = {
+  starlight_observatory: {
+    tr: {
+      name: 'Gökyüzü Rasathanesi & Kütüphane Kulesi',
+      badge: '🔭 Yıldız Kulesi',
+      subtitle: 'Kuzey Işıkları Manzaralı Astronomi & Örgü Kulesi',
+      unlockConditionText: '200. Seviye veya Sahil Terası %80',
+    },
+    en: {
+      name: 'Starlight Observatory & Library Tower',
+      badge: '🔭 Starlight Tower',
+      subtitle: 'Aurora-View Astronomy & Cozy Knitting Attic',
+      unlockConditionText: 'Level 200 or Coastal Terrace 80%',
+    },
+    de: {
+      name: 'Sternwarte & Bibliotheksturm',
+      badge: '🔭 Sternenturm',
+      subtitle: 'Astronomie- & Strickturm unter dem Polarlicht',
+      unlockConditionText: 'Level 200 oder Küstenterrasse 80%',
+    },
+    es: {
+      name: 'Observatorio Estelar y Torre Biblioteca',
+      badge: '🔭 Torre Estelar',
+      subtitle: 'Torre de Astronomía y Tejido bajo la Aurora',
+      unlockConditionText: 'Nivel 200 o Terraza Costera 80%',
+    },
+    fr: {
+      name: 'Observatoire Étoilé & Tour Bibliothèque',
+      badge: '🔭 Tour Étoilée',
+      subtitle: 'Grenier d’Astronomie et de Tricot sous l’Aurore',
+      unlockConditionText: 'Niveau 200 ou Terrasse Côtière 80%',
+    },
+    it: {
+      name: 'Osservatorio Stellare e Torre Biblioteca',
+      badge: '🔭 Torre Stellare',
+      subtitle: 'Torre di Astronomia e Maglia sotto l’Aurora',
+      unlockConditionText: 'Livello 200 o Terrazza Costiera 80%',
+    },
+    pt: {
+      name: 'Observatório Estelar e Torre Biblioteca',
+      badge: '🔭 Torre Estelar',
+      subtitle: 'Sótão de Astronomia e Tricô sob a Aurora',
+      unlockConditionText: 'Nível 200 ou Terraço Costeiro 80%',
+    },
+    ru: {
+      name: 'Звёздная Обсерватория и Башня-Библиотека',
+      badge: '🔭 Звёздная Башня',
+      subtitle: 'Уютная башня астрономии и вязания под сиянием',
+      unlockConditionText: 'Уровень 200 или Терраса 80%',
+    },
+    ja: {
+      name: '星空の天文台と図書塔',
+      badge: '🔭 星見の塔',
+      subtitle: 'オーロラを望む天文と編み物の屋根裏塔',
+      unlockConditionText: 'レベル200 または 海辺のテラス80%',
+    },
+    ko: {
+      name: '별빛 천문대 & 도서관 탑',
+      badge: '🔭 별빛 탑',
+      subtitle: '오로라가 보이는 아늑한 천문 & 뜨개질 다락방',
+      unlockConditionText: '200 레벨 또는 해안 테라스 80%',
+    },
+    zh: {
+      name: '星光天文台与藏书塔',
+      badge: '🔭 星光塔楼',
+      subtitle: '极光夜空下的温馨天文与编织阁楼',
+      unlockConditionText: '第200关 或 海岸露台达80%',
+    },
+    ar: {
+      name: 'مرصد النجوم وبرج المكتبة',
+      badge: '🔭 برج النجوم',
+      subtitle: 'برج الفلك والحياكة تحت أضواء الشفق القطبي',
+      unlockConditionText: 'المستوى 200 أو 80% من شرفة الساحل',
+    },
+  },
+};
+
+const STARLIGHT_ITEMS_I18N: Record<string, Record<Lang, { name: string; short: string; desc: string }>> = {
+  brass_telescope: {
+    tr: {
+      name: 'Antika Pirinç Teleskop',
+      short: '1. Pirinç Teleskop',
+      desc: 'Ceviz sehpalı parlak pirinç teleskopla kış takımyıldızlarını ve kutup ışıklarını izle.',
+    },
+    en: {
+      name: 'Antique Brass Telescope',
+      short: '1. Brass Telescope',
+      desc: 'Gaze at winter constellations and northern lights through a polished brass telescope on a walnut tripod.',
+    },
+    de: {
+      name: 'Antikes Messingteleskop',
+      short: '1. Messingteleskop',
+      desc: 'Beobachte Wintersternbilder und Polarlichter durch ein poliertes Messingteleskop.',
+    },
+    es: {
+      name: 'Telescopio Antiguo de Latón',
+      short: '1. Telescopio de Latón',
+      desc: 'Observa las constelaciones invernales y la aurora con un telescopio de latón pulido.',
+    },
+    fr: {
+      name: 'Télescope Ancien en Laiton',
+      short: '1. Télescope Laiton',
+      desc: 'Observez les constellations d’hiver et l’aurore boréale avec ce télescope en laiton poli.',
+    },
+    it: {
+      name: 'Telescopio Antico in Ottone',
+      short: '1. Telescopio Ottone',
+      desc: 'Ammira le costellazioni invernali e l’aurora attraverso un telescopio in ottone lucido.',
+    },
+    pt: {
+      name: 'Telescópio Antigo de Latão',
+      short: '1. Telescópio Latão',
+      desc: 'Observe as constelações de inverno e a aurora boreal com um telescópio de latão polido.',
+    },
+    ru: {
+      name: 'Старинный Латунный Телескоп',
+      short: '1. Латунный Телескоп',
+      desc: 'Наблюдайте за зимними созвездиями и северным сиянием через полированный латунный телескоп.',
+    },
+    ja: {
+      name: 'アンティーク真鍮望遠鏡',
+      short: '1. 真鍮の望遠鏡',
+      desc: 'クルミ材の三脚に据えられた真鍮の望遠鏡で冬の星座とオーロラを観察しましょう。',
+    },
+    ko: {
+      name: '앤티크 황동 망원경',
+      short: '1. 황동 망원경',
+      desc: '호두나무 삼각대 위의 황동 망원경으로 겨울 별자리와 오로라를 감상하세요.',
+    },
+    zh: {
+      name: '古典黄铜望远镜',
+      short: '1. 黄铜望远镜',
+      desc: '透过胡桃木三脚架上的抛光黄铜望远镜观赏冬日星座与绚丽极光。',
+    },
+    ar: {
+      name: 'تلسكوب نحاسي عتيق',
+      short: '1. تلسكوب نحاسي',
+      desc: 'تأمل كوكبات الشتاء والشفق القطبي عبر تلسكوب نحاسي مصقول على حامل من خشب الجوز.',
+    },
+  },
+  celestial_globe: {
+    tr: {
+      name: 'Tarihî Gökyüzü & Yıldız Küresi',
+      short: '2. Gökyüzü Küresi',
+      desc: 'Oyma ceviz kaide üzerinde dönen altın işlemeli antik gökyüzü ve takımyıldız küresi.',
+    },
+    en: {
+      name: 'Antique Celestial Star Globe',
+      short: '2. Celestial Globe',
+      desc: 'An heirloom constellation globe resting on a turned walnut pedestal beside the window.',
+    },
+    de: {
+      name: 'Antiker Himmelsglobus',
+      short: '2. Himmelsglobus',
+      desc: 'Ein historischer Sternbildglobus auf einem gedrechselten Walnusssockel.',
+    },
+    es: {
+      name: 'Globo Celeste Antiguo',
+      short: '2. Globo Celeste',
+      desc: 'Un globo de constelaciones antiguo sobre un pedestal de nogal torneado.',
+    },
+    fr: {
+      name: 'Globe Céleste Ancien',
+      short: '2. Globe Céleste',
+      desc: 'Un globe des constellations ancien posé sur un piédestal en noyer tourné.',
+    },
+    it: {
+      name: 'Globo Celeste Antico',
+      short: '2. Globo Celeste',
+      desc: 'Un antico globo delle costellazioni su un piedistallo in noce tornito.',
+    },
+    pt: {
+      name: 'Globo Celeste Antigo',
+      short: '2. Globo Celeste',
+      desc: 'Um globo de constelações histórico sobre um pedestal de nogueira torneada.',
+    },
+    ru: {
+      name: 'Старинный Небесный Глобус',
+      short: '2. Небесный Глобус',
+      desc: 'Антикварный глобус созвездий на точёной подставке из грецкого ореха.',
+    },
+    ja: {
+      name: '古地図の天球儀',
+      short: '2. 天球儀',
+      desc: '窓辺のクルミ材の台座に置かれた、星座が描かれたアンティーク天球儀。',
+    },
+    ko: {
+      name: '고전 천구의',
+      short: '2. 별자리 천구의',
+      desc: '조각된 호두나무 받침대 위에 놓인 고풍스러운 별자리 천구의입니다.',
+    },
+    zh: {
+      name: '古董星象天球仪',
+      short: '2. 星象天球仪',
+      desc: '安放在窗畔胡桃木底座上的古典星象与星座天球仪。',
+    },
+    ar: {
+      name: 'كرة سماوية عتيقة للنجوم',
+      short: '2. الكرة السماوية',
+      desc: 'كرة كوكبات سماوية تاريخية ترتكز على قاعدة مخروطة من خشب الجوز.',
+    },
+  },
+  walnut_bookshelf: {
+    tr: {
+      name: 'Merdivenli Ceviz Astronomi Kitaplığı',
+      short: '3. Ceviz Kitaplık',
+      desc: 'Deri ciltli gökbilim ciltleri, yıldız haritası parşömenleri ve ahşap merdivenli kavisli kitaplık.',
+    },
+    en: {
+      name: 'Curved Walnut Bookshelf & Ladder',
+      short: '3. Walnut Bookshelf',
+      desc: 'A grand curved walnut bookcase filled with leather-bound star atlases, scrolls, and a library ladder.',
+    },
+    de: {
+      name: 'Walnuss-Bücherregal mit Leiter',
+      short: '3. Bücherregal',
+      desc: 'Ein geschwungenes Walnussregal voller Sternatlanten, Schriftrollen und einer Holzleiter.',
+    },
+    es: {
+      name: 'Librería de Nogal con Escalera',
+      short: '3. Librería de Nogal',
+      desc: 'Una librería curva de nogal repleta de atlas estelares, pergaminos y escalera de madera.',
+    },
+    fr: {
+      name: 'Bibliothèque en Noyer avec Échelle',
+      short: '3. Bibliothèque',
+      desc: 'Une bibliothèque incurvée en noyer remplie d’atlas stellaires, de parchemins et d’une échelle.',
+    },
+    it: {
+      name: 'Libreria in Noce con Scala',
+      short: '3. Libreria in Noce',
+      desc: 'Una libreria curva in noce ricca di atlanti stellari rilegati in pelle e pergamene.',
+    },
+    pt: {
+      name: 'Estante de Nogueira com Escada',
+      short: '3. Estante Nogueira',
+      desc: 'Uma estante curva de nogueira repleta de atlas estelares, pergaminhos e escada de madeira.',
+    },
+    ru: {
+      name: 'Ореховый Книжный Шкаф с Лестницей',
+      short: '3. Книжный Шкаф',
+      desc: 'Изогнутый шкаф из ореха со звёздными атласами, свитками и приставной лестницей.',
+    },
+    ja: {
+      name: '梯子付きクルミ材の書棚',
+      short: '3. 天文書の書棚',
+      desc: '革装丁の星図や巻物がぎっしり並ぶ、木製はしご付きの曲線書棚。',
+    },
+    ko: {
+      name: '사다리 호두나무 천문 책장',
+      short: '3. 호두나무 책장',
+      desc: '가죽 장정 성도책과 두루마리 별지도, 원목 사다리가 어우러진 곡선형 책장입니다.',
+    },
+    zh: {
+      name: '胡桃木弧形藏书架与木梯',
+      short: '3. 弧形藏书架',
+      desc: '摆满皮面星图典籍与古老卷轴的胡桃木弧形书架，配有一架原木书梯。',
+    },
+    ar: {
+      name: 'مكتبة خشب الجوز مع سلّم',
+      short: '3. مكتبة الفلك',
+      desc: 'خزانة كتب منحنية من خشب الجوز مليئة بأطالس النجوم والمخطوطات وسلّم خشبي.',
+    },
+  },
+  constellation_rug: {
+    tr: {
+      name: 'Altın Takımyıldız Dokuma Halısı',
+      short: '4. Takımyıldız Halısı',
+      desc: 'Gece laciverti yün üzerine altın ipliklerle dokunmuş zodyak ve takımyıldız haritası halısı.',
+    },
+    en: {
+      name: 'Golden Constellation Woven Rug',
+      short: '4. Star Chart Rug',
+      desc: 'A circular midnight-navy wool rug intricately woven with golden zodiac and constellation lines.',
+    },
+    de: {
+      name: 'Gewebter Sternbild-Teppich',
+      short: '4. Sternenteppich',
+      desc: 'Ein runder nachtblauer Wollteppich, kunstvoll mit goldenen Sternbildlinien gewebt.',
+    },
+    es: {
+      name: 'Alfombra Tejida de Constelaciones',
+      short: '4. Alfombra Estelar',
+      desc: 'Una alfombra circular de lana azul noche tejida con líneas doradas de constelaciones.',
+    },
+    fr: {
+      name: 'Tapis Tissé des Constellations',
+      short: '4. Tapis Étoilé',
+      desc: 'Un tapis rond en laine bleu nuit finement tissé de constellations dorées.',
+    },
+    it: {
+      name: 'Tappeto Intrecciato delle Costellazioni',
+      short: '4. Tappeto Stellare',
+      desc: 'Un tappeto rotondo in lana blu notte intessuto con linee dorate delle costellazioni.',
+    },
+    pt: {
+      name: 'Tapete Tecido de Constelações',
+      short: '4. Tapete Estelar',
+      desc: 'Um tapete circular de lã azul-noturno tecido com linhas douradas de constelações.',
+    },
+    ru: {
+      name: 'Тканый Ковёр Созвездий',
+      short: '4. Ковёр Созвездий',
+      desc: 'Круглый тёмно-синий шерстяной ковёр, расшитый золотыми линиями созвездий.',
+    },
+    ja: {
+      name: '黄金星座の織りラグ',
+      short: '4. 星座の円形ラグ',
+      desc: '夜空色のウールに金糸で星座と天体図が織り込まれた円形ラグ。',
+    },
+    ko: {
+      name: '황금 별자리 직조 러그',
+      short: '4. 별자리 러그',
+      desc: '밤하늘빛 양모 위에 금실로 별자리 지도를 정교하게 수놓은 원형 러그입니다.',
+    },
+    zh: {
+      name: '金线星图编织圆毯',
+      short: '4. 星图圆毯',
+      desc: '在深邃夜空蓝羊毛上以金线精心织出星座轨迹的圆形地毯。',
+    },
+    ar: {
+      name: 'سجادة الكوكبات الذهبية المنسوجة',
+      short: '4. سجادة النجوم',
+      desc: 'سجادة دائرية من الصوف الكحلي منسوجة بخيوط ذهبية ترسم خرائط النجوم.',
+    },
+  },
+  velvet_observatory_chair: {
+    tr: {
+      name: 'Gece Mavisi Kadife Berjer Koltuk',
+      short: '5. Kadife Berjer',
+      desc: 'Yıldızlı gökyüzü altında sıcacık örgü örmek için kapitone gece mavisi kadife okuma koltuğu.',
+    },
+    en: {
+      name: 'Midnight-Blue Velvet Tufted Armchair',
+      short: '5. Velvet Armchair',
+      desc: 'A plush tufted midnight-blue velvet reading armchair for cozy stargazing and knitting.',
+    },
+    de: {
+      name: 'Nachtblauer Samtsessel',
+      short: '5. Samtsessel',
+      desc: 'Ein gemütlicher gesteppter Samtsessel in Nachtblau zum Sterneschauen und Stricken.',
+    },
+    es: {
+      name: 'Sillón Capitonnée de Terciopelo Azul',
+      short: '5. Sillón Terciopelo',
+      desc: 'Un acogedor sillón de terciopelo azul medianoche para observar estrellas y tejer.',
+    },
+    fr: {
+      name: 'Fauteuil Capitonné en Velours Bleu Nuit',
+      short: '5. Fauteuil Velours',
+      desc: 'Un fauteuil moelleux en velours bleu nuit pour admirer les étoiles en tricotant.',
+    },
+    it: {
+      name: 'Poltrona Capitonné in Velluto Blu Notte',
+      short: '5. Poltrona Velluto',
+      desc: 'Una morbida poltrona in velluto blu notte per osservare le stelle e lavorare a maglia.',
+    },
+    pt: {
+      name: 'Poltrona Capitonê de Veludo Azul-Noite',
+      short: '5. Poltrona Veludo',
+      desc: 'Uma poltrona aconchegante de veludo azul-noite para contemplar estrelas e tricotar.',
+    },
+    ru: {
+      name: 'Бархатное Кресло Цвета Ночного Неба',
+      short: '5. Бархатное Кресло',
+      desc: 'Мягкое каретное кресло из тёмно-синего бархата для уютного вязания под звёздами.',
+    },
+    ja: {
+      name: 'ミッドナイトブルーのベルベットチェア',
+      short: '5. ベルベット椅子',
+      desc: '星空を眺めながらゆったり編み物を楽しめる、深い夜空色のベルベットアームチェア。',
+    },
+    ko: {
+      name: '미드나잇 블루 벨벳 암체어',
+      short: '5. 벨벳 안락의자',
+      desc: '별빛 아래에서 포근하게 뜨개질을 즐길 수 있는 미드나잇 블루 벨벳 안락의자입니다.',
+    },
+    zh: {
+      name: '午夜蓝丝绒拉扣扶手椅',
+      short: '5. 丝绒扶手椅',
+      desc: '柔软舒适的午夜蓝丝绒单人沙发椅，伴你在星空下惬意阅读与编织。',
+    },
+    ar: {
+      name: 'كرسي مخملي بلون سماء الليل',
+      short: '5. كرسي مخملي',
+      desc: 'كرسي قراءة وثير من المخمل الأزرق الليلي للاستمتاع بمراقبة النجوم والحياكة.',
+    },
+  },
+};
+
+const NEW_OUTFITS_I18N: Record<string, Record<Lang, OutfitLocale>> = {
+  holiday_reindeer: {
+    tr: {
+      name: 'Tarçın Geyik & Altın Çan Örgüsü',
+      desc: 'Yeni Yıl Şömine Odası için keçe geyik boynuzlu, altın çıngıraklı sıcak tarçın örgü takım.',
+    },
+    en: {
+      name: 'Cinnamon Reindeer & Golden Bell Knit',
+      desc: 'Warm chestnut cable-knit sweater and beanie with felt reindeer antlers and a golden jingle bell.',
+    },
+    de: {
+      name: 'Zimt-Rentier & Goldglöckchen-Strick',
+      desc: 'Warmes kastanienbraunes Zopfmuster-Set mit Filzgeweih und goldenem Glöckchen.',
+    },
+    es: {
+      name: 'Tejido Reno de Canela y Cascabel',
+      desc: 'Cálido conjunto tejido color canela con astas de fieltro y un cascabel dorado.',
+    },
+    fr: {
+      name: 'Tricot Renne Cannelle & Clochette d’Or',
+      desc: 'Ensemble torsadé marron cannelle avec bois de renne en feutre et grelot doré.',
+    },
+    it: {
+      name: 'Maglia Renna Cannella e Campanellino',
+      desc: 'Caldo completo intrecciato color cannella con corna in feltro e sonaglio dorato.',
+    },
+    pt: {
+      name: 'Tricô Rena de Canela e Guizo Dourado',
+      desc: 'Conjunto trançado cor de canela com chifres de feltro e um guizo dourado.',
+    },
+    ru: {
+      name: 'Коричный Оленёнок с Золотым Бубенцом',
+      desc: 'Тёплый вязаный комплект с фетровыми рожками и золотым новогодним колокольчиком.',
+    },
+    ja: {
+      name: 'シナモントナカイ＆金の鈴ニット',
+      desc: 'フェルトのトナカイ角と金の鈴がついた、温かなシナモンブラウンの編み物セット。',
+    },
+    ko: {
+      name: '시나몬 루돌프 & 황금 방울 니트',
+      desc: '귀여운 펠트 사슴뿔과 황금 방울이 달린 따뜻한 시나몬 브라운 케이블 니트 세트.',
+    },
+    zh: {
+      name: '肉桂驯鹿与金铃针织装',
+      desc: '配有可爱毛毡鹿角与金色铃铛的温暖肉桂棕麻花针织套装。',
+    },
+    ar: {
+      name: 'صوف الرنة القرفي والجرس الذهبي',
+      desc: 'طقم صوفي بلون القرفة الدافئ مع قرون رنة لطيفة وجرس ذهبي.',
+    },
+  },
+  holiday_elf: {
+    tr: {
+      name: 'Zümrüt Çam & Şeker Kamışı Örgüsü',
+      desc: 'Yeni Yıl Şömine Odası için çam yeşili ve kırmızı-beyaz çizgili neşeli festival örgüsü.',
+    },
+    en: {
+      name: 'Emerald Pine & Candy-Cane Elf Knit',
+      desc: 'Festive pine-green and red-white candy-cane striped chunky knit beanie, scarf, and booties.',
+    },
+    de: {
+      name: 'Tannengrün & Zuckerstangen-Elfenstrick',
+      desc: 'Festliches Strickset in Tannengrün mit rot-weißen Zuckerstangenstreifen.',
+    },
+    es: {
+      name: 'Tejido Duende Pino y Bastón de Caramelo',
+      desc: 'Alegre conjunto tejido en verde pino con franjas rojas y blancas.',
+    },
+    fr: {
+      name: 'Tricot Lutin Sapin & Sucre d’Orge',
+      desc: 'Ensemble festif vert sapin à rayures rouges et blanches de sucre d’orge.',
+    },
+    it: {
+      name: 'Maglia Elfo Pino e Bastoncino di Zucchero',
+      desc: 'Festoso completo verde pino a righe bianche e rosse.',
+    },
+    pt: {
+      name: 'Tricô Duende Pinheiro e Bengala Doce',
+      desc: 'Conjunto festivo verde-pinho com listras vermelhas e brancas.',
+    },
+    ru: {
+      name: 'Хвойно-Карамельный Эльфийский Свитер',
+      desc: 'Праздничный изумрудно-хвойный комплект с красно-белыми карамельными полосками.',
+    },
+    ja: {
+      name: 'エメラルドツリー＆キャンディケインニット',
+      desc: 'もみの木グリーンと赤白ストライプが鮮やかなホリデーエルフニット。',
+    },
+    ko: {
+      name: '에메랄드 파인 & 캔디케인 엘프 니트',
+      desc: '전나무 초록색과 빨강·하양 캔디케인 줄무늬가 어우러진 축제 니트 세트.',
+    },
+    zh: {
+      name: '松林绿与拐杖糖精灵针织装',
+      desc: '松针绿搭配红白拐杖糖条纹的欢乐节日精灵毛线套装。',
+    },
+    ar: {
+      name: 'صوف الصنوبر الأخضر وحلوى العيد',
+      desc: 'طقم احتفالي بلون الصنوبر الأخضر مع خطوط حمراء وبيضاء مبهجة.',
+    },
+  },
+  coastal_captain: {
+    tr: {
+      name: 'Ege Kaptanı Çizgili Denizci Trikosu',
+      desc: 'Akdeniz Sahil Verandası için altın çapa rozetli, lacivert-krem denizci çizgili örgü takım.',
+    },
+    en: {
+      name: 'Aegean Captain Sailor-Striped Knit',
+      desc: 'Mediterranean navy and cream Breton-striped knitwear adorned with a golden anchor pin.',
+    },
+    de: {
+      name: 'Ägäis-Kapitän Matrosenstrick',
+      desc: 'Blau-cremefarben gestreiftes Küsten-Strickset mit goldener Ankernadel.',
+    },
+    es: {
+      name: 'Tejido Marinero Capitán del Egeo',
+      desc: 'Conjunto marinero a rayas azul marino y crema con insignia de ancla dorada.',
+    },
+    fr: {
+      name: 'Tricot Marin Capitaine de l’Égée',
+      desc: 'Marinière tricotée bleu marine et crème ornée d’une ancre dorée.',
+    },
+    it: {
+      name: 'Maglia Marinaio Capitano dell’Egeo',
+      desc: 'Completo a righe blu navy e crema con spilla a forma di ancora dorata.',
+    },
+    pt: {
+      name: 'Tricô Marinheiro Capitão do Egeu',
+      desc: 'Conjunto listrado azul-marinho e creme com broche de âncora dourada.',
+    },
+    ru: {
+      name: 'Морской Тельняшка Капитана Эгейского Моря',
+      desc: 'Полосатый морской комплект с золотым якорем на шапочке.',
+    },
+    ja: {
+      name: 'エーゲ海キャプテンのマリンニット',
+      desc: '金の錨ピンが輝く、ネイビー＆クリームの爽やかなマリンボーダーニット。',
+    },
+    ko: {
+      name: '에게해 캡틴 마린 스트라이프 니트',
+      desc: '황금 닻 배지가 달린 네이비 & 크림 마린 줄무늬 해안가 니트 세트.',
+    },
+    zh: {
+      name: '爱琴海船长海魂条纹针织装',
+      desc: '点缀金色船锚徽章的海军蓝与奶油白地中海条纹针织套装。',
+    },
+    ar: {
+      name: 'صوف قبطان بحر إيجة المخطط',
+      desc: 'طقم بحري مخطط بالأزرق الداكن والكريمي مزين بدبوس مرساة ذهبية.',
+    },
+  },
+  coastal_citrus: {
+    tr: {
+      name: 'Limon Çiçeği & Begonvil Yaz Örgüsü',
+      desc: 'Akdeniz Sahil Verandası için güneş sarısı, begonvil pembesi ve yeşil limon yapraklı örgü.',
+    },
+    en: {
+      name: 'Lemon Blossom & Bougainvillea Knit',
+      desc: 'Sunny lemon-yellow and bougainvillea-pink cable-knit set with a fresh green lemon leaf.',
+    },
+    de: {
+      name: 'Zitronenblüten & Bougainvillea-Strick',
+      desc: 'Sonnengelbes und bougainvillea-pinkes Strickset mit grünem Zitronenblatt.',
+    },
+    es: {
+      name: 'Tejido Flor de Limón y Buganvilla',
+      desc: 'Conjunto tejido en amarillo limón y rosa buganvilla con hoja de limonero.',
+    },
+    fr: {
+      name: 'Tricot Citron Soleil & Bougainvillier',
+      desc: 'Ensemble jaune citron et rose bougainvillier avec petite feuille de citronnier.',
+    },
+    it: {
+      name: 'Maglia Limone Solare e Bouganville',
+      desc: 'Completo giallo limone e rosa bouganville con fogliolina di limone.',
+    },
+    pt: {
+      name: 'Tricô Limão Siciliano e Buganvília',
+      desc: 'Conjunto amarelo-limão e rosa-buganvília com folha de limoeiro.',
+    },
+    ru: {
+      name: 'Лимонный Бриз и Розовая Бугенвиллея',
+      desc: 'Солнечно-жёлтый с розовым вязаный комплект с зелёным лимонным листочком.',
+    },
+    ja: {
+      name: 'レモンブロッサム＆ブーゲンビリアニット',
+      desc: '太陽のレモンイエローとブーゲンビリアピンクに緑の葉を添えた地中海ニット。',
+    },
+    ko: {
+      name: '레몬 블라썸 & 부겐빌레아 니트',
+      desc: '상큼한 레몬 옐로우와 부겐빌레아 핑크에 초록 잎사귀를 더한 지중해 니트.',
+    },
+    zh: {
+      name: '柠檬花与三角梅阳光针织装',
+      desc: '明媚柠檬黄与三角梅粉交织、点缀翠绿柠檬叶的海岸风情套装。',
+    },
+    ar: {
+      name: 'صوف زهر الليمون والجهنمية المشمس',
+      desc: 'طقم صوفي بألوان الليمون الأصفر ووردي الجهنمية مع ورقة ليمون خضراء.',
+    },
+  },
+  starlight_astronomer: {
+    tr: {
+      name: 'Gece Mavisi & Altın Takımyıldız Örgüsü',
+      desc: 'Yıldız Kulesi Rasathanesi için altın hilal ve yıldız nakışlı gece laciverti astronom takımı.',
+    },
+    en: {
+      name: 'Midnight Astronomer & Gold Star Knit',
+      desc: 'Deep midnight-indigo knitwear embroidered with golden crescent moons and twinkling stars.',
+    },
+    de: {
+      name: 'Mitternachts-Astronom & Goldstern-Strick',
+      desc: 'Nachtblaues Strickset, bestickt mit goldenen Halbmonden und funkelnden Sternen.',
+    },
+    es: {
+      name: 'Tejido Astrónomo Nocturno y Estrellas',
+      desc: 'Conjunto azul medianoche bordado con lunas crecientes y estrellas doradas.',
+    },
+    fr: {
+      name: 'Tricot Astronome de Minuit & Étoiles d’Or',
+      desc: 'Tricot indigo nocturne brodé de croissants de lune et d’étoiles dorées.',
+    },
+    it: {
+      name: 'Maglia Astronomo di Mezzanotte e Stelle',
+      desc: 'Completo blu notte ricamato con lune crescenti e stelle dorate.',
+    },
+    pt: {
+      name: 'Tricô Astrônomo da Meia-Noite e Estrelas',
+      desc: 'Conjunto azul-meia-noite bordado com luas crescentes e estrelas douradas.',
+    },
+    ru: {
+      name: 'Полночный Звездочёт с Золотыми Лунами',
+      desc: 'Глубокий синий свитер и шапочка с вышитыми золотыми полумесяцами и звёздами.',
+    },
+    ja: {
+      name: '星見の天文学者＆金星刺繍ニット',
+      desc: '金の三日月と星々が刺繍された、ミッドナイトブルーの天文台ニット。',
+    },
+    ko: {
+      name: '별빛 천문학자 & 황금 초승달 니트',
+      desc: '황금빛 초승달과 별자리가 수놓아진 깊은 밤하늘색 천문학자 니트 세트.',
+    },
+    zh: {
+      name: '午夜占星师与金星刺绣针织装',
+      desc: '绣有金色弯月与璀璨繁星的深邃午夜蓝天文塔针织套装。',
+    },
+    ar: {
+      name: 'صوف الفلكي الليلي والنجوم الذهبية',
+      desc: 'طقم كحلي ليلي مطرز بالأهلة والنجوم الذهبية المتلألئة.',
+    },
+  },
+  starlight_aurora: {
+    tr: {
+      name: 'Kuzey Işıkları (Aurora) Büyülü Örgüsü',
+      desc: 'Yıldız Kulesi Rasathanesi için turkuaz, ametist moru ve yıldız tozu geçişli kutup ışıkları takımı.',
+    },
+    en: {
+      name: 'Aurora Borealis Stardust Gradient Knit',
+      desc: 'Magical northern-lights knitwear blending turquoise, amethyst violet, and shimmering stardust gold.',
+    },
+    de: {
+      name: 'Polarlicht & Sternenstaub-Verlaufsstrick',
+      desc: 'Magisches Aurora-Strickset aus Türkis, Amethystviolett und glitzerndem Sternengold.',
+    },
+    es: {
+      name: 'Tejido Aurora Boreal y Polvo Estelar',
+      desc: 'Mágico degradado de luces del norte en turquesa, violeta amatista y oro estelar.',
+    },
+    fr: {
+      name: 'Tricot Aurore Boréale & Poussière d’Étoiles',
+      desc: 'Dégradé magique mêlant turquoise polaire, violet améthyste et or scintillant.',
+    },
+    it: {
+      name: 'Maglia Aurora Boreale e Polvere di Stelle',
+      desc: 'Magico sfumato di luci del nord tra turchese, viola ametista e oro stellare.',
+    },
+    pt: {
+      name: 'Tricô Aurora Boreal e Poeira Estelar',
+      desc: 'Degradê mágico das luzes do norte em turquesa, violeta-ametista e ouro estelar.',
+    },
+    ru: {
+      name: 'Северное Сияние и Звёздная Пыль',
+      desc: 'Волшебный градиент из бирюзового, аметистового и золотистого цветов авроры.',
+    },
+    ja: {
+      name: 'オーロラ・スターダストのグラデニット',
+      desc: 'ターコイズ、アメジスト紫、星屑ゴールドが溶け合う幻想的なオーロラニット。',
+    },
+    ko: {
+      name: '오로라 보레알리스 스타더스트 니트',
+      desc: '청록빛과 자수정 보라색, 별가루 금빛이 어우러진 신비로운 오로라 그라데이션 니트.',
+    },
+    zh: {
+      name: '极光星尘幻彩渐变针织装',
+      desc: '融合极光青、紫水晶与璀璨星尘金的梦幻极光毛线套装。',
+    },
+    ar: {
+      name: 'صوف الشفق القطبي وغبار النجوم',
+      desc: 'طقم متدرج ساحر يمزج بين الفيروزي والبنفسجي وبريق النجوم الذهبي.',
+    },
+  },
+};
+
 export function getWorkshopRoom(roomId: string, lang: Lang): RoomLocale {
-  const r = ROOMS_DATA[roomId];
+  const r = STARLIGHT_ROOM_I18N[roomId] || ROOMS_DATA[roomId];
   if (!r) return { name: roomId, badge: roomId, subtitle: '', unlockConditionText: '' };
   const base = r[lang] || r['en'] || r['tr'];
   if (roomId === 'holiday_hearth' && !isHolidaySeasonActive()) {
@@ -2529,14 +3222,14 @@ export function getWorkshopRoom(roomId: string, lang: Lang): RoomLocale {
 }
 
 export function getWorkshopItem(itemId: string, lang: Lang): ItemLocale {
-  const it = ITEMS_DATA[itemId];
+  const it = STARLIGHT_ITEMS_I18N[itemId] || ITEMS_DATA[itemId];
   if (!it) return { name: itemId, shortLabel: itemId, desc: '' };
   const loc = it[lang] || it['en'] || it['tr'];
   return { name: loc.name, shortLabel: loc.short, desc: loc.desc };
 }
 
 export function getBobbinOutfit(outfitId: string, lang: Lang): OutfitLocale {
-  const o = OUTFITS_DATA[outfitId];
+  const o = NEW_OUTFITS_I18N[outfitId] || OUTFITS_DATA[outfitId];
   if (!o) return { name: outfitId, desc: '' };
   return o[lang] || o['en'] || o['tr'];
 }

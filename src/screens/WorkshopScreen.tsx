@@ -63,6 +63,16 @@ const COASTAL_TERRACE_STAGE_IMAGES: Record<number, ImageSourcePropType> = {
   5: require('../../assets/images/coastal_stage_5.jpg'), // + Makrome Deniz Sediri & Yumak Sepeti
 };
 
+// 6 Progressive 3D Miniature Diorama Room Stages for Room 5: Gökyüzü Rasathanesi & Kütüphane Kulesi (Yıldız Kulesi)
+const STARLIGHT_OBSERVATORY_STAGE_IMAGES: Record<number, ImageSourcePropType> = {
+  0: require('../../assets/images/starlight_stage_0.jpg'), // Sade kubbeli ahşap rasathane kulesi
+  1: require('../../assets/images/starlight_stage_1.jpg'), // + Antika Pirinç Teleskop
+  2: require('../../assets/images/starlight_stage_2.jpg'), // + Tarihî Gökyüzü & Yıldız Küresi
+  3: require('../../assets/images/starlight_stage_3.jpg'), // + Merdivenli Ceviz Astronomi Kitaplığı
+  4: require('../../assets/images/starlight_stage_4.jpg'), // + Altın Takımyıldız Dokuma Halısı
+  5: require('../../assets/images/starlight_stage_5.jpg'), // + Gece Mavisi Kadife Berjer Koltuk
+};
+
 // Real 3D Bobbin Character Sprites with Ground Contact Shadows (Alpha RGBA PNGs)
 const BOBBIN_OUTFIT_IMAGES: Record<string, ImageSourcePropType> = {
   none: require('../../assets/images/bobbin_none.png'),
@@ -72,6 +82,12 @@ const BOBBIN_OUTFIT_IMAGES: Record<string, ImageSourcePropType> = {
   royal_berry: require('../../assets/images/bobbin_royal.png'),
   winter_fur: require('../../assets/images/bobbin_winter_fur.png'),
   holiday_santa: require('../../assets/images/bobbin_holiday.png'),
+  holiday_reindeer: require('../../assets/images/bobbin_holiday_reindeer.png'),
+  holiday_elf: require('../../assets/images/bobbin_holiday_elf.png'),
+  coastal_captain: require('../../assets/images/bobbin_coastal_captain.png'),
+  coastal_citrus: require('../../assets/images/bobbin_coastal_citrus.png'),
+  starlight_astronomer: require('../../assets/images/bobbin_starlight_astronomer.png'),
+  starlight_aurora: require('../../assets/images/bobbin_starlight_aurora.png'),
 };
 
 interface WorkshopItemBase {
@@ -124,6 +140,15 @@ const COASTAL_TERRACE_CATALOG_BASE: WorkshopItemBase[] = [
   { id: 'macrame_sea_nook', step: 5, starsRequired: 30, icon: 'home', colorTag: '#10B981' },
 ];
 
+// Room 5 Items Base: Gökyüzü Rasathanesi & Kütüphane Kulesi (Yıldız Kulesi)
+const STARLIGHT_OBSERVATORY_CATALOG_BASE: WorkshopItemBase[] = [
+  { id: 'brass_telescope', step: 1, starsRequired: 5, icon: 'telescope' as any, colorTag: '#F59E0B' },
+  { id: 'celestial_globe', step: 2, starsRequired: 10, icon: 'planet' as any, colorTag: '#D97706' },
+  { id: 'walnut_bookshelf', step: 3, starsRequired: 15, icon: 'library' as any, colorTag: '#8B5CF6' },
+  { id: 'constellation_rug', step: 4, starsRequired: 20, icon: 'sparkles', colorTag: '#3B82F6' },
+  { id: 'velvet_observatory_chair', step: 5, starsRequired: 30, icon: 'moon' as any, colorTag: '#6366F1' },
+];
+
 interface KnitwearItemBase {
   id: string;
   starsRequired: number;
@@ -142,9 +167,15 @@ const KNITWEAR_CATALOG_BASE: KnitwearItemBase[] = [
   { id: 'classic_honey', starsRequired: 3, color: '#F59E0B', accentEmoji: '🧣', image: BOBBIN_OUTFIT_IMAGES.classic_honey },
   { id: 'arctic_sky', starsRequired: 8, color: '#0EA5E9', accentEmoji: '❄️', image: BOBBIN_OUTFIT_IMAGES.arctic_sky },
   { id: 'holiday_santa', starsRequired: 10, color: '#DC2626', accentEmoji: '🎅', image: BOBBIN_OUTFIT_IMAGES.holiday_santa },
+  { id: 'holiday_reindeer', starsRequired: 11, color: '#B45309', accentEmoji: '🦌', image: BOBBIN_OUTFIT_IMAGES.holiday_reindeer },
   { id: 'winter_fur', starsRequired: 12, color: '#38BDF8', accentEmoji: '🎿', image: BOBBIN_OUTFIT_IMAGES.winter_fur },
+  { id: 'holiday_elf', starsRequired: 14, color: '#15803D', accentEmoji: '🎄', image: BOBBIN_OUTFIT_IMAGES.holiday_elf },
   { id: 'emerald_moss', starsRequired: 16, color: '#10B981', accentEmoji: '🌲', image: BOBBIN_OUTFIT_IMAGES.emerald_moss },
+  { id: 'coastal_captain', starsRequired: 18, color: '#1D4ED8', accentEmoji: '⚓', image: BOBBIN_OUTFIT_IMAGES.coastal_captain },
+  { id: 'coastal_citrus', starsRequired: 20, color: '#EAB308', accentEmoji: '🍋', image: BOBBIN_OUTFIT_IMAGES.coastal_citrus },
+  { id: 'starlight_astronomer', starsRequired: 22, color: '#312E81', accentEmoji: '🔭', image: BOBBIN_OUTFIT_IMAGES.starlight_astronomer },
   { id: 'royal_berry', starsRequired: 25, color: '#8B5CF6', accentEmoji: '👑', image: BOBBIN_OUTFIT_IMAGES.royal_berry },
+  { id: 'starlight_aurora', starsRequired: 28, color: '#0D9488', accentEmoji: '🌌', image: BOBBIN_OUTFIT_IMAGES.starlight_aurora },
 ];
 
 interface RoomDefBase {
@@ -187,6 +218,12 @@ const ROOM_DEFINITIONS_BASE: RoomDefBase[] = [
     stages: COASTAL_TERRACE_STAGE_IMAGES,
     catalogBase: COASTAL_TERRACE_CATALOG_BASE,
     unlockLevel: 150,
+  },
+  {
+    id: 'starlight_observatory',
+    stages: STARLIGHT_OBSERVATORY_STAGE_IMAGES,
+    catalogBase: STARLIGHT_OBSERVATORY_CATALOG_BASE,
+    unlockLevel: 200,
   },
 ];
 
@@ -286,6 +323,16 @@ export function WorkshopScreen({
         (data.unlocked || 1) >= 150 ||
         room3Count >= 4 ||
         (data.unlockedRooms && data.unlockedRooms.includes('coastal_terrace'))
+      );
+    }
+    if (roomId === 'starlight_observatory') {
+      const room4Count = COASTAL_TERRACE_CATALOG_BASE.filter((i) => unlockedSet.has(i.id)).length;
+      const hasAnyStarlightItem = STARLIGHT_OBSERVATORY_CATALOG_BASE.some((i) => unlockedSet.has(i.id));
+      return (
+        (data.unlocked || 1) >= 200 ||
+        room4Count >= 4 ||
+        hasAnyStarlightItem ||
+        (data.unlockedRooms && data.unlockedRooms.includes('starlight_observatory'))
       );
     }
     return false;
