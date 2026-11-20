@@ -399,6 +399,58 @@ function createTrackLUT(shape: TrackShape, W: number, H: number): TrackLUT {
           y: cy + ryMax * rFactor * Math.sin(theta),
         };
       }
+      case 'anchor_bay': {
+        const u = (t - 0.5) * 1.68;
+        const v = 0.72 * Math.sin(t * Math.PI * 3.85) * (1.0 - 0.12 * t);
+        const ca = Math.cos(0.66);
+        const sa = Math.sin(0.66);
+        const dx = Math.max(-0.94, Math.min(0.94, u * ca - v * sa));
+        const dy = Math.max(-0.94, Math.min(0.94, u * sa + v * ca));
+        return {
+          x: cx + rxMax * dx,
+          y: cy + ryMax * dy,
+        };
+      }
+      case 'snowflake_crest': {
+        const theta = -Math.PI * 0.5 + t * Math.PI * 3.08;
+        const decay = 0.98 - t * 0.58;
+        const hexStar = 0.85 + 0.15 * Math.cos(6 * theta);
+        return {
+          x: cx + rxMax * decay * hexStar * Math.cos(theta),
+          y: cy + ryMax * decay * hexStar * Math.sin(theta),
+        };
+      }
+      case 'treble_clef': {
+        const theta = t * Math.PI * 3.85;
+        const progX = Math.max(-0.95, Math.min(0.95, -0.86 + t * 1.72 + 0.07 * Math.sin(2 * theta)));
+        const waveY = -0.88 * Math.cos(theta) * (1.0 - 0.10 * t);
+        return {
+          x: cx + rxMax * progX,
+          y: cy + ryMax * waveY,
+        };
+      }
+      case 'double_pendulum': {
+        const theta = t * Math.PI * 3.85;
+        const arch = -0.10 * Math.cos(2 * theta);
+        const progY = Math.max(0.04, Math.min(0.96, 0.08 + t * 0.84 + arch * (1.0 - t * 0.45)));
+        return {
+          x: cx + rxMax * 0.92 * Math.cos(theta),
+          y: padYTop + (H - padYTop - padYBottom) * progY,
+        };
+      }
+      case 'crown_labyrinth': {
+        const theta = -Math.PI * 0.75 + t * Math.PI * 3.15;
+        const decay = 0.96 - t * 0.58;
+        const cosT = Math.cos(theta);
+        const sinT = Math.sin(theta);
+        const sx = Math.pow(Math.abs(cosT), 0.58) * Math.sign(cosT);
+        const sy = Math.pow(Math.abs(sinT), 0.58) * Math.sign(sinT);
+        const turret = 0.90 + 0.10 * Math.cos(4 * (theta - Math.PI * 0.25));
+        return {
+          x: cx + rxMax * decay * sx * turret * 0.94,
+          y: cy + ryMax * decay * sy * turret * 0.94,
+        };
+      }
       case 'spiral':
       default: {
         const theta = -Math.PI * 0.5 + t * Math.PI * 3.3;
@@ -607,6 +659,13 @@ export function SnakeTrackView({
     return buildZoneGeometry(lut, iceStart, iceEnd, jointSize * 0.52);
   }, [lut, iceStart, iceEnd, jointSize]);
 
+  const turboStart = game.turboZone?.start ?? null;
+  const turboEnd = game.turboZone?.end ?? null;
+  const turboGeom = useMemo(() => {
+    if (turboStart === null || turboEnd === null) return null;
+    return buildZoneGeometry(lut, turboStart, turboEnd, jointSize * 0.50);
+  }, [lut, turboStart, turboEnd, jointSize]);
+
   const isIceThawed = (game.iceZone?.thawDuration ?? 0) > 0;
   const isHeadUnderBridge =
     !!game.bridge &&
@@ -617,6 +676,10 @@ export function SnakeTrackView({
     !isIceThawed &&
     renderHeadPos >= game.iceZone.start &&
     renderHeadPos <= game.iceZone.end + ZONE_EXIT_CLEARANCE;
+  const isHeadInTurbo =
+    !!game.turboZone &&
+    renderHeadPos >= game.turboZone.start &&
+    renderHeadPos <= game.turboZone.end + ZONE_EXIT_CLEARANCE;
 
   const { rings, headPos, neckPos, headAngle } = useMemo(() => {
     const list: Array<{
@@ -785,6 +848,51 @@ export function SnakeTrackView({
               strokeDasharray="8 6"
               fill="none"
               opacity={isIceThawed ? 0.5 : 0.85}
+            />
+          </G>
+        )}
+        {/* 1c. TURBO WIND / CURRENT ZONE (Akıntı Bölgesi) Canal Bed */}
+        {turboGeom && (
+          <G>
+            <Path
+              d={turboGeom.d}
+              stroke="rgba(16, 185, 129, 0.55)"
+              strokeWidth={jointSize * 1.18}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="none"
+            />
+            <Path
+              d={turboGeom.d}
+              stroke="#0D9488"
+              strokeWidth={jointSize * 0.90}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="none"
+            />
+            <Path
+              d={turboGeom.d}
+              stroke="#5EEAD4"
+              strokeWidth={jointSize * 0.52}
+              strokeLinecap="round"
+              strokeDasharray="10 6"
+              fill="none"
+            />
+            <Path
+              d={turboGeom.leftRailD}
+              stroke="#FDE68A"
+              strokeWidth={2.5}
+              strokeLinecap="round"
+              strokeDasharray="6 4"
+              fill="none"
+            />
+            <Path
+              d={turboGeom.rightRailD}
+              stroke="#FDE68A"
+              strokeWidth={2.5}
+              strokeLinecap="round"
+              strokeDasharray="6 4"
+              fill="none"
             />
           </G>
         )}
@@ -1111,6 +1219,30 @@ export function SnakeTrackView({
               : isHeadFrozenInIce
               ? '❄️ Dondu!'
               : '❄️ Buzlu Alan'}
+          </Text>
+        </View>
+      )}
+
+      {turboGeom && (
+        <View
+          pointerEvents="none"
+          style={[
+            styles.zoneBadge,
+            {
+              left: Math.max(8, Math.min(viewWidth - 96, turboGeom.midPt.x - 42)),
+              top: Math.max(6, Math.min(viewHeight - 32, turboGeom.midPt.y - 14)),
+              backgroundColor: isHeadInTurbo ? '#FEF3C7' : 'rgba(13, 148, 136, 0.92)',
+              borderColor: isHeadInTurbo ? '#F59E0B' : '#5EEAD4',
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.zoneBadgeText,
+              { color: isHeadInTurbo ? '#92400E' : '#F0FDFA' },
+            ]}
+          >
+            {isHeadInTurbo ? '💨 1.6x Hızlandı!' : '💨 Akıntı 1.6x'}
           </Text>
         </View>
       )}

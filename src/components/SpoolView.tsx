@@ -17,6 +17,7 @@ interface Props {
   isUnraveling?: boolean;
   isWild?: boolean;
   frozen?: number;
+  chainLock?: number;
   isMystery?: boolean;
   secondColor?: string;
 }
@@ -56,6 +57,7 @@ function SpoolImpl({
   isUnraveling = false,
   isWild = false,
   frozen = 0,
+  chainLock = 0,
   isMystery = false,
   secondColor,
 }: Props) {
@@ -216,6 +218,27 @@ function SpoolImpl({
         >
           <View style={styles.frozenWrap}>
             <Text style={styles.frozenText}>❄️{frozen}</Text>
+          </View>
+        </View>
+      )}
+
+      {/* 10. Iron Chain Lock Shield Overlay */}
+      {chainLock > 0 && (
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              backgroundColor: 'rgba(30, 41, 59, 0.48)',
+              borderRadius: 8,
+              borderWidth: 2,
+              borderColor: '#F59E0B',
+              alignItems: 'center',
+              justifyContent: 'center',
+            },
+          ]}
+        >
+          <View style={styles.chainWrap}>
+            <Text style={styles.chainText}>⛓️{chainLock}</Text>
           </View>
         </View>
       )}
@@ -385,6 +408,23 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '900',
     color: '#0077B6',
+  },
+  chainWrap: {
+    backgroundColor: 'rgba(254, 243, 199, 0.96)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: '#D97706',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.35,
+    shadowRadius: 2,
+  },
+  chainText: {
+    fontSize: 11,
+    fontWeight: '900',
+    color: '#92400E',
   },
   cbBadge: {
     position: 'absolute',

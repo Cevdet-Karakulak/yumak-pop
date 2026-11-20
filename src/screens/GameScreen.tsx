@@ -575,6 +575,8 @@ export function GameScreen({
         showToast(t.toastKnotted);
       } else if (chk.reason === 'frozen') {
         showToast('❄️ Buzlu makara! Çözmek için rafta makara patlat');
+      } else if (chk.reason === 'chained') {
+        showToast('⛓️ Zincirli makara! Kırmak için rafta bir makara tamamla');
       } else if (chk.reason === 'twin_needs_2_slots') {
         showToast(t.toastTwinSlots);
       } else if (chk.reason === 'rack_full') {
@@ -865,6 +867,9 @@ export function GameScreen({
               {info.mechanics.includes('conveyor') && <T style={{ fontSize: 13 }}>⚙️</T>}
               {info.mechanics.includes('bridge') && <T style={{ fontSize: 13 }}>🌉</T>}
               {info.mechanics.includes('ice_zone') && <T style={{ fontSize: 13 }}>❄️</T>}
+              {info.mechanics.includes('turbo_zone') && <T style={{ fontSize: 13 }}>💨</T>}
+              {info.mechanics.includes('chain_lock') && <T style={{ fontSize: 13 }}>⛓️</T>}
+              {info.mechanics.includes('stone_pillar') && <T style={{ fontSize: 13 }}>🪨</T>}
             </View>
             {/* Danger Steps Indicator */}
             <View
@@ -1063,8 +1068,13 @@ export function GameScreen({
               {Array.from({ length: totalSlots }).map((_, i) => {
                 const activeRackLen = game.rack.length;
                 const isUnlocked = i < activeRackLen;
+                const isStoneSealed =
+                  isUnlocked &&
+                  i === activeRackLen - 1 &&
+                  activeRackLen >= 3 &&
+                  (game.sealedRackPops ?? 0) > 0;
                 const isNextUnlockable = i === activeRackLen;
-                const sp = isUnlocked ? game.rack[i] : null;
+                const sp = isUnlocked && !isStoneSealed ? game.rack[i] : null;
                 const unlockPrice = SLOT_UNLOCK_PRICES[i] ?? 50;
 
                 return (
@@ -1075,7 +1085,32 @@ export function GameScreen({
                       { width: slotW, height: slotW * 1.30, marginHorizontal: slotGap / 2 },
                     ]}
                   >
-                    {isUnlocked ? (
+                    {isStoneSealed ? (
+                      <Pressable
+                        onPress={() =>
+                          showToast(
+                            `🪨 Taş mühürlü yuva! Açmak için ${game.sealedRackPops} makara daha tamamla`,
+                          )
+                        }
+                        style={[
+                          styles.lockedSlot,
+                          {
+                            width: slotW * 0.88,
+                            height: slotW * 1.15,
+                            borderRadius: 10,
+                            backgroundColor: '#57534E',
+                            borderColor: '#F59E0B',
+                          },
+                        ]}
+                      >
+                        <T style={{ fontSize: 16 }}>🪨</T>
+                        <View style={[styles.unlockPriceBadge, { backgroundColor: '#D97706' }]}>
+                          <T style={{ fontSize: 9, fontFamily: FONT.black, color: '#FFF' }}>
+                            {game.sealedRackPops} POP
+                          </T>
+                        </View>
+                      </Pressable>
+                    ) : isUnlocked ? (
                       sp ? (
                         <Pressable
                           onPress={() => {
@@ -1229,6 +1264,7 @@ export function GameScreen({
                               isTwinTop={isTwinTop}
                               isWild={sp.isWild}
                               frozen={sp.frozen}
+                              chainLock={sp.chainLock}
                               isMystery={sp.isMystery}
                               secondColor={sp.secondColor}
                               size={s}

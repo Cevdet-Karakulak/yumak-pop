@@ -29,6 +29,7 @@ export interface Spool {
   twinId?: number;
   isWild?: boolean;
   frozen?: number;
+  chainLock?: number;
   isMystery?: boolean;
   secondColor?: string;
   secondCap?: number;
@@ -38,6 +39,7 @@ export type TapFailReason =
   | 'empty'
   | 'knotted'
   | 'frozen'
+  | 'chained'
   | 'twin_needs_2_slots'
   | 'twin_partner_blocked'
   | 'rack_full';
@@ -51,6 +53,11 @@ export interface IceZone {
   start: number; // e.g. 64 (normalized 0..100)
   end: number;   // e.g. 78
   thawDuration?: number; // turns remaining thawed by a rack spool pop
+}
+
+export interface TurboZone {
+  start: number; // e.g. 49 (normalized 0..100)
+  end: number;   // e.g. 57
 }
 
 export interface ConveyorConfig {
@@ -75,7 +82,9 @@ export interface GameState {
   status: 'playing' | 'won' | 'lost';
   bridge?: BridgeZone;
   iceZone?: IceZone;
+  turboZone?: TurboZone;
   conveyor?: ConveyorConfig;
+  sealedRackPops?: number; // when > 0, the last rack slot is sealed by a stone pillar until N rack pops occur
 }
 
 export interface UnravelTick {
@@ -95,8 +104,16 @@ export function cloneState(s: GameState): GameState {
     rack: s.rack.map((sp) => (sp ? { ...sp } : null)),
     bridge: s.bridge ? { ...s.bridge } : undefined,
     iceZone: s.iceZone ? { ...s.iceZone } : undefined,
+    turboZone: s.turboZone ? { ...s.turboZone } : undefined,
     conveyor: s.conveyor ? { ...s.conveyor } : undefined,
   };
+}
+
+export function getUsableRackLength(s: GameState): number {
+  if ((s.sealedRackPops ?? 0) > 0 && s.rack.length >= 3) {
+    return s.rack.length - 1;
+  }
+  return s.rack.length;
 }
 
 export function checkTap(s: GameState, col: number): { ok: true } | { ok: false; reason: TapFailReason } {
@@ -110,7 +127,11 @@ export function checkTap(s: GameState, col: number): { ok: true } | { ok: false;
   if (front.frozen && front.frozen > 0) {
     return { ok: false, reason: 'frozen' };
   }
-  const freeSlots = s.rack.filter((r) => r === null).length;
+  if (front.chainLock && front.chainLock > 0) {
+    return { ok: false, reason: 'chained' };
+  }
+  const usableLen = getUsableRackLength(s);
+  const freeSlots = s.rack.slice(0, usableLen).filter((r) => r === null).length;
   if (freeSlots === 0) {
     return { ok: false, reason: 'rack_full' };
   }
@@ -119,6 +140,7 @@ export function checkTap(s: GameState, col: number): { ok: true } | { ok: false;
     if (partner) {
       if (partner.spool.knots > 0) return { ok: false, reason: 'twin_partner_blocked' };
       if (partner.spool.frozen && partner.spool.frozen > 0) return { ok: false, reason: 'frozen' };
+      if (partner.spool.chainLock && partner.spool.chainLock > 0) return { ok: false, reason: 'chained' };
       if (freeSlots < 2) return { ok: false, reason: 'twin_needs_2_slots' };
     }
   }
@@ -183,6 +205,25 @@ function thawFrozenSpools(next: GameState) {
   }
 }
 
+function breakChainLocks(next: GameState) {
+  for (const col of next.columns) {
+    for (const sp of col) {
+      if (sp.chainLock && sp.chainLock > 0) {
+        sp.chainLock -= 1;
+        break;
+      }
+    }
+  }
+  for (const b of next.baskets) {
+    for (const sp of b) {
+      if (sp.chainLock && sp.chainLock > 0) {
+        sp.chainLock -= 1;
+        break;
+      }
+    }
+  }
+}
+
 export function shiftConveyor(next: GameState) {
   if (!next.columns || next.columns.length <= 1) return;
   const dir = next.conveyor?.direction ?? 1;
@@ -221,8 +262,9 @@ export function tapColumn(
     front.isMystery = false; // Reveal hidden yarn color on rack!
   }
 
+  const usableLen = getUsableRackLength(next);
   const slots: number[] = [];
-  const slot1 = next.rack.findIndex((r) => r === null);
+  const slot1 = next.rack.findIndex((r, idx) => idx < usableLen && r === null);
   next.rack[slot1] = front;
   slots.push(slot1);
 
@@ -235,7 +277,7 @@ export function tapColumn(
     if (pSpool) {
       pSpool.hidden = false;
       if (pSpool.isMystery) pSpool.isMystery = false;
-      const slot2 = next.rack.findIndex((r) => r === null);
+      const slot2 = next.rack.findIndex((r, idx) => idx < usableLen && r === null);
       if (slot2 >= 0) {
         next.rack[slot2] = pSpool;
         slots.push(slot2);
@@ -249,7 +291,13 @@ export function tapColumn(
   next.moves += 1;
 
   // Step the snake forward closer to the vortex hole with every move!
-  next.headPos = Math.min(next.dangerHolePos, next.headPos + next.stepPenalty);
+  // Inside a Turbo Current Zone (turbo_zone), the snake rushes 1.6x faster!
+  const inTurbo =
+    !!next.turboZone &&
+    next.headPos >= next.turboZone.start &&
+    next.headPos <= next.turboZone.end + ZONE_EXIT_CLEARANCE;
+  const effectiveStep = inTurbo ? next.stepPenalty * 1.6 : next.stepPenalty;
+  next.headPos = Math.min(next.dangerHolePos, next.headPos + effectiveStep);
 
   // Conveyor / Escalator mechanics:
   let conveyorShifted = false;
@@ -398,6 +446,10 @@ export function unravelTick(s: GameState): {
       next.rack[matchingSlot] = null; // Spool complete -> POP!
       popped = true;
       thawFrozenSpools(next); // Crack ice on frozen spools in columns!
+      breakChainLocks(next); // Shatter 1 chain link on chained spools!
+      if (next.sealedRackPops && next.sealedRackPops > 0) {
+        next.sealedRackPops = Math.max(0, next.sealedRackPops - 1);
+      }
       if (next.iceZone) {
         next.iceZone.thawDuration = 2; // Popping a spool generates warm craft heat that thaws the ice zone for 2 moves!
       }
@@ -821,13 +873,18 @@ export function pushBackSnake(s: GameState, pushAmount = 28): GameState {
     col.forEach((sp) => {
       if (sp.knots > 0) sp.knots = 0;
       if (sp.frozen && sp.frozen > 0) sp.frozen = 0;
+      if (sp.chainLock && sp.chainLock > 0) sp.chainLock = 0;
     });
   });
   next.baskets.forEach((basket) => {
     basket.forEach((sp) => {
       if (sp.frozen && sp.frozen > 0) sp.frozen = 0;
+      if (sp.chainLock && sp.chainLock > 0) sp.chainLock = 0;
     });
   });
+  if (next.sealedRackPops && next.sealedRackPops > 0) {
+    next.sealedRackPops = 0;
+  }
   // If rack is full, add an emergency slot so the player has room to make moves without altering any spool's color!
   if (next.rack.every((sp) => sp !== null)) {
     next.rack = [...next.rack, null];
@@ -873,6 +930,10 @@ export function magnetFront(
         } else {
           next.rack[idx] = null;
           thawFrozenSpools(next);
+          breakChainLocks(next);
+          if (next.sealedRackPops && next.sealedRackPops > 0) {
+            next.sealedRackPops = Math.max(0, next.sealedRackPops - 1);
+          }
         }
       }
     }

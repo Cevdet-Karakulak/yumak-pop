@@ -16,7 +16,8 @@ export function HowToPlaySheet({
   onClose: () => void;
   onReplayTutorial?: () => void;
 }) {
-  const { t } = useSave();
+  const { t, lang } = useSave();
+  const isTr = lang === 'tr';
 
   const cards: {
     key: MechanicKind;
@@ -98,6 +99,30 @@ export function HowToPlaySheet({
       visual: <T style={{ fontSize: 32 }}>❄️</T>,
     },
     {
+      key: 'turbo_zone',
+      title: isTr ? '💨 Hızlanan Akıntı Bölgesi!' : '💨 Turbo Current Zone!',
+      desc: isTr
+        ? 'Yılanın başı turkuaz rüzgâr akıntısındayken yapılan her hamlede yılan deliğe doğru %60 daha hızlı (1.6x) ilerler!'
+        : 'While the snake head is inside the turquoise wind current, every move advances the snake 1.6x faster toward the hole!',
+      visual: <T style={{ fontSize: 32 }}>💨</T>,
+    },
+    {
+      key: 'chain_lock',
+      title: isTr ? '⛓️ Zincirli Makara!' : '⛓️ Chain-Locked Spool!',
+      desc: isTr
+        ? 'Metal zincirle kilitlidir! Yalnızca raftaki bir makara tamamen sarılıp patladığında zincir 1 kademe kırılır.'
+        : 'Locked with heavy iron chains! Each time a spool on the rack fills up and pops, 1 chain link shatters.',
+      visual: <SpoolView color="O" cap={4} need={4} chainLock={1} size={46} />,
+    },
+    {
+      key: 'stone_pillar',
+      title: isTr ? '🪨 Taş Mühürlü Raf!' : '🪨 Stone-Sealed Rack Slot!',
+      desc: isTr
+        ? '3. raf yuvası taş mühürle kapalı başlar. İlk 2 makarayı sarıp patlattığında taş mühür kırılır ve yuva açılır!'
+        : 'The 3rd rack slot starts sealed by a stone pillar. Complete and pop 2 spools on the rack to shatter the seal!',
+      visual: <T style={{ fontSize: 32 }}>🪨</T>,
+    },
+    {
       key: 'vortex',
       title: t.mech_vortex_title,
       desc: t.mech_vortex_desc,
@@ -162,8 +187,9 @@ export function MechanicIntroSheet({
   mechanic: MechanicKind | null;
   onClose: () => void;
 }) {
-  const { t } = useSave();
+  const { t, lang } = useSave();
   if (!mechanic) return null;
+  const isTr = lang === 'tr';
 
   const titleMap: Record<MechanicKind, string> = {
     basic: t.mech_basic_title,
@@ -178,6 +204,9 @@ export function MechanicIntroSheet({
     bridge: t.mech_bridge_title,
     ice_zone: t.mech_ice_zone_title,
     conveyor: t.mech_conveyor_title,
+    turbo_zone: isTr ? '💨 Hızlanan Akıntı Bölgesi!' : '💨 Turbo Current Zone!',
+    chain_lock: isTr ? '⛓️ Zincirli Makara!' : '⛓️ Chain-Locked Spool!',
+    stone_pillar: isTr ? '🪨 Taş Mühürlü Raf!' : '🪨 Stone-Sealed Rack Slot!',
   };
   const descMap: Record<MechanicKind, string> = {
     basic: t.mech_basic_desc,
@@ -192,6 +221,15 @@ export function MechanicIntroSheet({
     bridge: t.mech_bridge_desc,
     ice_zone: t.mech_ice_zone_desc,
     conveyor: t.mech_conveyor_desc,
+    turbo_zone: isTr
+      ? 'Yılanın başı turkuaz rüzgâr tünelindeyken her hamlede %60 daha hızlı (1.6x) ilerler! Akıntıya girmeden önce doğru renkleri hazırla.'
+      : 'While the snake head is inside the turquoise wind stream, every move advances the snake 1.6x faster! Prepare matching spools before it enters.',
+    chain_lock: isTr
+      ? 'Metal zincirle kilitli makaralara doğrudan dokunamazsın. Raftaki bir makarayı tamamen sarıp patlattığında zincir kırılır!'
+      : 'You cannot tap a chain-locked spool directly. Fill and pop any spool on the rack to shatter 1 chain link!',
+    stone_pillar: isTr
+      ? 'Bu bölümde 3. raf yuvası taş mühürle kapalı başlar! Rafta 2 makara sarıp patlattığında taş mühür kırılır ve 3. yuva açılır.'
+      : 'In this level, the 3rd rack slot starts sealed by a stone pillar! Pop 2 spools on the rack to shatter the stone seal and unlock the 3rd slot.',
   };
 
   return (
@@ -238,6 +276,23 @@ export function MechanicIntroSheet({
             <T style={{ fontSize: 52 }}>⚙️</T>
             <T style={{ fontSize: 13, color: UI.gold, fontFamily: FONT.black, marginTop: 4 }}>
               {t.mech_conveyor_title}
+            </T>
+          </View>
+        )}
+        {mechanic === 'turbo_zone' && (
+          <View style={{ alignItems: 'center' }}>
+            <T style={{ fontSize: 52 }}>💨</T>
+            <T style={{ fontSize: 13, color: '#0D9488', fontFamily: FONT.black, marginTop: 4 }}>
+              {titleMap.turbo_zone}
+            </T>
+          </View>
+        )}
+        {mechanic === 'chain_lock' && <SpoolView color="O" cap={4} need={4} chainLock={1} size={68} />}
+        {mechanic === 'stone_pillar' && (
+          <View style={{ alignItems: 'center' }}>
+            <T style={{ fontSize: 52 }}>🪨</T>
+            <T style={{ fontSize: 13, color: '#92400E', fontFamily: FONT.black, marginTop: 4 }}>
+              {titleMap.stone_pillar}
             </T>
           </View>
         )}

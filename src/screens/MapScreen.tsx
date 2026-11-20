@@ -110,8 +110,11 @@ export function MapScreen({ onBack, onPlay }: { onBack: () => void; onPlay: (n: 
                     isLocked && styles.chapterPillLocked,
                   ]}
                 >
-                  <T style={{ fontSize: 13 }}>{ch.icon}</T>
+                  <T style={{ fontSize: 12 }}>{ch.icon}</T>
                   <T
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.75}
                     style={[
                       styles.chapterPillText,
                       isSelected && styles.chapterPillTextActive,
@@ -220,19 +223,19 @@ const styles = StyleSheet.create({
   },
   chapterBar: {
     flexDirection: 'row',
-    paddingHorizontal: 14,
+    paddingHorizontal: 10,
     paddingBottom: 8,
-    gap: 8,
+    gap: 5,
   },
   chapterPill: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.88)',
-    borderRadius: 16,
+    borderRadius: 14,
     paddingVertical: 6,
-    paddingHorizontal: 10,
-    gap: 5,
+    paddingHorizontal: 6,
+    gap: 3,
     borderWidth: 1.5,
     borderColor: '#F3D5C1',
   },

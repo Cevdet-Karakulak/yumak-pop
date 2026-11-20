@@ -2,6 +2,7 @@ import {
   canTap,
   cloneState,
   GameState,
+  getUsableRackLength,
   Spool,
   tapColumn,
   unravelTick,
@@ -9,7 +10,7 @@ import {
 } from './engine';
 import { createRng, Rng } from './rng';
 
-export const TOTAL_LEVELS = 200;
+export const TOTAL_LEVELS = 250;
 export const BASE_RACK = 3;
 export const LEVELS_PER_CHAPTER = 50;
 
@@ -27,7 +28,7 @@ export const CHAPTERS: Chapter[] = [
   { id: 2, title: 'Renkli Yumaklar', subtitle: 'Kelt Labirenti & İkiz Makaralar', startLevel: 51, endLevel: 100, icon: '🌈' },
   { id: 3, title: 'Sihirli İğneler', subtitle: 'Köprüler, Buz Alanları & Yürüyen Bant', startLevel: 101, endLevel: 150, icon: '✨' },
   { id: 4, title: 'Kış Zirvesi & Dağ Parkurları', subtitle: 'Buzlu Fiyortlar, Çift Başlı Yılanlar & Zirve Sınavı', startLevel: 151, endLevel: 200, icon: '🏔️' },
-  { id: 5, title: 'Gökkuşağı Vadisi', subtitle: 'Buzlu Bobinler ve İki Renkli İpler', startLevel: 201, endLevel: 250, icon: '🌸' },
+  { id: 5, title: 'Ustalık Koyu & Senfoni', subtitle: 'Yeni Parkurlar, Akıntı, Zincirli Makara & Mühürlü Raf', startLevel: 201, endLevel: 250, icon: '⚓' },
   { id: 6, title: 'Efsanevi Motifler', subtitle: 'Büyük Usta Mücadeleleri', startLevel: 251, endLevel: 300, icon: '🏆' },
 ];
 
@@ -61,7 +62,10 @@ export type MechanicKind =
   | 'dual'
   | 'bridge'
   | 'ice_zone'
-  | 'conveyor';
+  | 'conveyor'
+  | 'chain_lock'
+  | 'turbo_zone'
+  | 'stone_pillar';
 
 export type TrackShape =
   | 'clover'
@@ -88,7 +92,12 @@ export type TrackShape =
   | 'carousel_circus'
   | 'dragon_spiral'
   | 'escalator_zigzag'
-  | 'celtic_nexus';
+  | 'celtic_nexus'
+  | 'anchor_bay'
+  | 'snowflake_crest'
+  | 'treble_clef'
+  | 'double_pendulum'
+  | 'crown_labyrinth';
 
 export interface LevelInfo {
   number: number;
@@ -127,6 +136,16 @@ function levelParams(n: number) {
   if (n >= 95 && (n % 5 === 4 || (n >= 101 && (n % 3 === 2 || n % 2 === 0)))) {
     mechanics.push('conveyor');
   }
+  // Chapter 5 (201-250) New Challenges:
+  if (n >= 201 && (n <= 205 || n % 2 === 1 || n >= 241)) {
+    mechanics.push('turbo_zone');
+  }
+  if (n >= 211) {
+    mechanics.push('chain_lock');
+  }
+  if (n >= 226 && (n === 226 || n % 2 === 0 || n >= 241)) {
+    mechanics.push('stone_pillar');
+  }
 
   let newMechanic: MechanicKind | undefined;
   if (n === 1) newMechanic = 'basic';
@@ -140,6 +159,9 @@ function levelParams(n: number) {
   else if (n === 55 || n === 101) newMechanic = 'bridge';
   else if (n === 75 || n === 103) newMechanic = 'ice_zone';
   else if (n === 95 || n === 105) newMechanic = 'conveyor';
+  else if (n === 201) newMechanic = 'turbo_zone';
+  else if (n === 211) newMechanic = 'chain_lock';
+  else if (n === 226) newMechanic = 'stone_pillar';
 
   // Progressive color palette expansion (up to 8 colors)
   const numColors = Math.min(
@@ -195,7 +217,16 @@ function levelParams(n: number) {
   ];
 
   let trackShape: TrackShape;
-  if (n > 100) {
+  if (n > 200) {
+    const ch5Tracks: TrackShape[] = [
+      'anchor_bay',
+      'snowflake_crest',
+      'treble_clef',
+      'double_pendulum',
+      'crown_labyrinth',
+    ];
+    trackShape = ch5Tracks[(n - 201) % ch5Tracks.length];
+  } else if (n > 100) {
     const ch3Tracks: TrackShape[] = [
       'bridge_cross',
       'frozen_fjord',
@@ -225,10 +256,13 @@ function levelParams(n: number) {
   const wildCount = n < 16 ? 0 : (n % 3 === 0 || n % 5 === 0 ? 1 : 0);
   const frozenCount = n < 24 ? 0 : n <= 45 ? 1 : (n > 100 ? 3 : 2);
   const dualCount = n < 36 ? 0 : n <= 65 ? 1 : (n > 100 ? 3 : 2);
+  const chainCount = n < 211 ? 0 : n < 230 ? 2 : 3;
 
   const hasBridge = mechanics.includes('bridge') || trackShape === 'bridge_cross';
   const hasIce = mechanics.includes('ice_zone') || trackShape === 'frozen_fjord';
   const hasConveyor = mechanics.includes('conveyor') || trackShape === 'carousel_circus' || trackShape === 'escalator_zigzag';
+  const hasTurbo = mechanics.includes('turbo_zone');
+  const hasStonePillar = mechanics.includes('stone_pillar');
 
   if (hasBridge && !mechanics.includes('bridge')) mechanics.push('bridge');
   if (hasIce && !mechanics.includes('ice_zone')) mechanics.push('ice_zone');
@@ -247,7 +281,7 @@ function levelParams(n: number) {
  */
 const TRACK_OBSTACLE_ZONES: Record<
   TrackShape,
-  { bridge: [number, number]; ice: [number, number] }
+  { bridge: [number, number]; ice: [number, number]; turbo?: [number, number] }
 > = {
   clover: { bridge: [31.1, 35.5], ice: [59.3, 64.5] },
   horseshoe: { bridge: [31.1, 35.6], ice: [60.5, 65.8] },
@@ -274,6 +308,11 @@ const TRACK_OBSTACLE_ZONES: Record<
   dragon_spiral: { bridge: [39.4, 44.2], ice: [69.2, 74.9] },
   escalator_zigzag: { bridge: [43.0, 46.8], ice: [64.9, 69.4] },
   celtic_nexus: { bridge: [33.0, 37.9], ice: [71.8, 77.6] },
+  anchor_bay: { bridge: [29.0, 34.0], ice: [69.0, 74.5], turbo: [49.0, 56.5] },
+  snowflake_crest: { bridge: [31.5, 36.2], ice: [68.0, 73.5], turbo: [50.0, 57.0] },
+  treble_clef: { bridge: [30.0, 35.0], ice: [68.5, 74.0], turbo: [49.0, 56.5] },
+  double_pendulum: { bridge: [31.0, 35.8], ice: [67.5, 73.0], turbo: [48.5, 56.0] },
+  crown_labyrinth: { bridge: [32.0, 36.8], ice: [67.0, 72.5], turbo: [49.5, 57.0] },
 };
 
   const zoneInfo = TRACK_OBSTACLE_ZONES[trackShape] || TRACK_OBSTACLE_ZONES.spiral;
@@ -288,6 +327,11 @@ const TRACK_OBSTACLE_ZONES: Record<
 
   const iceZone = hasIce
     ? { start: zoneInfo.ice[0], end: zoneInfo.ice[1] }
+    : undefined;
+
+  const turboCoords = zoneInfo.turbo ?? [49.0, 56.0];
+  const turboZone = hasTurbo
+    ? { start: turboCoords[0], end: turboCoords[1] }
     : undefined;
 
   const conveyor = hasConveyor
@@ -310,6 +354,8 @@ const TRACK_OBSTACLE_ZONES: Record<
     wildCount,
     frozenCount,
     dualCount,
+    chainCount,
+    hasStonePillar,
     basketRatio,
     stepPenalty,
     startHeadPos,
@@ -319,6 +365,7 @@ const TRACK_OBSTACLE_ZONES: Record<
     newMechanic,
     bridge,
     iceZone,
+    turboZone,
     conveyor,
   };
 }
@@ -527,6 +574,21 @@ export function createLevel(n: number, rackSlots = BASE_RACK, seedSalt = 0): Gam
       }
     }
 
+    // Apply Chain Lock spools (Chapter 5+: shattered when rack spools complete & pop)
+    const actualChains = p.chainCount > 0 ? (attempt > 28 ? 0 : Math.max(1, p.chainCount - Math.floor(attempt / 14))) : 0;
+    if (actualChains > 0) {
+      let applied = 0;
+      for (let c = 0; c < colCount && applied < actualChains; c++) {
+        const target = columns[c].find(
+          (s, idx) => idx >= 1 && !s.knots && !s.twinId && !s.isWild && !s.isMystery && !s.frozen && s.color !== segments[0]?.color,
+        );
+        if (target) {
+          target.chainLock = attempt < 10 && n >= 235 ? 2 : 1;
+          applied++;
+        }
+      }
+    }
+
     // Apply Dual-Layer spools (outer layer finishes -> reveals second inner color)
     const actualDual = p.dualCount > 0 ? (attempt > 25 ? 0 : Math.max(1, p.dualCount - Math.floor(attempt / 12))) : 0;
     if (actualDual > 0) {
@@ -571,7 +633,9 @@ export function createLevel(n: number, rackSlots = BASE_RACK, seedSalt = 0): Gam
       status: 'playing',
       bridge: p.bridge,
       iceZone: p.iceZone,
+      turboZone: p.turboZone,
       conveyor: p.conveyor,
+      sealedRackPops: p.hasStonePillar ? (attempt > 25 ? 1 : 2) : undefined,
     };
 
     // Must NOT be trivially solvable by mindless left-to-right or right-to-left tapping,
@@ -727,7 +791,8 @@ export function isTriviallySolvedSequentially(start: GameState, maxClearedRatio 
 function evaluateState(s: GameState): number {
   if (s.status === 'won') return 1e9;
   if (s.status === 'lost') return -1e9;
-  const freeSlots = s.rack.filter((r) => r === null).length;
+  const usableLen = getUsableRackLength(s);
+  const freeSlots = s.rack.slice(0, usableLen).filter((r) => r === null).length;
   const unlockedRatio = (s.totalUnits - s.remainingUnits) * 25;
   const safety = (s.dangerHolePos - s.headPos) * 4;
   return unlockedRatio + freeSlots * 140 + safety;
